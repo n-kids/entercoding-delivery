@@ -484,12 +484,12 @@
             <div class="text-sm font-bold text-violet-200">텍스트 붙여넣기</div>
             <button id="importTextPasteBtn" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700">📋 클립보드에서 붙여넣기</button>
           </div>
-          <textarea id="importTextInput" rows="6" placeholder="예)&#10;달빛유치원 3단계 111 교사 2, 카드 111&#10;새싹어린이집 1단계 10, 2단계 5 (교사 1)&#10;경기도 김포시 사우중로 1&#10;&#10;엑셀·구글 시트에서 표를 복사해 붙여 넣어도 됩니다." class="w-full bg-slate-800 text-white text-base sm:text-sm rounded-xl px-3 py-2.5 border border-slate-700 leading-relaxed"></textarea>
+          <textarea id="importTextInput" rows="6" placeholder="예)&#10;모담유치원 83/86/82 교사용 6/5/4&#10;달빛유치원 3단계 111 교사 2, 카드 111&#10;새싹어린이집 1단계 10, 2단계 5 (교사 1)&#10;경기도 김포시 사우중로 1&#10;&#10;엑셀·구글 시트에서 표를 복사해 붙여 넣어도 됩니다." class="w-full bg-slate-800 text-white text-base sm:text-sm rounded-xl px-3 py-2.5 border border-slate-700 leading-relaxed"></textarea>
           <div class="grid grid-cols-2 gap-2">
             <button id="importTextGoBtn" type="button" class="py-2.5 rounded-xl text-sm font-extrabold bg-violet-500 hover:bg-violet-400 text-white">읽어서 표로 보기</button>
             <button id="importTextAiBtn" type="button" class="py-2.5 rounded-xl text-sm font-bold bg-slate-800 text-slate-200 border border-slate-700">🤖 AI로 읽기</button>
           </div>
-          <p class="text-[11px] text-slate-500 leading-relaxed">카톡·문자·메모에 적힌 납품 내용을 그대로 붙여 넣으세요. 원 이름, 1~4단계, 교사용, 기타 품목(카드·안내문 등), 주소를 찾아 아래 표로 정리합니다. AI로 읽기는 Gemini 키가 있을 때 사용할 수 있습니다.</p>
+          <p class="text-[11px] text-slate-500 leading-relaxed">카톡·문자·메모에 적힌 납품 내용을 그대로 붙여 넣으세요. "모담유치원 83/86/82 교사용 6/5/4"처럼 빗금으로 이어진 숫자는 1·2·3·4단계 순서로 읽습니다. 원 이름, 1~4단계, 교사용, 기타 품목(카드·안내문 등), 주소를 찾아 아래 표로 정리합니다. AI로 읽기는 Gemini 키가 있을 때 사용할 수 있습니다.</p>
         </div>
 
         <div id="importStatus" class="hidden text-xs sm:text-sm rounded-2xl px-3 py-2.5 border"></div>
@@ -2413,7 +2413,7 @@
 - 단계 열은 왼쪽부터 1, 2, 3, 4단계 순서입니다(4단계 열이 없으면 q4=0). 숫자가 어느 열 아래에 있는지 정확히 판단하세요.
 - "교사용"/"교사" 수량이 단계 아래 칸, 별도 열, 괄호 등으로 표시되어 있으면 해당 단계의 t1~t4에 넣으세요. 단계 구분 없는 교사용 하나뿐이면 그 원의 수량이 있는 첫 단계에 넣으세요. 없으면 0.
 - 엔터코딩 교재 외에 그 원에 함께 납품하는 기타 품목(카드, 교구, 안내문 등)이 적혀 있으면 extras에 "품목명 수량, 품목명 수량" 형식으로 넣으세요. 없으면 빈 문자열.
-- 지역/동 칸이 있으면 region에 넣고, 주소가 적혀 있으면 address에 넣으세요. 없으면 빈 문자열.
+- \"모담유치원 83/86/82 교사용 6/5/4\"처럼 빗금(/)으로 이어진 숫자는 1·2·3(·4)단계 순서의 수량입니다(q1=83,q2=86,q3=82 / t1=6,t2=5,t3=4). '-'나 'x'는 0입니다.\n- 지역/동 칸이 있으면 region에 넣고, 주소가 적혀 있으면 address에 넣으세요. 없으면 빈 문자열.
 - 표에 있는 행만 출력하고 합계 행·제목 행은 제외하세요.
 - 원 이름 철자 참고(기존 납품처 목록, 표와 같을 때만 이 철자 사용): ${known}`;
       const body = {
@@ -2764,8 +2764,18 @@
         const em = line.match(/(?:기타|추가|그\s*외)\s*(?:품목)?\s*[:：]\s*(.+)$/);
         if (em) { cur.extras = cur.extras.concat(normalizeExtras(em[1])); line = line.replace(em[0], ' '); }
         line = line.replace(extraRe, (all, w, n) => { if (/^교사용\s*지도서$/.test(w) || !/교사/.test(w)) { cur.extras.push({ name: w.trim(), qty: parseInt(n, 10) }); return ' '; } return all; });
+        // "83/86/82 교사용 6/5/4" : slash-separated quantities = 1·2·3(·4)단계 in order ('-' or 'x' = 0)
+        let seqHit = false;
+        line = line.replace(/(교사(?:용)?|학생(?:용)?)?\s*[:：]?\s*(?<![\d.])((?:\d+|[-xX])(?:\s*\/\s*(?:\d+|[-xX])){1,3})(?![\d.]|\s*단계|\s*단\b|\s*\(\s*[월화수목금토일]|\s*(?:일|요일|납품|배송|배달|도착|까지|오전|오후))/g, (all, who, seq) => {
+          const parts = seq.split('/').map(x => x.trim());
+          const teacher = !!(who && /교사/.test(who));
+          parts.forEach((x, i) => { const v = /^\d+$/.test(x) ? parseInt(x, 10) : 0; cur[(teacher ? 't' : 'q') + (i + 1)] += v; });
+          if (teacher) cur._gotT = true; else { cur._gotQ = true; cur._lastStep = parts.length; }
+          seqHit = true;
+          return ' ';
+        });
         const re = /(교사(?:용)?)?\s*(?:엔터\s*코딩\s*)?([1-4])\s*(?:단계|단)\s*(교사(?:용)?)?\s*[:：=\-]?\s*(\d+)|(교사(?:용)?)\s*[:：=\-]?\s*(\d+)|엔터\s*코딩\s*([1-4])\s*[:：=\-]?\s*(\d+)/g;
-        let m; let any = false;
+        let m; let any = seqHit;
         while ((m = re.exec(line))) {
           any = true;
           if (m[2]) {
