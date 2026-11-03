@@ -286,6 +286,7 @@
           <button id="pkTextReadBtn" type="button" class="w-full py-2.5 rounded-xl text-sm font-extrabold bg-rose-500 hover:bg-rose-400 text-white">읽어서 확인하기</button>
         </div>
         <div id="pkStatus" class="hidden text-xs rounded-xl px-3 py-2 border"></div>
+        <div id="pkKeyWarn" class="hidden text-xs rounded-xl px-3 py-2 border border-rose-500/40 bg-rose-500/10 text-rose-200 leading-relaxed"></div>
         <div id="pkReview" class="hidden space-y-2">
           <div class="flex items-center justify-between gap-2">
             <span class="text-xs font-bold text-amber-300">읽은 내용 확인 · 이름을 눌러 고칠 수 있습니다</span>
@@ -699,9 +700,9 @@
           <li>[앱 설정] → [플랫폼 키] → <strong>JavaScript 키</strong> → JavaScript SDK 도메인에 <code class="text-amber-300">https://entercoding-delivery.pplx.app</code>, <code class="text-amber-300">https://n-kids.github.io</code> 등록</li>
           <li>JavaScript 키를 복사해 위 칸에 붙여넣기</li>
         </ol>
-        <div class="flex items-center gap-2">
-          <button id="testKakaoBtn" type="button" class="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold">연결 시험</button>
-          <span id="kakaoTestResult" class="text-xs text-slate-400"></span>
+        <div class="flex items-start gap-2">
+          <button id="testKakaoBtn" type="button" class="shrink-0 whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold">연결 시험</button>
+          <span id="kakaoTestResult" class="flex-1 min-w-0 text-xs text-slate-400"></span>
         </div>
       </div>
 
@@ -2345,8 +2346,18 @@
 
     // ---------- geocoding ----------
     let kakaoReadyPromise = null;
+    // 카카오 JavaScript 키 = 영문 소문자+숫자 32자리 (주소/URL을 넣는 실수 방지)
+    function kakaoKeyProblem(k) {
+      k = String(k || '').trim();
+      if (!k) return '';
+      if (/^https?:|\.(io|app|com|kr)\b|\//i.test(k)) return '키 칸에 사이트 주소가 들어가 있습니다. 주소는 카카오 개발자 사이트의 [JavaScript SDK 도메인]에 등록하고, 이 칸에는 32자리 JavaScript 키를 넣어 주세요.';
+      if (!/^[0-9a-f]{32}$/i.test(k)) return `키 형식이 다릅니다(지금 ${k.length}자). 카카오 [앱 키] → JavaScript 키(영문+숫자 32자리)를 복사해 넣어 주세요. REST API 키나 Admin 키는 안 됩니다.`;
+      return '';
+    }
+    function kakaoUsable() { return !!SETTINGS.kakaoKey && !kakaoKeyProblem(SETTINGS.kakaoKey); }
     function loadKakao() {
       if (!SETTINGS.kakaoKey) return Promise.reject(new Error('no key'));
+      if (kakaoKeyProblem(SETTINGS.kakaoKey)) return Promise.reject(new Error('bad key'));
       if (window.kakao && window.kakao.maps && window.kakao.maps.services) return Promise.resolve();
       if (kakaoReadyPromise) return kakaoReadyPromise;
       kakaoReadyPromise = new Promise((resolve, reject) => {
@@ -2364,13 +2375,16 @@
     }
     function kakaoKeyword(q) {
       return new Promise(resolve => {
+        const ctr = workAreaCenter();
+        const opt = { size: 6 };
+        if (ctr) { opt.location = new kakao.maps.LatLng(ctr.lat, ctr.lng); opt.sort = kakao.maps.services.SortBy.ACCURACY; }
         new kakao.maps.services.Places().keywordSearch(q, (res, status) => {
           if (status !== kakao.maps.services.Status.OK) return resolve([]);
           resolve(res.slice(0, 6).map(p => ({
             name: p.place_name, address: p.road_address_name || p.address_name, jibun: p.address_name,
             phone: p.phone || '', lat: parseFloat(p.y), lng: parseFloat(p.x), category: p.category_name || '', source: '카카오 장소'
           })));
-        }, { size: 6 });
+        }, opt);
       });
     }
     function kakaoAddress(q) {
@@ -2391,7 +2405,7 @@
       if (wait > 0) await sleep(wait);
       lastNominatimAt = Date.now();
       try {
-        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=kr&accept-language=ko&addressdetails=1&limit=5&q=${encodeURIComponent(q)}`;
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=kr&accept-language=ko&addressdetails=1&limit=5${(() => { const c = workAreaCenter(); return c ? `&viewbox=${(c.lng - 0.35).toFixed(3)},${(c.lat + 0.3).toFixed(3)},${(c.lng + 0.35).toFixed(3)},${(c.lat - 0.3).toFixed(3)}` : ''; })()}&q=${encodeURIComponent(q)}`;
         const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
         if (!res.ok) return [];
         const data = await res.json();
@@ -2411,17 +2425,32 @@
     function cleanAddress(a) { return String(a || '').replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim(); }
 
     // Returns { engine, candidates[], best (auto-acceptable) | null }
-    async function geocodeSchool(name, address) {
+    // 배송 지역 중심(납품 원 좌표 평균) · 다른 지역 동명 장소를 걸러내는 데 사용
+    let _areaCache = null;
+    function workAreaCenter() {
+      const pts = [];
+      try { SCHOOLS.forEach(s => { const c = getSchoolCoords(s); if (hasCoords(c)) pts.push(c); }); } catch (e) {}
+      try { (PICKUPS || []).forEach(p => { if (!p.schoolId && hasCoords({ lat: p.lat, lng: p.lng })) pts.push({ lat: p.lat, lng: p.lng }); }); } catch (e) {}
+      if (!pts.length) return { lat: 37.64, lng: 126.75 }; // 김포·고양 기본값
+      const key = pts.length;
+      if (_areaCache && _areaCache.key === key) return _areaCache.c;
+      const lats = pts.map(p => p.lat).sort((a, b) => a - b), lngs = pts.map(p => p.lng).sort((a, b) => a - b);
+      const c = { lat: lats[Math.floor(lats.length / 2)], lng: lngs[Math.floor(lngs.length / 2)] };
+      _areaCache = { key, c }; return c;
+    }
+    async function geocodeSchool(name, address, opts = {}) {
       const addr = cleanAddress(address);
       const regionHint = regionFromAddress(address).group;
+      const variants = (opts.variants || []).filter(v => v && v !== name);
       let candidates = [], engine = '';
       let kakaoOk = false;
-      if (SETTINGS.kakaoKey) {
+      if (kakaoUsable()) {
         try {
           await loadKakao(); kakaoOk = true; engine = '카카오 지도';
           const queries = [];
           if (name) queries.push(regionHint ? `${regionHint} ${name}` : name);
           if (name && regionHint) queries.push(name);
+          variants.forEach(v => queries.push(v));
           const lists = [];
           for (const q of queries) lists.push(await kakaoKeyword(q));
           if (addr) { lists.push(await kakaoAddress(addr)); lists.push(await kakaoKeyword(addr)); }
@@ -2429,9 +2458,12 @@
         } catch (e) { kakaoOk = false; }
       }
       if (!kakaoOk) {
-        engine = SETTINGS.kakaoKey ? '오픈스트리트맵 (카카오 연결 실패 · 키/도메인 확인)' : '오픈스트리트맵 (무료 · 정확도 낮음, 카카오 키 등록 권장)';
+        engine = !SETTINGS.kakaoKey ? '오픈스트리트맵 (무료 · 유치원/어린이집 거의 없음, 카카오 키 등록 권장)'
+          : kakaoKeyProblem(SETTINGS.kakaoKey) ? '오픈스트리트맵 (⚠️ 카카오 키가 잘못 입력됨 · ⚙️ 연동 설정 확인)'
+          : '오픈스트리트맵 (카카오 연결 실패 · 키/도메인 확인)';
         if (addr) candidates = candidates.concat(await nominatim(addr));
         if (name) candidates = candidates.concat(await nominatim(regionHint ? `${name} ${regionHint}` : name));
+        if (!candidates.some(c => !c.rough)) for (const v of variants.slice(0, 2)) candidates = candidates.concat(await nominatim(v));
       }
       // dedupe (within 25m and same name)
       const uniq = [];
@@ -2442,24 +2474,27 @@
       // score
       const addrKey = normName(addr).replace(/^경기(도)?/, '');
       uniq.forEach(c => {
-        let sc = name ? nameScore(name, c.name) : 0;
+        let sc = Math.max(name ? nameScore(name, c.name) : 0, ...variants.map(v => nameScore(v, c.name)));
         const ca = normName(c.address).replace(/^경기(도)?/, '');
         const cj = normName(c.jibun).replace(/^경기(도)?/, '');
         if (addrKey && (ca.includes(addrKey) || addrKey.includes(ca) || cj.includes(addrKey))) sc += 0.6;
         if (regionHint && (c.address + c.jibun).includes(regionHint)) sc += 0.1;
         if (/어린이집|유치원|학교|교육/.test(c.category)) sc += 0.1;
         if (c.rough) sc -= 0.4;
+        const ctr = workAreaCenter();
+        if (ctr && !addrKey) { const km = computeHaversineMeters(ctr.lat, ctr.lng, c.lat, c.lng) / 1000; if (km > 35) sc -= 0.5; else if (km > 20) sc -= 0.15; c.km = km; }
         c.score = sc;
       });
       uniq.sort((a, b) => b.score - a.score);
       const top = uniq[0];
       let best = null;
       if (top && !top.rough) {
-        const nameOk = name && nameScore(name, top.name) >= 0.85;
+        const nameOk = (name && nameScore(name, top.name) >= 0.85) || variants.some(v => nameScore(v, top.name) >= 0.85);
+        const far = isFinite(top.km) && top.km > 35;
         const addrOk = addrKey && (normName(top.address).replace(/^경기(도)?/, '').includes(addrKey) || normName(top.jibun).includes(addrKey));
         const second = uniq[1];
         const ambiguous = second && second.score >= top.score - 0.05 && computeHaversineMeters(top.lat, top.lng, second.lat, second.lng) > 150 && !addrOk;
-        if ((nameOk || addrOk) && !ambiguous) best = top;
+        if ((nameOk || addrOk) && !ambiguous && !far) best = top;
       }
       return { engine, candidates: uniq.slice(0, 8), best };
     }
@@ -2515,7 +2550,7 @@
     function renderGeoResults(list) {
       const box = document.getElementById('geoResults');
       if (!list.length) {
-        box.innerHTML = '<div class="text-xs text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-xl p-2.5">검색 결과가 없습니다. 주소(도로명)로 다시 검색하거나, 지도를 눌러 위치를 직접 지정하세요.</div>';
+        box.innerHTML = '<div class="text-xs text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-xl p-2.5">검색 결과가 없습니다. 원 이름을 정식 이름(예: ○○어린이집)이나 도로명 주소로 바꿔 다시 검색하거나, 지도를 눌러 위치를 직접 지정하세요.' + (kakaoUsable() ? '' : '<br><strong>지금은 카카오 키가 ' + (SETTINGS.kakaoKey ? '잘못 입력되어' : '없어') + ' 무료 지도(오픈스트리트맵)로만 검색 중입니다. 유치원·어린이집은 대부분 나오지 않으니 ☰ 메뉴 → ⚙️ 연동 설정에서 카카오 JavaScript 키를 넣어 주세요.</strong>') + '</div>';
         return;
       }
       box.innerHTML = list.map((c, i) => `
@@ -2538,7 +2573,9 @@
       info.textContent = '위치 검색 중...';
       document.getElementById('geoResults').innerHTML = '';
       const looksAddress = /(로|길)\s*\d|\d+-\d+|(동|리)\s*\d/.test(q);
-      const r = await geocodeSchool(looksAddress ? (school ? school.name : '') : q, looksAddress ? q : (school && normName(q) === normName(school.name) ? school.address : ''));
+      const tv = geoState.target && geoState.target.variants ? geoState.target.variants : [];
+      const useV = !looksAddress && tv.length && (tv.some(v => normName(v) === normName(q)) || normName(q) === normName(geoState.target.raw || ''));
+      const r = await geocodeSchool(looksAddress ? (school ? school.name : '') : q, looksAddress ? q : (school && normName(q) === normName(school.name) ? school.address : ''), { variants: useV ? tv : [] });
       info.textContent = `검색: ${r.engine}${r.best ? ' · ✓ 이름/주소가 일치하는 결과를 자동 선택했습니다' : ' · 맞는 결과를 눌러 선택하세요'}`;
       renderGeoResults(r.candidates);
       const pick = r.best || r.candidates[0];
@@ -3386,7 +3423,8 @@
     function openSettings() {
       document.getElementById('kakaoKeyInput').value = SETTINGS.kakaoKey || '';
       document.getElementById('geminiKeyInput').value = SETTINGS.geminiKey || '';
-      document.getElementById('kakaoTestResult').textContent = SETTINGS.kakaoKey ? '저장된 키 있음' : '';
+      { const out = document.getElementById('kakaoTestResult'); const prob = kakaoKeyProblem(SETTINGS.kakaoKey);
+        out.textContent = prob ? '✕ ' + prob : (SETTINGS.kakaoKey ? '저장된 키 있음' : ''); out.className = prob ? 'text-xs text-rose-300' : 'text-xs text-slate-400'; }
       document.getElementById('geminiTestResult').textContent = SETTINGS.geminiKey ? '저장된 키 있음' : '';
       document.getElementById('settingsModal').classList.remove('hidden');
     }
@@ -3397,10 +3435,14 @@
       SETTINGS.geminiKey = document.getElementById('geminiKeyInput').value.trim();
     }
     document.getElementById('openSettingsModalBtn').addEventListener('click', openSettings);
+    document.addEventListener('click', (e) => { if (e.target.closest('[data-open-settings]')) openSettings(); });
     document.getElementById('closeSettingsModalBtn').addEventListener('click', () => document.getElementById('settingsModal').classList.add('hidden'));
     document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+      const prob = kakaoKeyProblem(document.getElementById('kakaoKeyInput').value);
+      if (prob) { const out = document.getElementById('kakaoTestResult'); out.textContent = '✕ ' + prob; out.className = 'text-xs text-rose-300'; document.getElementById('kakaoKeyInput').focus(); return; }
       readSettingsInputs(); saveSettings();
       document.getElementById('settingsModal').classList.add('hidden');
+      try { renderPickups(); if (kakaoUsable()) pkAutoGeocode(PICKUPS.filter(p => !p.done)); } catch (e) {}
       showToast('연동 설정을 저장했습니다.');
     });
     document.getElementById('clearKeysBtn').addEventListener('click', () => {
@@ -3411,6 +3453,7 @@
       readSettingsInputs();
       const out = document.getElementById('kakaoTestResult');
       if (!SETTINGS.kakaoKey) { out.textContent = '키를 입력해 주세요.'; return; }
+      if (kakaoKeyProblem(SETTINGS.kakaoKey)) { out.textContent = '✕ ' + kakaoKeyProblem(SETTINGS.kakaoKey); out.className = 'text-xs text-rose-300'; return; }
       if (window.kakao && window.kakao.maps && window.kakao.maps.services && out.dataset.loadedKey && out.dataset.loadedKey !== SETTINGS.kakaoKey) {
         out.textContent = '키를 바꿨습니다. 저장 후 페이지를 새로고침하고 다시 시험해 주세요.'; return;
       }
@@ -3562,6 +3605,24 @@
       if (dt - now > 1000 * 3600 * 24 * 200) y -= 1;          // e.g. Dec→Jan wrap
       else if (now - dt > 1000 * 3600 * 24 * 240) y += 1;
       return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    // 웍스 줄임말 → 지도 검색용 정식 이름 후보 ("시립다울" → "다울어린이집", "고양시립다울어린이집" …)
+    function pkNameVariants(n) {
+      const s = String(n || '').replace(/\s+/g, '').trim();
+      if (!s) return [];
+      const out = [pkGuessFullName(s)];
+      let m;
+      if ((m = s.match(/^(고양|김포|파주|서울)?(시립|구립|국공립)(.+?)(어린이집)?$/))) {
+        const core = m[3];
+        out.push(core + '어린이집');
+        if (m[1]) out.push(m[1] + '시립' + core + '어린이집'); else { out.push('고양시립' + core + '어린이집'); out.push('김포시립' + core + '어린이집'); }
+        out.push('국공립' + core + '어린이집');
+      } else if ((m = s.match(/^(.+?)초(등학교)?병설(유치원)?$/))) {
+        out.push(m[1] + '초등학교병설유치원'); out.push(m[1] + '초등학교 병설유치원'); out.push(m[1] + '초등학교');
+      } else if (!/(유치원|어린이집|학교|센터)$/.test(s)) {
+        out.push(s + '유치원'); out.push(s + '어린이집');
+      }
+      return out.filter((v, i, a) => v && a.indexOf(v) === i);
     }
     function pkGuessFullName(n) {
       const s = String(n || '').trim();
@@ -3752,9 +3813,9 @@
     });
 
     // automatic location search for pickups not linked to a delivery school
-    let pkGeoRunning = false;
+    let pkGeoRunning = false, pkGeoQueued = null;
     async function pkAutoGeocode(list) {
-      if (pkGeoRunning) return; pkGeoRunning = true;
+      if (pkGeoRunning) { pkGeoQueued = list; return; } pkGeoRunning = true;
       let found = 0, tried = 0;
       try {
         for (const p of list) {
@@ -3762,13 +3823,16 @@
           if (hasCoords({ lat: p.lat, lng: p.lng })) continue;
           tried++;
           try {
-            const r = await geocodeSchool(pkGuessFullName(p.school), p.address || '');
+            const vs = pkNameVariants(p.school);
+            const r = await geocodeSchool(vs[0] || p.school, p.address || '', { variants: vs.slice(1) });
             if (r.best) { p.lat = r.best.lat; p.lng = r.best.lng; if (!p.address) p.address = r.best.address || ''; found++; savePickups(); renderPickups(); }
           } catch (e) {}
-          if (!SETTINGS.kakaoKey) await sleep(1100);
+          if (pkGeoQueued) break;
+          if (!kakaoUsable()) await sleep(1100);
         }
       } finally { pkGeoRunning = false; }
-      if (tried) pkSetStatus(found === tried ? 'ok' : 'warn', `위치 자동 찾기: ${tried}곳 중 <strong>${found}곳</strong> 찾음.${found < tried ? ' 못 찾은 곳은 카드의 [📍 위치 찾기]를 눌러 지정해 주세요.' + (SETTINGS.kakaoKey ? '' : ' (⚙️ 연동 설정에 카카오 키를 넣으면 훨씬 잘 찾습니다)') : ''}`);
+      if (pkGeoQueued) { const q = pkGeoQueued; pkGeoQueued = null; return pkAutoGeocode(q); }
+      if (tried) pkSetStatus(found === tried ? 'ok' : 'warn', `위치 자동 찾기: ${tried}곳 중 <strong>${found}곳</strong> 찾음.${found < tried ? ' 못 찾은 곳은 카드의 [📍 위치 찾기]를 눌러 지정해 주세요.' + (kakaoUsable() ? '' : SETTINGS.kakaoKey ? ' <strong class="text-rose-300">⚠️ 카카오 키가 잘못 입력되어 있습니다(사이트 주소가 들어감). ☰ 메뉴 → ⚙️ 연동 설정에서 32자리 JavaScript 키로 바꿔 주세요.</strong>' : ' (⚙️ 연동 설정에 카카오 키를 넣으면 훨씬 잘 찾습니다)') : ''}`);
     }
 
     // ---- import buttons ----
@@ -3856,6 +3920,11 @@
       const tab = document.getElementById('pkTabCount'); tab.textContent = cnt.pending; tab.classList.toggle('hidden', !cnt.pending);
     }
     function renderPickups() {
+      { const w = document.getElementById('pkKeyWarn'); if (w) { const bad = SETTINGS.kakaoKey && kakaoKeyProblem(SETTINGS.kakaoKey);
+        const noLoc = PICKUPS.filter(p => !p.done && !hasCoords(pkCoords(p))).length;
+        if (bad) { w.innerHTML = `⚠️ <strong>카카오 지도 키가 잘못 입력되어 있어 위치 검색이 거의 안 됩니다.</strong> 지금 키 칸에 사이트 주소(${escapeHtml(SETTINGS.kakaoKey.slice(0, 40))})가 들어가 있습니다. <button type="button" data-open-settings class="underline font-bold text-amber-300">⚙️ 연동 설정 열기</button> → 카카오 [앱 키]의 <strong>JavaScript 키(32자리)</strong>로 바꿔 주세요.`; w.classList.remove('hidden'); }
+        else if (!SETTINGS.kakaoKey && noLoc) { w.innerHTML = `📍 위치 없는 할 일 ${noLoc}건 · 카카오 키가 없어 무료 지도로만 찾고 있어 유치원·어린이집이 잘 안 나옵니다. <button type="button" data-open-settings class="underline font-bold text-amber-300">⚙️ 카카오 키 넣기</button>`; w.classList.remove('hidden'); }
+        else w.classList.add('hidden'); } }
       renderPickupFilters();
       const sort = document.getElementById('pkSortSelect').value;
       let list = PICKUPS.filter(p => {
@@ -3940,7 +4009,7 @@
       const s = pkLinkedSchool(p);
       if (s) { openGeoModal(s.id, { autoSearch: true, onDone: () => { renderPickups(); if (afterSave) afterSave(); } }); return; }
       openGeoModalTarget({
-        name: pkGuessFullName(p.school), address: p.address, lat: p.lat, lng: p.lng,
+        name: pkGuessFullName(p.school), raw: p.school, variants: pkNameVariants(p.school), address: p.address, lat: p.lat, lng: p.lng,
         onSave: (cand, lat, lng) => {
           p.lat = lat; p.lng = lng; if (cand && cand.address) p.address = cand.address;
           savePickups(); renderPickups();
