@@ -1,295 +1,93 @@
 <!-- ... existing code ... -->
-    // 2) 잠금화면 / 상단 미디어 컨트롤(MediaSession)에 실시간 남은 거리 & 납품수량 표시
-    function getActiveOrNearestSchool() {
-      const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
-      const pendingWithDist = enriched.filter(s => !completedMap[s.id] && s.dist !== null).sort((a, b) => a.dist - b.dist);
-      if (pendingWithDist.length > 0) return pendingWithDist[0];
-      const pending = enriched.filter(s => !completedMap[s.id]);
-      return pending[0] || enriched[currentCursorIndex] || enriched[0] || null;
-    }
+    // 2) 잠금화면 / 상단 미디어 컨트롤(MediaSession) 및 PiP 타겟 선정:
+    //    - 사용자가 네이버 내비 출발 버튼을 누른 원(activeNaviSchoolId)이 있으면 거리 상관없이 최우선 표시
+    //    - 납품 완료된 원은 제외 (단, 해당 원에 미완료 회수·반품이 남아 있으면 회수 모드로 표시)
+    //    - 미완료 납품 원과 미완료 회수·반품 장소 중 가까운 곳을 우선 표시
+    //    - 납품할 목록이 없으면 미완료 회수·반품 목록을 자동으로 표시
+    let activeNaviSchoolId = null;
 
-    function getActiveOrNearestPickupGroup() {
-      const pend = (PICKUPS || []).filter(p => !p.done);
-      if (!pend.length) return null;
-      const withDist = pend.map(p => ({ p, dist: pkDistance(p) }));
-      const valid = withDist.filter(x => x.dist !== null).sort((a, b) => a.dist - b.dist);
-      const first = valid.length ? valid[0].p : pend[0];
-      const key = normName(first.school);
-      const group = pend.filter(p => normName(p.school) === key);
-      const dist = pkDistance(first);
-      return {
-        schoolName: pkGuessFullName(first.school),
-        address: (pkLinkedSchool(first) && pkLinkedSchool(first).address) || first.address || '',
-        dist,
-        group
-      };
-    }
-
-    // 내 위치 기준으로 가장 가까운 곳(납품 원 vs 회수·반품지) 또는 현재 탭에 맞는 통합 타겟 반환
-    function getUnifiedHudTarget() {
-      const school = getActiveOrNearestSchool();
-      const pkInfo = getActiveOrNearestPickupGroup();
-
-      // 회수·반품 탭을 보고 있거나, 납품이 모두 끝나고 회수만 남은 경우
-      if (currentView === 'pickup' && pkInfo) {
-        return { mode: 'pickup', pkInfo };
-      }
-      if (!school && pkInfo) {
-        return { mode: 'pickup', pkInfo };
-      }
-      // GPS가 켜져 있을 때, 납품 원이 아닌 별도 회수 장소가 현재 내 위치에서 더 가까우면 자동 전환
-      if (school && pkInfo && school.dist !== null && pkInfo.dist !== null && pkInfo.dist < school.dist) {
-        const linkedToSame = normName(pkInfo.schoolName) === normName(school.name);
-        if (!linkedToSame) {
-          return { mode: 'pickup', pkInfo };
+    function getBestPipTarget() {
+      // 1. 사용자가 네이버 내비 출발을 누른 원이 있고 아직 완료되지 않았으면 거리 상관없이 최우선 고정
+      if (activeNaviSchoolId !== null) {
+        const locked = SCHOOLS.find(s => s.id === activeNaviSchoolId && !completedMap[s.id]);
+        if (locked) {
+          return {
+            kind: 'delivery',
+            school: locked,
+            dist: distanceToSchool(locked),
+            pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(locked) : []
+          };
+        } else {
+          activeNaviSchoolId = null; // 이미 완료되었거나 삭제되었으면 해제
         }
       }
-      if (school) {
-        const linkedPickups = (typeof pendingPickupsForSchool === 'function') ? pendingPickupsForSchool(school) : [];
-        return { mode: 'school', school, linkedPickups };
+
+      const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
+      // 납품 완료된 원은 철저히 제외하고 미완료 납품 원만 추출
+      const pendingDeliveries = enriched.filter(s => !completedMap[s.id]);
+      const pendingWithDist = pendingDeliveries.filter(s => s.dist !== null).sort((a, b) => a.dist - b.dist);
+      const nearestDelivery = pendingWithDist[0] || pendingDeliveries.find(s => s.id === (SCHOOLS[currentCursorIndex] && SCHOOLS[currentCursorIndex].id)) || pendingDeliveries[0] || null;
+
+      // 미완료 회수·반품 그룹 (납품 완료된 원에 남아있는 회수건 + 단독 회수처 모두 포함)
+      const pickupGroups = getPendingPickupGroupsWithDist();
+      const nearestPickup = pickupGroups[0] || null;
+
+      // 2. 사용자가 '회수·반품' 탭을 보고 있고 남은 회수 건이 있을 때 -> 가까운 회수·반품 우선
+      if (currentView === 'pickup' && nearestPickup) {
+        return { kind: 'pickup', pickupGroup: nearestPickup, dist: nearestPickup.dist };
       }
+
+      // 3. 미완료 납품 원과 미완료 회수·반품이 둘 다 있을 때 -> GPS 거리가 더 가까운 쪽을 최우선 표시
+      if (nearestDelivery && nearestPickup) {
+        if (nearestPickup.dist !== null && (nearestDelivery.dist === null || nearestPickup.dist < nearestDelivery.dist)) {
+          return { kind: 'pickup', pickupGroup: nearestPickup, dist: nearestPickup.dist };
+        }
+        return {
+          kind: 'delivery',
+          school: nearestDelivery,
+          dist: nearestDelivery.dist,
+          pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(nearestDelivery) : []
+        };
+      }
+
+      // 4. 미완료 납품 원만 남아 있을 때 -> 가장 가까운 미완료 납품 원 표시
+      if (nearestDelivery) {
+        return {
+          kind: 'delivery',
+          school: nearestDelivery,
+          dist: nearestDelivery.dist,
+          pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(nearestDelivery) : []
+        };
+      }
+
+      // 5. 납품해야 할 목록이 모두 완료되었거나 없을 때 -> 남은 회수·반품 목록을 표시
+      if (nearestPickup) {
+        return { kind: 'pickup', pickupGroup: nearestPickup, dist: nearestPickup.dist };
+      }
+
       return null;
     }
 
-    function updateMediaSessionMetadata() {
-      if (!('mediaSession' in navigator)) return;
-      const hud = getUnifiedHudTarget();
-      if (!hud) return;
-      try {
-        if (hud.mode === 'pickup') {
-          const { schoolName, dist, group } = hud.pkInfo;
-          const distStr = dist !== null && dist !== undefined ? ` (${formatDistance(dist)})` : '';
-          const itemsStr = group.map(p => `[${p.type}] ${p.items || p.title}`).join(', ');
-          navigator.mediaSession.metadata = new MediaMetadata({
-            title: `↩️ ${schoolName}${distStr}`,
-            artist: itemsStr.slice(0, 80),
-            album: `엔터코딩 회수·반품 알리미 (${group.length}건)`,
-            artwork: [
-              { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-              { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
-            ]
-          });
-          return;
-        }
-        const target = hud.school;
-        const linked = hud.linkedPickups || [];
-        const distStr = target.dist !== null && target.dist !== undefined ? ` (${formatDistance(target.dist)})` : '';
-        const qtyStr = buildQuantityLabel(target);
-        const pkSuffix = linked.length ? ` · ↩️회수 ${linked.length}건(${linked.map(p => p.items || p.type).join(',')})` : '';
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: `📍 ${target.name}${distStr}${linked.length ? ' [회수있음]' : ''}`,
-          artist: `📦 ${qtyStr}${pkSuffix}`,
-          album: `엔터코딩 납품알리미 · ${target.regionGroup} ${target.subRegion}`,
-          artwork: [
-            { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
-          ]
-        });
-        navigator.mediaSession.setActionHandler('play', () => {
-          startBgKeepAlive(true);
-          speakSchoolQuantity(target);
-        });
-        navigator.mediaSession.setActionHandler('pause', () => {
-          speakSchoolQuantity(target);
-        });
-        navigator.mediaSession.setActionHandler('nexttrack', () => {
-          const i = findNextPendingIndex(currentCursorIndex, 1);
-          if (i !== -1) {
-            currentCursorIndex = i;
-            updateHudPanel(SCHOOLS[i]);
-            speakSchoolQuantity(SCHOOLS[i]);
-            updateMediaSessionMetadata();
-          }
-        });
-        navigator.mediaSession.setActionHandler('previoustrack', () => {
-          if (SCHOOLS.length > 0) {
-            currentCursorIndex = (currentCursorIndex - 1 + SCHOOLS.length) % SCHOOLS.length;
-            updateHudPanel(SCHOOLS[currentCursorIndex]);
-            speakSchoolQuantity(SCHOOLS[currentCursorIndex]);
-            updateMediaSessionMetadata();
-          }
-        });
-      } catch (e) {}
-    }
-
-    // 3) 서비스 워커 등록 & 시스템 상단 배너 도착 알림 (화면 꺼짐 / 네이버 내비 위에서 작동)
+    function getActiveOrNearestSchool() {
 <!-- ... existing code ... -->
-    // 4) 네이버 내비 위에 항상 떠 있는 미니창 (Picture-in-Picture HUD)
-    function ensurePipElements() {
-      if (pipCanvasEl && pipVideoEl) return;
-      pipCanvasEl = document.createElement('canvas');
-      pipCanvasEl.width = 540;
-      pipCanvasEl.height = 290;
-      pipVideoEl = document.createElement('video');
-      pipVideoEl.muted = true;
-      pipVideoEl.setAttribute('playsinline', '');
-      pipVideoEl.style.position = 'fixed';
-      pipVideoEl.style.width = '1px';
-      pipVideoEl.style.height = '1px';
-      pipVideoEl.style.opacity = '0.01';
-      pipVideoEl.style.pointerEvents = 'none';
-      pipVideoEl.style.bottom = '0';
-      pipVideoEl.style.right = '0';
-      document.body.appendChild(pipVideoEl);
+    document.getElementById('schoolList').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.getAttribute('data-action');
+      const id = parseInt(btn.getAttribute('data-id'), 10);
+      const school = SCHOOLS.find(s => s.id === id);
+      if (!school) return;
 
-      pipVideoEl.addEventListener('leavepictureinpicture', () => {
-        pipActive = false;
-        if (pipAnimTimer) { clearInterval(pipAnimTimer); pipAnimTimer = null; }
-        updatePipButtons();
-      });
-    }
-
-    function drawPipHudCanvas() {
-      if (!pipCanvasEl) return;
-      const ctx = pipCanvasEl.getContext('2d');
-      const W = pipCanvasEl.width, H = pipCanvasEl.height;
-      const radiusMeters = parseInt(document.getElementById('radiusSelect').value, 10) || 300;
-      const hud = getUnifiedHudTarget();
-
-      if (!hud) {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, W, H);
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 6;
-        ctx.strokeRect(3, 3, W - 6, H - 6);
-        ctx.fillStyle = '#f8fafc';
-        ctx.font = 'bold 28px "Noto Sans KR", sans-serif';
-        ctx.fillText('🎉 모든 납품 및 회수 완료!', 24, 150);
+      if (action === 'naver-speech') {
+        activeNaviSchoolId = school.id; // 네이버 내비 출발을 누른 원을 거리 상관없이 PiP에 고정
+        updateHudPanel(school);
+        speakSchoolQuantity(school);
+        if (typeof ensureBgKeepAliveOnNavi === 'function') {
+          try { ensureBgKeepAliveOnNavi(school); } catch (err) {}
+        }
+        updateBgMediaAndPip();
+        showToast(`${school.name} [내비 연동 고정] · 이제 거리와 상관없이 미니창에 이 원이 우선 표시됩니다.`);
         return;
       }
-
-      // (A) 회수·반품 전용 목적지 모드일 때
-      if (hud.mode === 'pickup') {
-        const { schoolName, address, dist, group } = hud.pkInfo;
-        const isArrived = dist !== null && dist <= radiusMeters;
-
-        ctx.fillStyle = isArrived ? '#4c0519' : '#0f172a';
-        ctx.fillRect(0, 0, W, H);
-        ctx.strokeStyle = '#f43f5e';
-        ctx.lineWidth = 6;
-        ctx.strokeRect(3, 3, W - 6, H - 6);
-
-        // 상단 바
-        ctx.fillStyle = '#e11d48';
-        ctx.fillRect(6, 6, W - 12, 42);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 20px "Noto Sans KR", sans-serif';
-        const statusStr = isArrived
-          ? `🚨 [회수·반품지 도착] ${radiusMeters}m 이내!`
-          : `↩️ 회수·반품 목적지 안내 (${group.length}건)`;
-        ctx.fillText(statusStr, 16, 34);
-
-        // 원 이름 + 거리
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '900 30px "Noto Sans KR", sans-serif';
-        ctx.fillText(schoolName.slice(0, 14), 18, 88);
-
-        ctx.fillStyle = '#fda4af';
-        ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
-        const distLabel = dist !== null ? `거리 ${formatDistance(dist)}` : '회수 방문';
-        ctx.fillText(distLabel, W - ctx.measureText(distLabel).width - 18, 86);
-
-        // 회수 품목 박스
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(16, 104, W - 32, 132);
-        ctx.strokeStyle = '#f43f5e';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(16, 104, W - 32, 132);
-
-        group.slice(0, 3).forEach((p, idx) => {
-          ctx.fillStyle = '#fecdd3';
-          ctx.font = 'bold 22px "Noto Sans KR", sans-serif';
-          const line = `• [${p.type}] ${(p.items || p.title || '').slice(0, 21)}`;
-          ctx.fillText(line, 26, 140 + idx * 38);
-        });
-
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 17px "Noto Sans KR", sans-serif';
-        ctx.fillText((address || '회수·반품 품목을 꼭 확인하세요').slice(0, 34), 18, 268);
-        return;
-      }
-
-      // (B) 납품 원 목적지 모드 (+ 해당 원의 회수·반품 할 일 동시 표시)
-      const target = hud.school;
-      const linkedPickups = hud.linkedPickups || [];
-      const exList = normalizeExtras(target.extras);
-      const dist = target ? distanceToSchool(target) : null;
-      const isArrived = dist !== null && dist <= radiusMeters;
-
-      // 배경
-      ctx.fillStyle = isArrived ? '#451a03' : '#0f172a';
-      ctx.fillRect(0, 0, W, H);
-
-      // 테두리
-      ctx.strokeStyle = linkedPickups.length ? '#f43f5e' : (isArrived ? '#f59e0b' : '#10b981');
-      ctx.lineWidth = 6;
-      ctx.strokeRect(3, 3, W - 6, H - 6);
-
-      // 상단 상태 바
-      ctx.fillStyle = isArrived ? '#f59e0b' : '#064e3b';
-      ctx.fillRect(6, 6, W - 12, 40);
-      ctx.fillStyle = isArrived ? '#0f172a' : '#6ee7b7';
-      ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
-      const statusStr = isArrived
-        ? `🚨 반경 ${radiusMeters}m 내 도착! 수량${linkedPickups.length ? ' + 회수' : ''} 확인`
-        : (gpsActive ? `🟢 실시간 GPS 추적 중 (반경 ${radiusMeters}m 알림)` : '📍 현재 목적지 납품·회수 안내');
-      ctx.fillText(statusStr, 16, 32);
-
-      // 원 이름 + 거리
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '900 30px "Noto Sans KR", sans-serif';
-      const nameStr = `${target.order}. ${target.name}`;
-      ctx.fillText(nameStr.slice(0, 14), 18, 84);
-
-      ctx.fillStyle = isArrived ? '#fde68a' : '#38bdf8';
-      ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
-      const distLabel = dist !== null ? `거리 ${formatDistance(dist)}` : target.subRegion;
-      ctx.fillText(distLabel, W - ctx.measureText(distLabel).width - 18, 82);
-
-      // 납품 수량 박스 (카드 노란색 표시 + 기타 품목)
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(16, 98, W - 32, 86);
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(16, 98, W - 32, 86);
-
-      const parts = stepLabelParts(target);
-      const qtyLine = parts.length ? parts.join(' · ') : '단계 수량 없음';
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = '900 25px "Noto Sans KR", sans-serif';
-      ctx.fillText(`📦 ${qtyLine}`.slice(0, 24), 24, 136);
-
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = 'bold 18px "Noto Sans KR", sans-serif';
-      const subLine = `${productLabel(target)} (${totalLabel(target)})${exList.length ? ' · 기타: ' + exList.map(x => x.name + (x.qty ? ' ' + x.qty : '')).join(', ') : ''}`;
-      ctx.fillText(subLine.slice(0, 31), 26, 170);
-
-      // 회수·반품 배너 (이 원에서 회수할 품목이 있으면 빨간 박스로 강조 표시!)
-      if (linkedPickups.length > 0) {
-        ctx.fillStyle = '#881337';
-        ctx.fillRect(16, 194, W - 32, 54);
-        ctx.strokeStyle = '#fb7185';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(16, 194, W - 32, 54);
-
-        ctx.fillStyle = '#ffe4e6';
-        ctx.font = '900 20px "Noto Sans KR", sans-serif';
-        const pkText = `↩️ 회수(${linkedPickups.length}건): ` + linkedPickups.map(p => `${p.items || p.title}`).join(', ');
-        ctx.fillText(pkText.slice(0, 27), 24, 228);
-      } else {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(16, 194, W - 32, 54);
-        ctx.fillStyle = '#64748b';
-        ctx.font = 'bold 18px "Noto Sans KR", sans-serif';
-        ctx.fillText(`✓ 이 원에 등록된 회수·반품 할 일 없음`, 24, 226);
-      }
-
-      // 하단 지역/주소
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 16px "Noto Sans KR", sans-serif';
-      const footerStr = `[${target.regionGroup} · ${target.subRegion}] ${target.address || ''}`;
-      ctx.fillText(footerStr.slice(0, 36), 18, 274);
-    }
-
-    function updatePipButtons() {
+      if (action === 'popup') {
 <!-- ... existing code ... -->
