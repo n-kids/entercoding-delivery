@@ -100,6 +100,18 @@
         <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
           ✏️ 수량수정/추가
         </button>
+        <button id="toggleBgKeepAliveBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition" title="네이버 내비 사용 중이거나 화면이 꺼져도 백그라운드에서 GPS와 도착 알림이 멈추지 않도록 유지합니다">
+          🔋 백그라운드 유지 켜짐
+        </button>
+        <button id="togglePipHudBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition" title="네이버 내비게이션 화면 위에 납품수량과 남은 거리를 작은 팝업창(PiP)으로 항상 띄워둡니다">
+          🪟 내비 위 미니창(PiP)
+        </button>
+        <button id="toggleSysNotifBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="앱이 내려가 있을 때에도 상단 배너와 진동으로 도착 알림을 울립니다">
+          📲 상단 도착알림 켜기
+        </button>
+        <button id="openPhotoModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="업로드된 원본 납품표 사진 대조">
+          🖼️ 원본 표 사진
+        </button>
         <button id="openInstallModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition">
           📱 폰 앱 설치방법
         </button>
@@ -124,9 +136,17 @@
           <span class="px-2 py-1 rounded-lg text-[11px] sm:text-xs font-black bg-[#03C75A] text-slate-950 shadow shrink-0">N 내비 연동</span>
           <h2 class="text-[13px] sm:text-base font-extrabold text-white leading-snug">네이버 내비 목적지에 납품수량을 함께 표시</h2>
         </div>
-        <button id="toggleMiniHudBtn" type="button" class="w-full sm:w-auto px-3 py-2.5 sm:py-1.5 rounded-xl text-xs font-extrabold bg-[#03C75A]/20 hover:bg-[#03C75A]/30 text-emerald-300 border border-[#03C75A]/40 transition">
-          🚗 내비 동행 대형 HUD 모드
-        </button>
+        <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+          <button id="bannerPipHudBtn" type="button" class="flex-1 sm:flex-initial px-3 py-2.5 sm:py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow">
+            🪟 내비 위 미니창(PiP) 띄우기
+          </button>
+          <button id="bannerBgKeepAliveBtn" type="button" class="flex-1 sm:flex-initial px-3 py-2.5 sm:py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition">
+            🔋 백그라운드 알림 유지: 켜짐
+          </button>
+          <button id="toggleMiniHudBtn" type="button" class="w-full sm:w-auto px-3 py-2 sm:py-1.5 rounded-xl text-xs font-extrabold bg-[#03C75A]/20 hover:bg-[#03C75A]/30 text-emerald-300 border border-[#03C75A]/40 transition">
+            🚗 내비 동행 대형 HUD 모드
+          </button>
+        </div>
       </div>
       <p class="hidden sm:block text-xs text-slate-300 leading-relaxed">
         각 원 카드의 <strong class="text-[#03C75A]">[🟢 네이버 내비 출발(수량표시)]</strong>를 누르면 네이버 지도 내비게이션 앱이 바로 열리며, 네이버 내비 상단 도착지 이름에 <strong class="text-amber-300">"달빛유치원 [3단계:111개 / 총111개]"</strong>처럼 수량이 그대로 표시되어 인터넷 창을 보지 않고 네이버 내비만 보고 운전하셔도 도착 시 수량을 바로 확인할 수 있습니다.
@@ -453,8 +473,11 @@
       </details>
       </div>
 
-      <div class="flex items-center justify-end pt-2 mt-2 border-t border-slate-800 shrink-0">
-        <button id="saveAndCloseEditBtn" type="button" class="w-full sm:w-auto px-5 py-3 sm:py-2 rounded-xl text-sm sm:text-xs font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950">
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 mt-2 border-t border-slate-800 shrink-0">
+        <button id="restoreDefaultDataBtn" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+          ↺ 초기 12개 원 복원
+        </button>
+        <button id="saveAndCloseEditBtn" type="button" class="flex-1 sm:flex-initial px-5 py-3 sm:py-2 rounded-xl text-sm sm:text-xs font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950">
           저장 및 닫기
         </button>
       </div>
@@ -462,37 +485,59 @@
   </div>
 
   <!-- Smartphone App Install & GPS Troubleshooting Modal -->
-  <div id="installModal" class="fixed inset-0 z-50 hidden bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+  <div id="installModal" class="fixed inset-0 z-50 hidden bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-3.5 max-h-[94vh] overflow-y-auto">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-extrabold text-white">📱 GPS 신호 해결 및 스마트폰 앱 설치</h3>
+        <h3 class="text-base sm:text-lg font-extrabold text-white">📱 폰 앱 설치 · 백그라운드 도착 알림 설정</h3>
         <button id="closeInstallModalBtn" type="button" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
       </div>
       <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
-        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5">
-          <div class="font-bold text-amber-400 mb-1">💡 GPS가 안 잡힐 때 확인할 것</div>
-          <ul class="list-decimal list-inside mt-1 space-y-1 text-xs text-slate-200">
-            <li>반드시 <strong>https:// 인터넷 주소</strong>로 열어주세요. (카톡·채팅 미리보기 창이나 다운로드한 파일은 GPS가 막힐 수 있습니다)</li>
-            <li>처음 [📍 실시간 GPS 켜기]를 누르면 나오는 위치 권한 창에서 <strong>[허용]</strong>을 눌러주세요. 거부했다면 주소창 왼쪽 자물쇠(또는 ⓘ) → 권한 → 위치 → 허용.</li>
-            <li>휴대폰 설정에서 <strong>위치(GPS) 기능이 켜져 있는지</strong>, 아이폰은 설정 → 개인정보 보호 → 위치 서비스 → Safari 웹사이트 → <strong>[앱을 사용하는 동안]</strong>인지 확인해 주세요.</li>
-            <li>터널·지하주차장에서는 신호가 잠시 끊기지만 앱이 자동으로 다시 찾습니다. GPS 없이 쓰려면 <strong>[📍 동네 버튼]</strong>이나 <strong>[다음 미완료 원 ▶]</strong>을 누르세요.</li>
-            <li>네이버 내비로 화면을 넘기면 이 앱의 GPS는 멈춥니다. 도착 후 이 앱으로 돌아오면 자동으로 다시 위치를 잡습니다.</li>
+        <!-- Step 1: One-click PWA Install -->
+        <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3.5 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-extrabold text-emerald-300">① 일반 앱처럼 스마트폰에 설치 (PWA)</span>
+            <span id="pwaInstallStateBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">설치 대기</span>
+          </div>
+          <p class="text-xs text-slate-300">설치하면 주소창 없는 전용 앱으로 실행되며 오프라인 캐시와 시스템 도착 알림이 활성화됩니다.</p>
+          <button id="pwaInstallNowBtn" type="button" class="w-full py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow">
+            📲 홈 화면에 일반 앱으로 바로 설치하기
+          </button>
+          <ul class="list-disc list-inside text-[11px] text-slate-400 space-y-0.5">
+            <li><strong>갤럭시(크롬/삼성인터넷)</strong>: 위 버튼을 누르거나 우측 상단 메뉴(⋮) → <strong>[앱 설치]</strong> 또는 <strong>[홈 화면에 추가]</strong></li>
+            <li><strong>아이폰(Safari)</strong>: 하단 공유 버튼(↑) → <strong>[홈 화면에 추가]</strong> 후 홈 화면 아이콘으로 실행</li>
           </ul>
         </div>
-        <div class="bg-slate-800/70 border border-slate-700 rounded-2xl p-3.5">
-          <div class="font-bold text-emerald-400 mb-1">📲 홈 화면에 앱처럼 추가하는 법</div>
-          <p>이 앱의 https 인터넷 주소를 휴대폰 브라우저로 연 뒤:</p>
-          <ul class="list-disc list-inside mt-1.5 space-y-1 text-xs text-slate-300">
-            <li><strong>갤럭시(안드로이드)</strong>: <strong>크롬(Chrome)</strong> 우측 상단 메뉴(⋮) → <strong>[홈 화면에 추가]</strong></li>
-            <li><strong>아이폰(iOS)</strong>: <strong>사파리(Safari)</strong> 하단 공유 버튼(↑) → <strong>[홈 화면에 추가]</strong></li>
+
+        <!-- Step 2: Background GPS & System Notification over Naver Navi -->
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 space-y-2">
+          <div class="font-extrabold text-amber-300">② 네이버 내비 사용 중 · 화면 꺼짐 시 도착 알림 울리게 하기</div>
+          <p class="text-xs text-slate-200">모바일 OS가 백그라운드에서 GPS를 멈추지 않도록 아래 <strong>3가지 보호 장치</strong>를 함께 제공합니다:</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <button id="reqNotifPermBtn" type="button" class="py-2.5 px-3 rounded-xl font-extrabold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 transition">
+              🔔 상단 도착알림 권한 허용
+            </button>
+            <button id="testArrivalNotifBtn" type="button" class="py-2.5 px-3 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 transition">
+              🔊 도착 알림 테스트 울려보기
+            </button>
+            <button id="modalPipHudBtn" type="button" class="py-2.5 px-3 rounded-xl font-extrabold text-xs bg-indigo-500 hover:bg-indigo-400 text-white transition">
+              🪟 내비 위 미니창(PiP) 띄우기
+            </button>
+            <button id="modalBgKeepAliveBtn" type="button" class="py-2.5 px-3 rounded-xl font-bold text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition">
+              🔋 백그라운드 오디오 유지: 켜짐
+            </button>
+          </div>
+          <ul class="list-decimal list-inside mt-1 space-y-1 text-[11px] text-slate-300">
+            <li><strong>[🪟 내비 위 미니창(PiP)]</strong>을 켜고 네이버 내비로 넘어가면, 내비 화면 위에 작은 수량·거리 창이 떠 있으면서 <strong>백그라운드에서도 실시간 GPS와 음성·진동 도착 알림이 100% 작동</strong>합니다.</li>
+            <li><strong>[🔋 백그라운드 유지]</strong>가 켜져 있으면 무음 미디어 세션이 유지되어 잠금화면·알림창에 가장 가까운 원의 수량과 거리가 실시간 표시되며, 핸들/이어폰 <strong>다음 곡(⏭) 버튼</strong>으로 다음 원 수량을 음성 안내받을 수 있습니다.</li>
+            <li><strong>[🔔 상단 도착알림]</strong>을 허용하면 앱이 뒤에 내려가 있어도 원 반경 300m 진입 시 상단 팝업 배너와 진동이 울리며, 배너에서 바로 <strong>[✓ 납품완료 체크]</strong>를 누를 수 있습니다.</li>
           </ul>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-2.5">
-        <button id="modalDownloadAppBtn" type="button" class="py-3 rounded-2xl font-extrabold text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition">
+        <button id="modalDownloadAppBtn" type="button" class="py-3 rounded-2xl font-extrabold text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
           📲 단독 앱 파일 지금 받기
         </button>
-        <button id="confirmInstallModalBtn" type="button" class="py-3 rounded-2xl font-extrabold text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+        <button id="confirmInstallModalBtn" type="button" class="py-3 rounded-2xl font-extrabold text-xs sm:text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition">
           확인했습니다
         </button>
       </div>
@@ -1491,6 +1536,9 @@
         badge.textContent = '📍 반경 내 진입 감지 · 자동 납품수량 팝업';
         playArrivalChime();
         speakSchoolQuantity(school);
+        if (typeof sendSchoolArrivalNotification === 'function') {
+          sendSchoolArrivalNotification(school, distanceToSchool(school));
+        }
       } else {
         badge.textContent = '📦 원별 납품수량 상세 화면';
         playArrivalChime();
@@ -1673,6 +1721,9 @@
         filtered.sort((a, b) => a.order - b.order);
       }
 
+      if (typeof updateBgMediaAndPip === 'function') {
+        try { updateBgMediaAndPip(enriched, radiusMeters); } catch (e) {}
+      }
       container.innerHTML = filtered.map(s => {
         const isDone = !!completedMap[s.id];
         const total = grandTotal(s);
@@ -2137,7 +2188,10 @@
       if (action === 'naver-speech') {
         updateHudPanel(school);
         speakSchoolQuantity(school);
-        showToast(`${school.name} [납품수량 포함] 목적지로 네이버 내비를 실행합니다.`);
+        if (typeof ensureBgKeepAliveOnNavi === 'function') {
+          try { ensureBgKeepAliveOnNavi(school); } catch (err) {}
+        }
+        showToast(`${school.name} [납품수량 포함] 목적지로 네이버 내비를 실행합니다. (백그라운드 GPS·도착알림 유지 작동)`);
         return;
       }
       if (action === 'popup') {
@@ -2970,9 +3024,17 @@
       if (!importRows.length) { document.getElementById('importStatus').classList.add('hidden'); }
       showToast(`${r.name || '빈 행'}${r.product ? ' · ' + r.product : ''} 행을 삭제했습니다.`);
     });
-    document.getElementById('importClearRowsBtn').addEventListener('click', () => {
+    document.getElementById('importClearRowsBtn').addEventListener('click', (e) => {
       if (!importRows.length) return;
-      if (!confirm(`불러온 납품 내용 ${importRows.length}줄을 모두 지울까요? (이미 목록에 적용한 내용은 그대로입니다)`)) return;
+      const btn = e.currentTarget;
+      if (btn.getAttribute('data-confirm') !== '1') {
+        btn.setAttribute('data-confirm', '1');
+        btn.textContent = '한 번 더 누르면 초기화';
+        setTimeout(() => { if (btn.isConnected) { btn.removeAttribute('data-confirm'); btn.textContent = '🗑 전체 초기화'; } }, 3000);
+        return;
+      }
+      btn.removeAttribute('data-confirm');
+      btn.textContent = '🗑 전체 초기화';
       importRows = []; importPhotoBlob = null;
       const pw = document.getElementById('importPhotoWrap'); if (pw) pw.classList.add('hidden');
       renderImportReview();
@@ -3990,10 +4052,18 @@
       if (document.getElementById('pkSortSelect').value === 'near' && userLat === null) showToast('가까운 순 정렬은 상단 [📍 GPS 켜기]를 켜야 정확합니다.');
       renderPickups();
     });
-    document.getElementById('pkClearDoneBtn').addEventListener('click', () => {
+    document.getElementById('pkClearDoneBtn').addEventListener('click', (e) => {
       const n = PICKUPS.filter(p => p.done).length;
       if (!n) { showToast('완료된 할 일이 없습니다.'); return; }
-      if (!confirm(`완료된 ${n}건을 목록에서 지울까요?`)) return;
+      const btn = e.currentTarget;
+      if (btn.getAttribute('data-confirm') !== '1') {
+        btn.setAttribute('data-confirm', '1');
+        btn.textContent = `한 번 더 누르면 ${n}건 정리`;
+        setTimeout(() => { if (btn.isConnected) { btn.removeAttribute('data-confirm'); btn.textContent = '완료 정리'; } }, 3000);
+        return;
+      }
+      btn.removeAttribute('data-confirm');
+      btn.textContent = '완료 정리';
       PICKUPS = PICKUPS.filter(p => !p.done); savePickups(); renderPickups(); renderList();
       showToast(`완료된 ${n}건을 정리했습니다.`);
     });
@@ -4078,9 +4148,17 @@
       pkCollectEdit(p); savePickups();
       pkOpenGeo(p.id, pkUpdateEditLoc);
     });
-    document.getElementById('pkEdDeleteBtn').addEventListener('click', () => {
+    document.getElementById('pkEdDeleteBtn').addEventListener('click', (e) => {
       const p = PICKUPS.find(x => x.id === pkEditingId); if (!p) return;
-      if (!confirm(`${p.school} ${p.type} 할 일을 삭제할까요?`)) return;
+      const btn = e.currentTarget;
+      if (btn.getAttribute('data-confirm') !== '1') {
+        btn.setAttribute('data-confirm', '1');
+        btn.textContent = '한 번 더 누르면 삭제';
+        setTimeout(() => { if (btn.isConnected) { btn.removeAttribute('data-confirm'); btn.textContent = '🗑 삭제'; } }, 3000);
+        return;
+      }
+      btn.removeAttribute('data-confirm');
+      btn.textContent = '🗑 삭제';
       PICKUPS = PICKUPS.filter(x => x.id !== p.id); savePickups(); closePickupEdit(); renderPickups(); renderList();
       showToast('삭제했습니다.');
     });
@@ -4140,6 +4218,9 @@
       document.getElementById('blackoutOverlay').classList.add('hidden');
       document.getElementById('pkAlertModal').classList.remove('hidden');
       playArrivalChime();
+      if (typeof sendPickupArrivalNotification === 'function') {
+        try { sendPickupArrivalNotification(group, pkDistance(near[0])); } catch (e) {}
+      }
       if (voiceEnabled && 'speechSynthesis' in window) {
         try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(`${pkGuessFullName(near[0].school)} 근처입니다. ${group.map(p => `${p.type} ${p.items || ''}`).join(', ')} 챙겨주세요.`); u.lang = 'ko-KR'; window.speechSynthesis.speak(u); } catch (e) {}
       }
@@ -4518,6 +4599,632 @@
       renderList();
       updateHudPanel(SCHOOLS[0]);
     });
+  
+    // ====================================================================
+    // v5: PWA 설치 · 서비스워커 · 백그라운드 오디오/미디어세션 유지 ·
+    //     내비 위 미니창(PiP HUD) · 꺼진 화면/타 앱 위 시스템 도착 알림 ·
+    //     Capacitor 안드로이드 네이티브(APK) 백그라운드 GPS 브릿지
+    // ====================================================================
+    let swRegistration = null;
+    let deferredInstallPrompt = null;
+    let bgKeepAliveEnabled = true;
+    let bgAudioEl = null;
+    let bgSilentOsc = null;
+    let pipVideoEl = null;
+    let pipCanvasEl = null;
+    let pipActive = false;
+    let pipAnimTimer = null;
+    let capBgWatcherId = null;
+
+    // 1) 무음 WAV 오디오 데이터 생성 (백그라운드에서 브라우저 프로세스와 GPS가 잠들지 않게 유지)
+    function createSilentWavDataUri(durationSec = 2) {
+      const sampleRate = 8000;
+      const numSamples = sampleRate * durationSec;
+      const buffer = new ArrayBuffer(44 + numSamples * 2);
+      const view = new DataView(buffer);
+      const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + numSamples * 2, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);   // PCM
+      view.setUint16(22, 1, true);   // Mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, numSamples * 2, true);
+      // 미세한 신호(amplitude 1)를 넣어 모바일 OS가 무음 트랙으로 강제 종료하지 않도록 방지
+      for (let i = 0; i < numSamples; i++) {
+        view.setInt16(44 + i * 2, (i % 2 === 0) ? 1 : -1, true);
+      }
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      return 'data:audio/wav;base64,' + btoa(binary);
+    }
+
+    function ensureBgAudioElement() {
+      if (bgAudioEl) return bgAudioEl;
+      bgAudioEl = document.createElement('audio');
+      bgAudioEl.src = createSilentWavDataUri(3);
+      bgAudioEl.loop = true;
+      bgAudioEl.volume = 0.01;
+      bgAudioEl.setAttribute('playsinline', '');
+      bgAudioEl.style.display = 'none';
+      document.body.appendChild(bgAudioEl);
+      return bgAudioEl;
+    }
+
+    function startBgKeepAlive(silentToast) {
+      bgKeepAliveEnabled = true;
+      try {
+        const el = ensureBgAudioElement();
+        const p = el.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch (e) {}
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx) {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          if (!bgSilentOsc) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.value = 30;
+            gain.gain.value = 0.0001;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            bgSilentOsc = osc;
+          }
+        }
+      } catch (e) {}
+      updateBgKeepAliveButtons();
+      updateMediaSessionMetadata();
+      if (!silentToast) {
+        showToast('🔋 백그라운드 유지 켜짐 · 네이버 내비로 전환하거나 화면을 꺼도 GPS와 도착 알림을 계속 유지합니다.');
+      }
+    }
+
+    function stopBgKeepAlive(silentToast) {
+      bgKeepAliveEnabled = false;
+      try { if (bgAudioEl) bgAudioEl.pause(); } catch (e) {}
+      try { if (bgSilentOsc) { bgSilentOsc.stop(); bgSilentOsc.disconnect(); bgSilentOsc = null; } } catch (e) {}
+      updateBgKeepAliveButtons();
+      if (!silentToast) {
+        showToast('백그라운드 유지 모드를 껐습니다.');
+      }
+    }
+
+    function updateBgKeepAliveButtons() {
+      const b1 = document.getElementById('toggleBgKeepAliveBtn');
+      const b2 = document.getElementById('bannerBgKeepAliveBtn');
+      const b3 = document.getElementById('modalBgKeepAliveBtn');
+      if (b1) {
+        b1.textContent = bgKeepAliveEnabled ? '🔋 백그라운드 유지 켜짐' : '🔋 백그라운드 유지 꺼짐';
+        b1.className = bgKeepAliveEnabled
+          ? 'px-2.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition'
+          : 'px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition';
+      }
+      if (b2) {
+        b2.textContent = bgKeepAliveEnabled ? '🔋 백그라운드 알림 유지: 켜짐' : '🔋 백그라운드 알림 유지: 꺼짐';
+      }
+      if (b3) {
+        b3.textContent = bgKeepAliveEnabled ? '🔋 백그라운드 오디오 유지: 켜짐' : '🔋 백그라운드 오디오 유지: 꺼짐';
+      }
+    }
+
+    function ensureBgKeepAliveOnNavi(school) {
+      if (bgKeepAliveEnabled) startBgKeepAlive(true);
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(() => updateSysNotifButtons()).catch(() => {});
+      }
+    }
+
+    // 사용자 첫 터치 시 백그라운드 오디오 세션 자동 잠금 해제
+    document.addEventListener('pointerdown', function unlockBgAudioOnce() {
+      if (bgKeepAliveEnabled && (gpsActive || userLat !== null)) {
+        startBgKeepAlive(true);
+      }
+    }, { passive: true });
+
+    // 2) 잠금화면 / 상단 미디어 컨트롤(MediaSession)에 실시간 남은 거리 & 납품수량 표시
+    function getActiveOrNearestSchool() {
+      const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
+      const pendingWithDist = enriched.filter(s => !completedMap[s.id] && s.dist !== null).sort((a, b) => a.dist - b.dist);
+      if (pendingWithDist.length > 0) return pendingWithDist[0];
+      const pending = enriched.filter(s => !completedMap[s.id]);
+      return pending[0] || enriched[currentCursorIndex] || enriched[0] || null;
+    }
+
+    function updateMediaSessionMetadata() {
+      if (!('mediaSession' in navigator)) return;
+      const target = getActiveOrNearestSchool();
+      if (!target) return;
+      const distStr = target.dist !== null && target.dist !== undefined ? ` (${formatDistance(target.dist)})` : '';
+      const qtyStr = buildQuantityLabel(target);
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: `📍 ${target.name}${distStr}`,
+          artist: `📦 ${qtyStr}`,
+          album: `엔터코딩 납품알리미 · ${target.regionGroup} ${target.subRegion}`,
+          artwork: [
+            { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+          ]
+        });
+        navigator.mediaSession.setActionHandler('play', () => {
+          startBgKeepAlive(true);
+          speakSchoolQuantity(target);
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          speakSchoolQuantity(target);
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+          const i = findNextPendingIndex(currentCursorIndex, 1);
+          if (i !== -1) {
+            currentCursorIndex = i;
+            updateHudPanel(SCHOOLS[i]);
+            speakSchoolQuantity(SCHOOLS[i]);
+            updateMediaSessionMetadata();
+          }
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+          if (SCHOOLS.length > 0) {
+            currentCursorIndex = (currentCursorIndex - 1 + SCHOOLS.length) % SCHOOLS.length;
+            updateHudPanel(SCHOOLS[currentCursorIndex]);
+            speakSchoolQuantity(SCHOOLS[currentCursorIndex]);
+            updateMediaSessionMetadata();
+          }
+        });
+      } catch (e) {}
+    }
+
+    // 3) 서비스 워커 등록 & 시스템 상단 배너 도착 알림 (화면 꺼짐 / 네이버 내비 위에서 작동)
+    async function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return null;
+      if (!/^https?:/.test(location.protocol)) return null;
+      try {
+        swRegistration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+        return swRegistration;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function handleSwIncomingMessage(data) {
+      if (!data || !data.type) return;
+      if (data.type === 'SW_COMPLETE_ITEM' && data.schoolId) {
+        const id = Number(data.schoolId);
+        const s = SCHOOLS.find(x => x.id === id);
+        if (s) {
+          completedMap[id] = true;
+          saveState();
+          renderList();
+          showToast(`✓ 알림창에서 [${s.name}] 납품 완료 처리되었습니다.`);
+        }
+      } else if (data.type === 'SW_OPEN_ITEM' && data.schoolId) {
+        openArrivalModal(Number(data.schoolId), false);
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (e) => handleSwIncomingMessage(e.data));
+    }
+    try {
+      if ('BroadcastChannel' in window) {
+        const swBc = new BroadcastChannel('entercoding_sw_channel');
+        swBc.addEventListener('message', (e) => handleSwIncomingMessage(e.data));
+      }
+    } catch (e) {}
+
+    function updateSysNotifButtons() {
+      const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+      const bHeader = document.getElementById('toggleSysNotifBtn');
+      const bModal = document.getElementById('reqNotifPermBtn');
+      if (bHeader) {
+        if (perm === 'granted') {
+          bHeader.textContent = '📲 상단 도착알림 작동중';
+          bHeader.className = 'px-2.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition';
+        } else if (perm === 'denied') {
+          bHeader.textContent = '🔕 상단 알림 차단됨';
+          bHeader.className = 'px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 transition';
+        } else {
+          bHeader.textContent = '📲 상단 도착알림 켜기';
+        }
+      }
+      if (bModal) {
+        bModal.textContent = perm === 'granted' ? '✓ 상단 도착알림 허용됨' : '🔔 상단 도착알림 권한 허용';
+      }
+    }
+
+    async function requestSystemNotificationPermission() {
+      // Capacitor Native LocalNotifications support
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+        try {
+          await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+          showToast('네이티브 앱 도착 알림 권한이 활성화되었습니다.');
+          return true;
+        } catch (e) {}
+      }
+      if (!('Notification' in window)) {
+        showToast('이 브라우저는 시스템 상단 알림을 지원하지 않습니다. 홈 화면에 앱으로 추가해 주세요.');
+        return false;
+      }
+      try {
+        const perm = await Notification.requestPermission();
+        updateSysNotifButtons();
+        if (perm === 'granted') {
+          await registerServiceWorker();
+          showToast('✓ 상단 도착 알림이 켜졌습니다! 이제 다른 앱 사용 중에도 원 근처 도착 시 배너와 진동이 울립니다.');
+          return true;
+        } else {
+          showToast('알림 권한이 거부되었습니다. 브라우저 주소창 왼쪽 설정에서 [알림 → 허용]으로 변경해 주세요.');
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function sendSchoolArrivalNotification(school, distMeters, isTest = false) {
+      if (!school) return;
+      const qtyLabel = buildQuantityLabel(school);
+      const exText = extrasToText(school.extras);
+      const distText = distMeters !== null && distMeters !== undefined ? ` (${formatDistance(distMeters)})` : '';
+      const title = `${isTest ? '[테스트] ' : ''}📍 ${school.name} 도착${distText}`;
+      const body = `📦 ${productLabel(school)}: ${qtyLabel}${exText ? ' · 기타: ' + exText : ''}
+${school.address || ''}`;
+
+      // 진동 울리기 (지원 기기)
+      try { if ('vibrate' in navigator) navigator.vibrate([350, 120, 350, 120, 500]); } catch (e) {}
+
+      // 1. Capacitor 안드로이드 네이티브 로컬 알림 (앱이 꺼져 있어도 울림)
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+        try {
+          await window.Capacitor.Plugins.LocalNotifications.schedule({
+            notifications: [{
+              id: Number(school.id) || Math.floor(Math.random() * 100000),
+              title,
+              body,
+              schedule: { at: new Date(Date.now() + 200) },
+              extra: { schoolId: school.id }
+            }]
+          });
+          return;
+        } catch (e) {}
+      }
+
+      // 2. PWA Service Worker 시스템 알림 (네이버 내비 위 / 잠금화면 배너 + 완료 체크 버튼)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const reg = swRegistration || (await registerServiceWorker());
+          if (reg && reg.showNotification) {
+            await reg.showNotification(title, {
+              body,
+              icon: 'icon-192.png',
+              badge: 'icon-192.png',
+              tag: 'arrival-school-' + school.id,
+              renotify: true,
+              requireInteraction: true,
+              vibrate: [350, 120, 350, 120, 500],
+              data: { schoolId: school.id, schoolName: school.name },
+              actions: [
+                { action: 'open', title: '📦 수량 크게 보기' },
+                { action: 'complete', title: '✓ 납품완료 체크' }
+              ]
+            });
+            return;
+          }
+        } catch (e) {}
+        try {
+          const n = new Notification(title, {
+            body,
+            icon: 'icon-192.png',
+            tag: 'arrival-school-' + school.id,
+            requireInteraction: true
+          });
+          n.onclick = () => { window.focus(); openArrivalModal(school.id, false); n.close(); };
+        } catch (e) {}
+      }
+    }
+
+    async function sendPickupArrivalNotification(group, distMeters) {
+      if (!group || !group.length) return;
+      const p0 = group[0];
+      const distText = distMeters !== null && distMeters !== undefined ? ` (${formatDistance(distMeters)})` : '';
+      const title = `📍 [회수·반품 도착] ${pkGuessFullName(p0.school)}${distText}`;
+      const body = group.map(p => `[${p.type}] ${p.items || p.title}`).join(' / ');
+      try { if ('vibrate' in navigator) navigator.vibrate([350, 120, 350, 120, 500]); } catch (e) {}
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const reg = swRegistration || (await registerServiceWorker());
+          if (reg && reg.showNotification) {
+            await reg.showNotification(title, {
+              body,
+              icon: 'icon-192.png',
+              badge: 'icon-192.png',
+              tag: 'arrival-pickup-' + p0.id,
+              renotify: true,
+              requireInteraction: true,
+              vibrate: [350, 120, 350, 120, 500],
+              data: { pickupIds: group.map(p => p.id), schoolName: p0.school }
+            });
+            return;
+          }
+        } catch (e) {}
+        try { new Notification(title, { body, icon: 'icon-192.png' }); } catch (e) {}
+      }
+    }
+
+    // 4) 네이버 내비 위에 항상 떠 있는 미니창 (Picture-in-Picture HUD)
+    function ensurePipElements() {
+      if (pipCanvasEl && pipVideoEl) return;
+      pipCanvasEl = document.createElement('canvas');
+      pipCanvasEl.width = 520;
+      pipCanvasEl.height = 240;
+      pipVideoEl = document.createElement('video');
+      pipVideoEl.muted = true;
+      pipVideoEl.setAttribute('playsinline', '');
+      pipVideoEl.style.position = 'fixed';
+      pipVideoEl.style.width = '1px';
+      pipVideoEl.style.height = '1px';
+      pipVideoEl.style.opacity = '0.01';
+      pipVideoEl.style.pointerEvents = 'none';
+      pipVideoEl.style.bottom = '0';
+      pipVideoEl.style.right = '0';
+      document.body.appendChild(pipVideoEl);
+
+      pipVideoEl.addEventListener('leavepictureinpicture', () => {
+        pipActive = false;
+        if (pipAnimTimer) { clearInterval(pipAnimTimer); pipAnimTimer = null; }
+        updatePipButtons();
+      });
+    }
+
+    function drawPipHudCanvas() {
+      if (!pipCanvasEl) return;
+      const ctx = pipCanvasEl.getContext('2d');
+      const W = pipCanvasEl.width, H = pipCanvasEl.height;
+      const radiusMeters = parseInt(document.getElementById('radiusSelect').value, 10) || 300;
+      const target = getActiveOrNearestSchool();
+      const dist = target ? distanceToSchool(target) : null;
+      const isArrived = dist !== null && dist <= radiusMeters;
+
+      // 배경
+      ctx.fillStyle = isArrived ? '#451a03' : '#0f172a';
+      ctx.fillRect(0, 0, W, H);
+
+      // 테두리
+      ctx.strokeStyle = isArrived ? '#f59e0b' : '#10b981';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(3, 3, W - 6, H - 6);
+
+      // 상단 상태 바
+      ctx.fillStyle = isArrived ? '#f59e0b' : '#064e3b';
+      ctx.fillRect(6, 6, W - 12, 42);
+      ctx.fillStyle = isArrived ? '#0f172a' : '#6ee7b7';
+      ctx.font = 'bold 20px "Noto Sans KR", sans-serif';
+      const statusStr = isArrived
+        ? `🚨 반경 ${radiusMeters}m 내 도착! 납품수량 확인`
+        : (gpsActive ? `🟢 실시간 GPS 추적 중 (반경 ${radiusMeters}m 알림)` : '📍 현재 목적지 납품수량 안내');
+      ctx.fillText(statusStr, 18, 34);
+
+      if (!target) {
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 28px "Noto Sans KR", sans-serif';
+        ctx.fillText('모든 원 납품 완료!', 20, 130);
+        return;
+      }
+
+      // 원 이름 + 거리
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 32px "Noto Sans KR", sans-serif';
+      const nameStr = `${target.order}. ${target.name}`;
+      ctx.fillText(nameStr.slice(0, 15), 18, 92);
+
+      ctx.fillStyle = isArrived ? '#fde68a' : '#38bdf8';
+      ctx.font = 'bold 24px "Noto Sans KR", sans-serif';
+      const distLabel = dist !== null ? `거리 ${formatDistance(dist)}` : target.subRegion;
+      ctx.fillText(distLabel, W - ctx.measureText(distLabel).width - 18, 90);
+
+      // 수량 배지 박스
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(16, 110, W - 32, 74);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(16, 110, W - 32, 74);
+
+      const parts = stepLabelParts(target);
+      const qtyLine = parts.length ? parts.join('  ·  ') : '수량 없음';
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = '900 28px "Noto Sans KR", sans-serif';
+      ctx.fillText(qtyLine.slice(0, 22), 28, 156);
+
+      // 하단 합계 및 동네
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
+      const footerStr = `${productLabel(target)} · ${totalLabel(target)} · [${target.regionGroup} ${target.subRegion}]`;
+      ctx.fillText(footerStr.slice(0, 32), 18, 216);
+    }
+
+    function updatePipButtons() {
+      const label = pipActive ? '🪟 내비 위 미니창 닫기' : '🪟 내비 위 미니창(PiP) 띄우기';
+      ['togglePipHudBtn', 'bannerPipHudBtn', 'modalPipHudBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = id === 'togglePipHudBtn' ? (pipActive ? '🪟 미니창 켜짐' : '🪟 내비 위 미니창(PiP)') : label;
+      });
+    }
+
+    async function togglePipHud() {
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+          pipActive = false;
+          updatePipButtons();
+          return;
+        }
+        ensurePipElements();
+        drawPipHudCanvas();
+        if (!pipCanvasEl.captureStream || !document.pictureInPictureEnabled) {
+          // 폴백: 대형 HUD 패널 열기 + 백그라운드 오디오 유지
+          document.getElementById('miniHudPanel').classList.remove('hidden');
+          startBgKeepAlive(true);
+          showToast('이 브라우저는 팝업 미니창(PiP)을 지원하지 않아 상단 대형 HUD 모드와 백그라운드 알림 유지를 켰습니다.');
+          return;
+        }
+        if (!pipVideoEl.srcObject) {
+          pipVideoEl.srcObject = pipCanvasEl.captureStream(5);
+        }
+        await pipVideoEl.play();
+        await pipVideoEl.requestPictureInPicture();
+        pipActive = true;
+        updatePipButtons();
+        startBgKeepAlive(true);
+        if (!gpsActive && userLat === null) startGpsTracking();
+        if (pipAnimTimer) clearInterval(pipAnimTimer);
+        pipAnimTimer = setInterval(drawPipHudCanvas, 1000);
+        showToast('🪟 내비 위 미니창이 켜졌습니다! 이제 네이버 내비게이션을 열어도 화면 위에 수량과 남은 거리가 계속 표시됩니다.');
+      } catch (e) {
+        document.getElementById('miniHudPanel').classList.remove('hidden');
+        startBgKeepAlive(true);
+        showToast('미니창(PiP)을 열지 못해 상단 대형 HUD 모드와 백그라운드 유지를 활성화했습니다.');
+      }
+    }
+
+    function updateBgMediaAndPip() {
+      updateMediaSessionMetadata();
+      if (pipActive) drawPipHudCanvas();
+    }
+
+    // 5) PWA 홈 화면 원클릭 설치 프롬프트 (beforeinstallprompt)
+    function updatePwaInstallUi() {
+      const badge = document.getElementById('pwaInstallStateBadge');
+      const btn = document.getElementById('pwaInstallNowBtn');
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (badge) {
+        badge.textContent = isStandalone ? '✓ 앱으로 설치됨' : (deferredInstallPrompt ? '원클릭 설치 가능' : '브라우저 메뉴로 설치');
+        badge.className = isStandalone
+          ? 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+          : 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40';
+      }
+      if (btn && isStandalone) {
+        btn.textContent = '✓ 이미 홈 화면 앱으로 실행 중입니다';
+      }
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      updatePwaInstallUi();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      updatePwaInstallUi();
+      showToast('🎉 엔터코딩 납품 알리미가 스마트폰에 일반 앱으로 설치되었습니다!');
+    });
+
+    // 6) Capacitor 안드로이드 네이티브 앱(APK) 실행 시 백그라운드 GPS 포그라운드 서비스 자동 연결
+    async function initCapacitorNativeBridge() {
+      if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
+      const Plugins = window.Capacitor.Plugins || {};
+      if (Plugins.LocalNotifications) {
+        try {
+          await Plugins.LocalNotifications.requestPermissions();
+          Plugins.LocalNotifications.addListener('localNotificationActionPerformed', (ev) => {
+            const extra = (ev && ev.notification && ev.notification.extra) || {};
+            if (extra.schoolId) openArrivalModal(Number(extra.schoolId), false);
+          });
+        } catch (e) {}
+      }
+      if (Plugins.BackgroundGeolocation) {
+        try {
+          capBgWatcherId = await Plugins.BackgroundGeolocation.addWatcher(
+            {
+              backgroundTitle: '엔터코딩 납품 GPS 알리미 작동 중',
+              backgroundMessage: '화면이 꺼져 있어도 원 근처 300m 진입 시 도착 알림과 수량을 안내합니다.',
+              requestPermissions: true,
+              stale: false,
+              distanceFilter: 15
+            },
+            (location, error) => {
+              if (error || !location) return;
+              gpsActive = true;
+              gpsHadFix = true;
+              userLat = location.latitude;
+              userLng = location.longitude;
+              userAccuracy = Math.round(location.accuracy || 10);
+              setGpsUi('live', `안드로이드 백그라운드 GPS 수신 중 (±${userAccuracy}m) · 화면이 꺼져도 도착 알림이 울립니다`);
+              renderList();
+            }
+          );
+        } catch (e) {}
+      }
+    }
+
+    // 버튼 이벤트 바인딩
+    document.getElementById('toggleBgKeepAliveBtn').addEventListener('click', () => {
+      if (bgKeepAliveEnabled) stopBgKeepAlive(false);
+      else startBgKeepAlive(false);
+    });
+    document.getElementById('bannerBgKeepAliveBtn').addEventListener('click', () => {
+      if (bgKeepAliveEnabled) stopBgKeepAlive(false);
+      else startBgKeepAlive(false);
+    });
+    document.getElementById('modalBgKeepAliveBtn').addEventListener('click', () => {
+      if (bgKeepAliveEnabled) stopBgKeepAlive(false);
+      else startBgKeepAlive(false);
+    });
+    document.getElementById('togglePipHudBtn').addEventListener('click', togglePipHud);
+    document.getElementById('bannerPipHudBtn').addEventListener('click', togglePipHud);
+    document.getElementById('modalPipHudBtn').addEventListener('click', togglePipHud);
+    document.getElementById('toggleSysNotifBtn').addEventListener('click', requestSystemNotificationPermission);
+    document.getElementById('reqNotifPermBtn').addEventListener('click', requestSystemNotificationPermission);
+    document.getElementById('testArrivalNotifBtn').addEventListener('click', async () => {
+      const ok = ('Notification' in window && Notification.permission === 'granted')
+        ? true
+        : await requestSystemNotificationPermission();
+      const target = getActiveOrNearestSchool() || SCHOOLS[0];
+      playArrivalChime();
+      speakSchoolQuantity(target);
+      if (ok && target) {
+        await sendSchoolArrivalNotification(target, 120, true);
+        showToast(`🔔 [${target.name}] 테스트 도착 알림을 발송했습니다. 상단 알림 배너를 확인해 보세요!`);
+      } else {
+        showToast('🔊 테스트 도착 알림음과 수량 음성 안내를 재생했습니다.');
+      }
+    });
+    document.getElementById('pwaInstallNowBtn').addEventListener('click', async () => {
+      if (deferredInstallPrompt) {
+        try {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+          updatePwaInstallUi();
+          return;
+        } catch (e) {}
+      }
+      if (IS_IOS) {
+        showToast('아이폰(Safari)에서는 화면 아래쪽 [공유(↑)] 버튼을 누른 뒤 [홈 화면에 추가]를 선택해 주세요.');
+      } else {
+        showToast('크롬/삼성인터넷 우측 상단 메뉴(⋮)에서 [앱 설치] 또는 [홈 화면에 추가]를 눌러 설치해 주세요.');
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      registerServiceWorker();
+      updateSysNotifButtons();
+      updateBgKeepAliveButtons();
+      updatePwaInstallUi();
+      initCapacitorNativeBridge();
+    });
+
   </script>
 </body>
 </html>

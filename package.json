@@ -1,0 +1,21 @@
+{
+  "name": "entercoding-delivery-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "엔터코딩 원별 납품수량 & 백그라운드 GPS 도착 알림 앱 (PWA + Android APK)",
+  "scripts": {
+    "prepare:www": "node scripts/prepare-www.mjs",
+    "android:init": "npm run prepare:www && npx cap add android && node scripts/configure-android.mjs && npx cap sync android",
+    "android:sync": "npm run prepare:www && node scripts/configure-android.mjs && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/geolocation": "^6.0.1",
+    "@capacitor/local-notifications": "^6.0.1",
+    "@capacitor-community/background-geolocation": "^1.2.21"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}
