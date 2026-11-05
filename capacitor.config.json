@@ -1,6 +1,6 @@
 {
-  "appId": "com.nkids.entercoding.delivery.test",
-  "appName": "납품알리미 테스트",
+  "appId": "com.nkids.entercoding.delivery",
+  "appName": "납품알리미",
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
