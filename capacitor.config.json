@@ -3,6 +3,16 @@
   "appName": "납품알리미",
   "webDir": "www",
   "bundledWebRuntime": false,
+  "server": {
+    "url": "https://n-kids.github.io/entercoding-delivery/",
+    "cleartext": true,
+    "allowNavigation": [
+      "n-kids.github.io",
+      "*.github.io",
+      "script.google.com",
+      "*.googleusercontent.com"
+    ]
+  },
   "android": {
     "allowMixedContent": true,
     "useLegacyBridge": true

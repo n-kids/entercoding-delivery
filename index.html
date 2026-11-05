@@ -506,12 +506,18 @@
           <p class="text-xs text-slate-200 leading-relaxed">
             웹 브라우저(크롬·사파리)는 보안 정책상 동영상(미디어 재생) 방식의 PiP만 허용하지만, <strong>안드로이드 APK로 설치</strong>하시면 배달·콜앱처럼 <strong>'다른 앱 위에 표시' 네이티브 오버레이 위젯</strong>이 작동하여 <strong>재생 아이콘 없이 네이버 내비 위에서 바로 품목 체크(☑)·완료처리·접기/펼치기</strong>를 직접 터치할 수 있습니다.
           </p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="bg-emerald-950/60 border border-emerald-500/40 rounded-xl px-3 py-2 text-[11px] text-emerald-200 flex items-center justify-between gap-2">
+            <span>🔄 <strong>APK & 홈화면 앱 자동 업데이트 켜짐:</strong> 최초 1회만 APK를 설치해 두면, 이후에는 GitHub(<code>n-kids.github.io</code>)에 파일만 올려도 앱을 켤 때 자동으로 최신 화면이 반영됩니다.</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button id="modalTestTouchOverlayBtn" type="button" class="py-2.5 px-3 rounded-xl font-extrabold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow">
-              🪟 터치형 오버레이 미니창 띄우기
+              🪟 터치형 오버레이 띄우기
             </button>
             <button id="modalReqOverlayPermBtn" type="button" class="py-2.5 px-3 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/40 transition">
-              ⚙️ '다른 앱 위에 표시' 권한 설정 (APK전용)
+              ⚙️ 오버레이 권한 설정
+            </button>
+            <button id="modalForceUpdateAppBtn" type="button" class="py-2.5 px-3 rounded-xl font-extrabold text-xs bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 transition">
+              🔄 최신버전 즉시 새로고침
             </button>
           </div>
           <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2 text-[11px] text-slate-300">
@@ -6022,6 +6028,30 @@ ${school.address || ''}`;
         window.AndroidOverlay.requestOverlayPermission();
       } else {
         showToast('이 버튼은 안드로이드 APK 앱으로 설치해 실행했을 때 안드로이드 [다른 앱 위에 표시] 권한 설정 창을 바로 열어줍니다.');
+      }
+    });
+    document.getElementById('modalForceUpdateAppBtn')?.addEventListener('click', async () => {
+      showToast('🔄 서버에서 최신 앱 버전을 확인하고 새로고침합니다...');
+      try {
+        if (swRegistration && typeof swRegistration.update === 'function') {
+          await swRegistration.update();
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+      } catch (e) {}
+      if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.forceRefreshFromServer === 'function') {
+        window.AndroidOverlay.forceRefreshFromServer();
+        return;
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set('v', String(Date.now()));
+      window.location.replace(url.toString());
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && swRegistration && typeof swRegistration.update === 'function') {
+        try { swRegistration.update(); } catch (e) {}
       }
     });
 

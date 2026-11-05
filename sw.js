@@ -1,5 +1,5 @@
 // 엔터코딩 원별 납품 GPS 알리미 - Service Worker (PWA 설치 · 오프라인 캐시 · 백그라운드 도착 시스템 알림)
-const CACHE_NAME = 'entercoding-delivery-v5';
+const CACHE_NAME = 'entercoding-delivery-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -36,7 +36,7 @@ self.addEventListener('fetch', (event) => {
 
   if (req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/')) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});

@@ -13,6 +13,8 @@ if (fs.existsSync(manifestPath)) {
     '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />',
     '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
     '<uses-permission android:name="android.permission.VIBRATE" />',
+    '<uses-permission android:name="android.permission.INTERNET" />',
+    '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />',
     '<uses-permission android:name="android.permission.WAKE_LOCK" />',
     '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />'
   ];
@@ -178,6 +180,20 @@ public class FloatingOverlayManager {
     @JavascriptInterface
     public boolean isSupported() {
         return true;
+    }
+
+    @JavascriptInterface
+    public void forceRefreshFromServer() {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (webView != null) {
+                    webView.getSettings().setCacheMode(android.webkit.WebSettings.LOAD_DEFAULT);
+                    webView.clearCache(false);
+                    webView.loadUrl("https://n-kids.github.io/entercoding-delivery/?v=" + System.currentTimeMillis());
+                }
+            }
+        });
     }
 
     @JavascriptInterface
@@ -610,20 +626,57 @@ public class FloatingOverlayManager {
 
   const mainJavaCode = `package ${pkgName};
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     private FloatingOverlayManager overlayManager;
 
+    private boolean isNetworkConnected() {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null) {
+                NetworkInfo info = cm.getActiveNetworkInfo();
+                return info != null && info.isConnected();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getBridge() != null && getBridge().getWebView() != null) {
             WebView webView = getBridge().getWebView();
+            WebSettings settings = webView.getSettings();
+            settings.setDomStorageEnabled(true);
+            if (isNetworkConnected()) {
+                settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+            } else {
+                settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+            }
             overlayManager = new FloatingOverlayManager(this, webView);
             webView.addJavascriptInterface(overlayManager, "AndroidOverlay");
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            WebView webView = getBridge().getWebView();
+            if (isNetworkConnected()) {
+                webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+            } else {
+                webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+            }
         }
     }
 
