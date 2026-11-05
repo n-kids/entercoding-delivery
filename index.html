@@ -1347,25 +1347,76 @@
     }
     const IS_ANDROID = /Android/i.test(navigator.userAgent);
     const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    function openNaverMapApp(appUrl, webUrl) {
-      if (IS_ANDROID) {
-        const rest = appUrl.replace(/^nmap:\/\//, '');
-        window.location.href = `intent://${rest}#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-        return;
+  function openNaverMapApp(appUrl, webUrl) {
+  // APK: 기존 네이티브 실행 함수를 사용해
+  // 좌표/검색어가 들어 있는 nmap 주소를 그대로 전달
+  if (
+    window.AndroidOverlay &&
+    typeof window.AndroidOverlay.launchNaverNavi === 'function'
+  ) {
+    try {
+      window.AndroidOverlay.launchNaverNavi(
+        String(appUrl || ''),
+        String(webUrl || '')
+      );
+      return;
+    } catch (error) {
+      console.error('[APK 지도 앱 실행 실패]', error);
+    }
+  }
+
+  // 위 브리지가 없을 때, 직접 시험에 성공한 웹 주소 실행 사용
+  if (
+    webUrl &&
+    window.DeliveryNative &&
+    typeof window.DeliveryNative.openNaverMap === 'function'
+  ) {
+    try {
+      window.DeliveryNative.openNaverMap(String(webUrl));
+      return;
+    } catch (error) {
+      console.error('[APK 웹 지도 실행 실패]', error);
+    }
+  }
+
+  // 일반 Android 브라우저: 기존 처리 유지
+  if (IS_ANDROID) {
+    const rest = appUrl.replace(/^nmap:\/\//, '');
+    window.location.href =
+      `intent://${rest}#Intent;scheme=nmap;` +
+      `package=com.nhn.android.nmap;` +
+      `S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+    return;
+  }
+
+  // iPhone/iPad: 기존 처리 유지
+  if (IS_IOS) {
+    let left = false;
+
+    const onHide = () => {
+      if (document.hidden) left = true;
+    };
+
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onHide);
+
+    window.location.href = appUrl;
+
+    setTimeout(() => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onHide);
+
+      if (!left && !document.hidden) {
+        window.location.href = webUrl;
       }
-      if (IS_IOS) {
-        let left = false;
-        const onHide = () => { if (document.hidden) left = true; };
-        document.addEventListener('visibilitychange', onHide);
-        window.addEventListener('pagehide', onHide);
-        window.location.href = appUrl;
-        setTimeout(() => {
-          document.removeEventListener('visibilitychange', onHide); window.removeEventListener('pagehide', onHide);
-          if (!left && !document.hidden) window.location.href = webUrl; // 앱 미설치 → 웹 지도
-        }, 1600);
-        return;
-      }
-      window.open(webUrl, '_blank', 'noopener');
+    }, 1600);
+
+    return;
+  }
+
+  // PC
+  window.open(webUrl, '_blank', 'noopener');
+}
     }
     document.addEventListener('click', (e) => {
       const a = e.target.closest('a[data-nmap]'); if (!a) return;
@@ -1450,20 +1501,79 @@
       } catch (e) {}
     }
 
-    function speakSchoolQuantity(school) {
-      if (!voiceEnabled || !('speechSynthesis' in window)) return;
-      try {
-        window.speechSynthesis.cancel();
-        const parts = stepLabelParts(school, 'speech');
-        const tt = teacherTotal(school);
-        const ex = normalizeExtras(school.extras).map(x => x.qty ? `${x.name} ${x.qty}개` : x.name);
-        const text = `${school.name} 도착 안내입니다. ${isMulti(school) ? '' : productName(school) + ' '}${parts.join(', ')}. 총 ${grandTotal(school)}개${tt ? ', 교사용 ' + tt + '개 포함' : ''} 납품입니다.${ex.length ? ' 기타 품목 ' + ex.join(', ') + '도 챙겨주세요.' : ''}`;
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'ko-KR';
-        utter.rate = 1.0;
-        window.speechSynthesis.speak(utter);
-      } catch (e) {}
+// 납품/회수 안내에서 함께 사용하는 음성 출력
+function speakDeliveryText(text) {
+  if (!voiceEnabled || !text) return;
+
+  const message = String(text);
+
+  // APK: 직접 실행 시험에 성공한 네이티브 음성 사용
+  if (
+    window.DeliveryNative &&
+    typeof window.DeliveryNative.speak === 'function'
+  ) {
+    try {
+      if (
+        typeof window.DeliveryNative.stopSpeaking === 'function'
+      ) {
+        window.DeliveryNative.stopSpeaking();
+      }
+
+      window.DeliveryNative.speak(message);
+      return;
+    } catch (error) {
+      console.error('[APK 음성 출력 실패]', error);
     }
+  }
+
+  // 일반 브라우저
+  if (
+    !window.speechSynthesis ||
+    typeof window.SpeechSynthesisUtterance !== 'function'
+  ) {
+    console.warn('[음성] 사용 가능한 음성 출력 기능이 없습니다.');
+    return;
+  }
+
+  try {
+    window.speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(message);
+    utter.lang = 'ko-KR';
+    utter.rate = 1.0;
+
+    window.speechSynthesis.speak(utter);
+  } catch (error) {
+    console.error('[브라우저 음성 출력 실패]', error);
+  }
+}
+
+function speakSchoolQuantity(school) {
+  if (!voiceEnabled || !school) return;
+
+  try {
+    const parts = stepLabelParts(school, 'speech');
+    const tt = teacherTotal(school);
+
+    const ex = normalizeExtras(school.extras).map(
+      x => x.qty ? `${x.name} ${x.qty}개` : x.name
+    );
+
+    const text =
+      `${school.name} 도착 안내입니다. ` +
+      `${isMulti(school) ? '' : productName(school) + ' '}` +
+      `${parts.join(', ')}. ` +
+      `총 ${grandTotal(school)}개` +
+      `${tt ? ', 교사용 ' + tt + '개 포함' : ''} 납품입니다.` +
+      `${ex.length
+        ? ' 기타 품목 ' + ex.join(', ') + '도 챙겨주세요.'
+        : ''}`;
+
+    speakDeliveryText(text);
+  } catch (error) {
+    console.error('[납품 음성 안내 실패]', error);
+  }
+}
 
     async function downloadStandaloneHtml() {
       try {
@@ -4329,10 +4439,23 @@
       if (typeof sendPickupArrivalNotification === 'function') {
         try { sendPickupArrivalNotification(group, pkDistance(near[0])); } catch (e) {}
       }
-      if (voiceEnabled && 'speechSynthesis' in window) {
-        try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(`${pkGuessFullName(near[0].school)} 근처입니다. ${group.map(p => `${p.type} ${p.items || ''}`).join(', ')} 챙겨주세요.`); u.lang = 'ko-KR'; window.speechSynthesis.speak(u); } catch (e) {}
+      if (voiceEnabled) {
+        try {
+          const text =
+            `${pkGuessFullName(near[0].school)} 근처입니다. ` +
+            `${group.map(
+              p => `${p.type} ${p.items || ''}`
+            ).join(', ')} 챙겨주세요.`;
+
+          speakDeliveryText(text);
+        } catch (error) {
+          console.error('[회수·반품 음성 안내 실패]', error);
+        }
       }
     }
+
+    document.getElementById('pkAlertList').addEventListener(
+      // 이 아래는 기존 코드 유지
     document.getElementById('pkAlertList').addEventListener('click', (e) => { const d = e.target.closest('[data-pk-done]'); if (d) pkToggleDone(d.getAttribute('data-pk-done')); });
     ['pkAlertCloseBtn', 'pkAlertOkBtn'].forEach(id => document.getElementById(id).addEventListener('click', () => document.getElementById('pkAlertModal').classList.add('hidden')));
 
@@ -6104,151 +6227,7 @@ ${school.address || ''}`;
       initCapacitorNativeBridge();
     });
 
-    (function () {
-  'use strict';
-
-  var native = window.DeliveryNative;
-
-  if (!native || window.__deliveryApkPatchInstalled) {
-    return;
-  }
-
-  window.__deliveryApkPatchInstalled = true;
-
-  function isGeneralNaverMapUrl(value) {
-    try {
-      var url = new URL(String(value), location.href);
-
-      if (url.protocol !== 'https:' &&
-          url.protocol !== 'http:') {
-        return false;
-      }
-
-      var hosts = [
-        'map.naver.com',
-        'm.map.naver.com',
-        'naver.me'
-      ];
-
-      if (hosts.indexOf(url.hostname.toLowerCase()) < 0) {
-        return false;
-      }
-
-      // 명시적인 길찾기·내비게이션 URL은 기존 처리 유지.
-      // 단축 주소는 열기 전 목적지를 판별할 수 없습니다.
-      if (/\/(directions?|navigation)(\/|$)/i.test(
-        url.pathname
-      )) {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function openNativeMap(value) {
-    if (!isGeneralNaverMapUrl(value)) return false;
-
-    try {
-      var url = new URL(String(value), location.href);
-      native.openNaverMap(url.href);
-      return true;
-    } catch (error) {
-      console.error('[APK 지도 열기 실패]', error);
-      return false;
-    }
-  }
-
-  // 일반 <a href="네이버 지도 주소"> 처리
-  document.addEventListener('click', function (event) {
-    if (event.defaultPrevented) return;
-
-    var target = event.target;
-    var anchor = target && target.closest
-      ? target.closest('a[href]')
-      : null;
-
-    if (!anchor) return;
-
-    if (openNativeMap(anchor.href)) {
-      event.preventDefault();
-    }
-  }, true);
-
-  // onclick 등에서 window.open(지도주소)를 쓰는 경우 처리
-  var originalOpen = window.open;
-
-  window.open = function (url, target, features) {
-    if (url && openNativeMap(url)) {
-      // 외부 앱에는 팝업 Window 객체가 없습니다.
-      return null;
-    }
-
-    return originalOpen.call(
-      window, url, target, features
-    );
-  };
-
-  // 명시적으로 호출할 수 있는 함수도 제공
-  window.deliveryOpenNaverMap = function (url) {
-    if (!openNativeMap(url)) {
-      originalOpen.call(
-        window, url, '_blank', 'noopener'
-      );
-    }
-  };
-
-  window.deliverySpeak = function (text) {
-    native.speak(String(text || ''));
-  };
-
-  // 기존 speechSynthesis.speak(...) 호출을 네이티브 TTS로 연결
-  function connectSpeech() {
-    var synth;
-
-    try {
-      synth = window.speechSynthesis;
-    } catch (error) {
-      console.warn('[APK 음성 객체 접근 실패]', error);
-    }
-
-    if (!synth) {
-      console.warn(
-        '[APK] speechSynthesis가 없습니다. ' +
-        '음성 호출부에서 deliverySpeak(text)를 사용하세요.'
-      );
-      return;
-    }
-
-    try {
-      Object.defineProperty(synth, 'speak', {
-        configurable: true,
-        value: function (utterance) {
-          if (utterance && utterance.text) {
-            native.speak(String(utterance.text));
-          }
-        }
-      });
-
-      Object.defineProperty(synth, 'cancel', {
-        configurable: true,
-        value: function () {
-          native.stopSpeaking();
-        }
-      });
-    } catch (error) {
-      console.warn(
-        '[APK] 웹 음성 대체 실패. ' +
-        'deliverySpeak(text) 직접 호출이 필요합니다.',
-        error
-      );
-    }
-  }
-
-  connectSpeech();
-})();
+   
 
   </script>
 </body>
