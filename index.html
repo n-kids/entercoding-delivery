@@ -6104,6 +6104,152 @@ ${school.address || ''}`;
       initCapacitorNativeBridge();
     });
 
+    (function () {
+  'use strict';
+
+  var native = window.DeliveryNative;
+
+  if (!native || window.__deliveryApkPatchInstalled) {
+    return;
+  }
+
+  window.__deliveryApkPatchInstalled = true;
+
+  function isGeneralNaverMapUrl(value) {
+    try {
+      var url = new URL(String(value), location.href);
+
+      if (url.protocol !== 'https:' &&
+          url.protocol !== 'http:') {
+        return false;
+      }
+
+      var hosts = [
+        'map.naver.com',
+        'm.map.naver.com',
+        'naver.me'
+      ];
+
+      if (hosts.indexOf(url.hostname.toLowerCase()) < 0) {
+        return false;
+      }
+
+      // 명시적인 길찾기·내비게이션 URL은 기존 처리 유지.
+      // 단축 주소는 열기 전 목적지를 판별할 수 없습니다.
+      if (/\/(directions?|navigation)(\/|$)/i.test(
+        url.pathname
+      )) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function openNativeMap(value) {
+    if (!isGeneralNaverMapUrl(value)) return false;
+
+    try {
+      var url = new URL(String(value), location.href);
+      native.openNaverMap(url.href);
+      return true;
+    } catch (error) {
+      console.error('[APK 지도 열기 실패]', error);
+      return false;
+    }
+  }
+
+  // 일반 <a href="네이버 지도 주소"> 처리
+  document.addEventListener('click', function (event) {
+    if (event.defaultPrevented) return;
+
+    var target = event.target;
+    var anchor = target && target.closest
+      ? target.closest('a[href]')
+      : null;
+
+    if (!anchor) return;
+
+    if (openNativeMap(anchor.href)) {
+      event.preventDefault();
+    }
+  }, true);
+
+  // onclick 등에서 window.open(지도주소)를 쓰는 경우 처리
+  var originalOpen = window.open;
+
+  window.open = function (url, target, features) {
+    if (url && openNativeMap(url)) {
+      // 외부 앱에는 팝업 Window 객체가 없습니다.
+      return null;
+    }
+
+    return originalOpen.call(
+      window, url, target, features
+    );
+  };
+
+  // 명시적으로 호출할 수 있는 함수도 제공
+  window.deliveryOpenNaverMap = function (url) {
+    if (!openNativeMap(url)) {
+      originalOpen.call(
+        window, url, '_blank', 'noopener'
+      );
+    }
+  };
+
+  window.deliverySpeak = function (text) {
+    native.speak(String(text || ''));
+  };
+
+  // 기존 speechSynthesis.speak(...) 호출을 네이티브 TTS로 연결
+  function connectSpeech() {
+    var synth;
+
+    try {
+      synth = window.speechSynthesis;
+    } catch (error) {
+      console.warn('[APK 음성 객체 접근 실패]', error);
+    }
+
+    if (!synth) {
+      console.warn(
+        '[APK] speechSynthesis가 없습니다. ' +
+        '음성 호출부에서 deliverySpeak(text)를 사용하세요.'
+      );
+      return;
+    }
+
+    try {
+      Object.defineProperty(synth, 'speak', {
+        configurable: true,
+        value: function (utterance) {
+          if (utterance && utterance.text) {
+            native.speak(String(utterance.text));
+          }
+        }
+      });
+
+      Object.defineProperty(synth, 'cancel', {
+        configurable: true,
+        value: function () {
+          native.stopSpeaking();
+        }
+      });
+    } catch (error) {
+      console.warn(
+        '[APK] 웹 음성 대체 실패. ' +
+        'deliverySpeak(text) 직접 호출이 필요합니다.',
+        error
+      );
+    }
+  }
+
+  connectSpeech();
+})();
+
   </script>
 </body>
 </html>
