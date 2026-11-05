@@ -110,6 +110,8 @@ public class FloatingOverlayManager {
     private boolean isShowing = false;
     private boolean isCollapsed = false;
     private String lastPayloadJson = "{}";
+    private String currentNaviUrl = "";
+    private String currentWebNaviUrl = "";
 
     public FloatingOverlayManager(Activity activity, WebView webView) {
         this.activity = activity;
@@ -151,6 +153,28 @@ public class FloatingOverlayManager {
         });
     }
 
+    private void launchNaviIntent(String naviUrl, String webUrl) {
+        try {
+            if (naviUrl != null && naviUrl.length() > 0) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(naviUrl));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                appContext.startActivity(intent);
+                return;
+            }
+        } catch (Exception e) {
+            try {
+                if (webUrl != null && webUrl.length() > 0) {
+                    Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl));
+                    fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    appContext.startActivity(fallback);
+                    return;
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
     @JavascriptInterface
     public boolean isSupported() {
         return true;
@@ -174,6 +198,16 @@ public class FloatingOverlayManager {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             appContext.startActivity(intent);
         }
+    }
+
+    @JavascriptInterface
+    public void launchNaverNavi(final String naviUrl, final String webUrl) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                launchNaviIntent(naviUrl, webUrl);
+            }
+        });
     }
 
     @JavascriptInterface
@@ -235,6 +269,11 @@ public class FloatingOverlayManager {
         });
     }
 
+    private void triggerStartNaviFromOverlay() {
+        evalJs("window.onNativeOverlayStartNavi && window.onNativeOverlayStartNavi(false);");
+        launchNaviIntent(currentNaviUrl, currentWebNaviUrl);
+    }
+
     private void ensureViewCreated() {
         if (rootContainer != null) return;
 
@@ -243,7 +282,7 @@ public class FloatingOverlayManager {
             : WindowManager.LayoutParams.TYPE_PHONE;
 
         layoutParams = new WindowManager.LayoutParams(
-            dp(290),
+            dp(296),
             WindowManager.LayoutParams.WRAP_CONTENT,
             overlayType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
@@ -275,19 +314,38 @@ public class FloatingOverlayManager {
         distView = new TextView(appContext);
         distView.setText("거리 계산중");
         distView.setTextColor(Color.parseColor("#38BDF8"));
-        distView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        distView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         distView.setTypeface(null, Typeface.BOLD);
         LinearLayout.LayoutParams distLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        distLp.setMargins(dp(8), 0, dp(4), 0);
+        distLp.setMargins(dp(6), 0, dp(4), 0);
         distView.setLayoutParams(distLp);
         headerBar.addView(distView);
+
+        // Quick Header Naver Navi Button (Accessible even when collapsed!)
+        TextView headerNaviBtn = new TextView(appContext);
+        headerNaviBtn.setText("🟢 내비");
+        headerNaviBtn.setTextColor(Color.parseColor("#052E16"));
+        headerNaviBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        headerNaviBtn.setTypeface(null, Typeface.BOLD);
+        headerNaviBtn.setPadding(dp(7), dp(4), dp(7), dp(4));
+        LinearLayout.LayoutParams hNaviLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        hNaviLp.setMargins(0, 0, dp(4), 0);
+        headerNaviBtn.setLayoutParams(hNaviLp);
+        headerNaviBtn.setBackground(makeBg("#03C75A", 8, "#34D399", 1));
+        headerNaviBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                triggerStartNaviFromOverlay();
+            }
+        });
+        headerBar.addView(headerNaviBtn);
 
         collapseBtn = new TextView(appContext);
         collapseBtn.setText("접기 ➖");
         collapseBtn.setTextColor(Color.parseColor("#E2E8F0"));
         collapseBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
         collapseBtn.setTypeface(null, Typeface.BOLD);
-        collapseBtn.setPadding(dp(8), dp(4), dp(8), dp(4));
+        collapseBtn.setPadding(dp(7), dp(4), dp(7), dp(4));
         collapseBtn.setBackground(makeBg("#334155", 8, "#475569", 1));
         collapseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -304,7 +362,7 @@ public class FloatingOverlayManager {
         closeBtn.setTextColor(Color.parseColor("#FCA5A5"));
         closeBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         closeBtn.setTypeface(null, Typeface.BOLD);
-        closeBtn.setPadding(dp(8), dp(4), dp(8), dp(4));
+        closeBtn.setPadding(dp(7), dp(4), dp(7), dp(4));
         LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         closeLp.setMargins(dp(4), 0, 0, 0);
         closeBtn.setLayoutParams(closeLp);
@@ -345,7 +403,7 @@ public class FloatingOverlayManager {
         ScrollView scrollView = new ScrollView(appContext);
         LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(135)
+            dp(130)
         );
         scrollView.setLayoutParams(scrollLp);
 
@@ -354,6 +412,29 @@ public class FloatingOverlayManager {
         scrollView.addView(itemsContainer);
         bodyContainer.addView(scrollView);
 
+        // Primary Full-Width Naver Navigation Route Guidance Button
+        TextView mainNaviBtn = new TextView(appContext);
+        mainNaviBtn.setText("🟢 네이버 내비 길안내 출발 (수량표시)");
+        mainNaviBtn.setTextColor(Color.parseColor("#052E16"));
+        mainNaviBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        mainNaviBtn.setTypeface(null, Typeface.BOLD);
+        mainNaviBtn.setGravity(Gravity.CENTER);
+        mainNaviBtn.setPadding(dp(10), dp(8), dp(10), dp(8));
+        mainNaviBtn.setBackground(makeBg("#03C75A", 10, "#6EE7B7", 1));
+        LinearLayout.LayoutParams mainNaviLp = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        mainNaviLp.setMargins(0, dp(8), 0, 0);
+        mainNaviBtn.setLayoutParams(mainNaviLp);
+        mainNaviBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                triggerStartNaviFromOverlay();
+            }
+        });
+        bodyContainer.addView(mainNaviBtn);
+
         // Bottom Action Buttons Row
         LinearLayout actionRow = new LinearLayout(appContext);
         actionRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -361,7 +442,7 @@ public class FloatingOverlayManager {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        actionRowLp.setMargins(0, dp(8), 0, 0);
+        actionRowLp.setMargins(0, dp(6), 0, 0);
         actionRow.setLayoutParams(actionRowLp);
 
         TextView completeBtn = new TextView(appContext);
@@ -465,6 +546,8 @@ public class FloatingOverlayManager {
             String name = obj.optString("name", "목적지 없음");
             String distText = obj.optString("distText", "거리 대기");
             String progressText = obj.optString("progressText", "품목 터치 시 즉시 체크");
+            currentNaviUrl = obj.optString("naviUrl", "");
+            currentWebNaviUrl = obj.optString("webNaviUrl", "");
 
             badgeView.setText(modeBadge);
             badgeView.setBackground(makeBg(modeColor, 8, null, 0));
@@ -555,5 +638,5 @@ public class MainActivity extends BridgeActivity {
 `;
 
   fs.writeFileSync(mainActivityPath, mainJavaCode, 'utf8');
-  console.log('Injected FloatingOverlayManager.java and MainActivity.java (AndroidOverlay JavascriptInterface).');
+  console.log('Injected FloatingOverlayManager.java (with Naver Navigation button) and MainActivity.java.');
 }

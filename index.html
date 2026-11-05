@@ -926,19 +926,23 @@
 
 
   <!-- Interactive Touch Floating Overlay (APK Native Overlay Preview & In-App Floating Widget without Media Controls) -->
-  <div id="domFloatingOverlay" class="hidden fixed z-[90] top-20 right-3 w-[295px] bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 rounded-2xl shadow-2xl p-3 text-slate-100 select-none">
-    <div id="domOverlayDragHeader" class="flex items-center justify-between gap-1.5 cursor-move pb-1.5 border-b border-slate-800">
+  <div id="domFloatingOverlay" class="hidden fixed z-[90] top-20 right-3 w-[305px] bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 rounded-2xl shadow-2xl p-3 text-slate-100 select-none">
+    <div id="domOverlayDragHeader" class="flex items-center justify-between gap-1 cursor-move pb-1.5 border-b border-slate-800">
       <span id="domOverlayBadge" class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-600 text-white">🧭 내비고정</span>
       <span id="domOverlayDist" class="flex-1 text-xs font-extrabold text-sky-400 truncate pl-1">거리 계산중</span>
+      <button id="domOverlayHeaderNaviBtn" type="button" class="px-2 py-0.5 rounded text-[11px] font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 shadow" title="현재 미니창에 표시된 목적지로 네이버 내비게이션 길안내를 바로 시작합니다">🟢 내비</button>
       <button id="domOverlayWebPipBtn" type="button" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/30 hover:bg-indigo-500/50 text-indigo-200 border border-indigo-400/40" title="웹 브라우저에서 네이버 내비로 화면을 전환할 때 쓰는 비디오 PiP 창으로 전환">웹PiP</button>
-      <button id="domOverlayCollapseBtn" type="button" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600">접기 ➖</button>
+      <button id="domOverlayCollapseBtn" type="button" class="px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600">접기 ➖</button>
       <button id="domOverlayCloseBtn" type="button" class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-700">✕</button>
     </div>
     <div id="domOverlayTitle" class="pt-1.5 font-black text-base text-white truncate cursor-move">목적지 준비중</div>
     <div id="domOverlayBody" class="space-y-2 pt-1">
       <div id="domOverlayProgress" class="text-[11px] font-bold text-amber-300">품목 터치 시 즉시 체크됩니다 (미디어 재생바 없음)</div>
       <div id="domOverlayItems" class="max-h-36 overflow-y-auto space-y-1 pr-0.5"></div>
-      <div class="grid grid-cols-2 gap-1.5 pt-1">
+      <button id="domOverlayMainNaviBtn" type="button" class="w-full py-2 px-3 rounded-xl text-xs font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 shadow-md transition flex items-center justify-center gap-1">
+        🟢 네이버 내비 길안내 출발 (수량표시)
+      </button>
+      <div class="grid grid-cols-2 gap-1.5">
         <button id="domOverlayCompleteBtn" type="button" class="py-1.5 px-2 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow">✓ 완료처리</button>
         <button id="domOverlayNextBtn" type="button" class="py-1.5 px-2 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-500 text-white shadow">다음 원 ▶</button>
       </div>
@@ -5485,11 +5489,16 @@ ${school.address || ''}`;
           name: '모든 납품·회수 완료!',
           distText: '완료',
           progressText: '남은 목적지가 없습니다',
+          naviUrl: '',
+          webNaviUrl: '',
           items: []
         };
       }
       if (best.kind === 'pickup' && best.pickupGroup) {
         const grp = best.pickupGroup;
+        const firstP = grp.items && grp.items[0];
+        const naviUrl = firstP && typeof pkNaviUrl === 'function' ? pkNaviUrl(firstP) : `nmap://search?query=${encodeURIComponent(grp.address || grp.name)}&appname=entercoding.delivery`;
+        const webNaviUrl = `https://map.naver.com/p/search/${encodeURIComponent(grp.address || grp.name)}`;
         const distLabel = best.dist !== null && best.dist !== undefined ? `거리 ${formatDistance(best.dist)}` : (grp.subRegion || '회수·반품');
         return {
           modeBadge: best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품',
@@ -5497,6 +5506,8 @@ ${school.address || ''}`;
           name: `↩️ ${grp.name}`,
           distText: distLabel,
           progressText: `회수·반품 ${grp.items.length}건 · 터치 시 완료 체크`,
+          naviUrl,
+          webNaviUrl,
           items: grp.items.map((p, idx) => ({
             index: idx,
             checked: !!p.done,
@@ -5527,6 +5538,8 @@ ${school.address || ''}`;
         name: `${s.order}. ${s.name}`,
         distText: distLabel,
         progressText: `품목체크 ${pr.done}/${pr.total} · ${totalLabel(s)}${pickups.length ? ` · 회수${pickups.length}건` : ''}`,
+        naviUrl: buildNaverNaviSchemeUrl(s),
+        webNaviUrl: buildNaverWebUrl(s),
         items: mappedItems
       };
     }
@@ -5654,6 +5667,47 @@ ${school.address || ''}`;
       if (nextBtn) {
         nextBtn.click();
         syncNativeAndDomOverlays();
+      }
+    };
+
+    window.onNativeOverlayStartNavi = function(shouldLaunchFromJs = true) {
+      const best = getBestPipTarget();
+      if (!best) {
+        showToast('현재 안내할 미완료 목적지가 없습니다.');
+        return;
+      }
+      let naviUrl = '';
+      let webUrl = '';
+      if (best.kind === 'pickup' && best.pickupGroup) {
+        const grp = best.pickupGroup;
+        const firstP = grp.items && grp.items[0];
+        if (firstP) {
+          setNaviLockedPickup(firstP.id);
+          if (typeof ensureBgKeepAliveOnNavi === 'function') {
+            try { ensureBgKeepAliveOnNavi(pkPseudo(firstP)); } catch (e) {}
+          }
+          naviUrl = typeof pkNaviUrl === 'function' ? pkNaviUrl(firstP) : `nmap://search?query=${encodeURIComponent(grp.address || grp.name)}&appname=entercoding.delivery`;
+          webUrl = `https://map.naver.com/p/search/${encodeURIComponent(grp.address || grp.name)}`;
+          showToast(`🧭 [${grp.name}] 네이버 내비 길안내를 시작하며 미니창에 고정합니다.`);
+        }
+      } else if (best.kind === 'delivery' && best.school) {
+        const s = best.school;
+        setNaviLockedSchool(s.id);
+        speakSchoolQuantity(s);
+        if (typeof ensureBgKeepAliveOnNavi === 'function') {
+          try { ensureBgKeepAliveOnNavi(s); } catch (e) {}
+        }
+        naviUrl = buildNaverNaviSchemeUrl(s);
+        webUrl = buildNaverWebUrl(s);
+        showToast(`🧭 [${s.name}] 네이버 내비 길안내 출발! 거리와 상관없이 미니창에 고정됩니다.`);
+      }
+      syncNativeAndDomOverlays();
+      if (shouldLaunchFromJs && naviUrl) {
+        if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.launchNaverNavi === 'function') {
+          window.AndroidOverlay.launchNaverNavi(naviUrl, webUrl);
+        } else {
+          openNaverMapApp(naviUrl, webUrl);
+        }
       }
     };
 
@@ -5931,6 +5985,12 @@ ${school.address || ''}`;
       if (!btn) return;
       const idx = parseInt(btn.getAttribute('data-dom-overlay-item'), 10);
       if (!Number.isNaN(idx)) window.onNativeOverlayToggleItem(idx);
+    });
+    document.getElementById('domOverlayHeaderNaviBtn')?.addEventListener('click', () => {
+      window.onNativeOverlayStartNavi(true);
+    });
+    document.getElementById('domOverlayMainNaviBtn')?.addEventListener('click', () => {
+      window.onNativeOverlayStartNavi(true);
     });
     document.getElementById('domOverlayCompleteBtn')?.addEventListener('click', () => {
       window.onNativeOverlayCompleteTarget();
