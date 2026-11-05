@@ -4454,8 +4454,7 @@ function speakSchoolQuantity(school) {
       }
     }
 
-    document.getElementById('pkAlertList').addEventListener(
-      // 이 아래는 기존 코드 유지
+
     document.getElementById('pkAlertList').addEventListener('click', (e) => { const d = e.target.closest('[data-pk-done]'); if (d) pkToggleDone(d.getAttribute('data-pk-done')); });
     ['pkAlertCloseBtn', 'pkAlertOkBtn'].forEach(id => document.getElementById(id).addEventListener('click', () => document.getElementById('pkAlertModal').classList.add('hidden')));
 
