@@ -1,31 +1,63 @@
-# 엔터코딩 원별 납품 GPS 알리미 (PWA 앱 설치 + 백그라운드 도착 알림 + Android APK 빌드)
+# 엔터코딩 원별 납품 GPS 알리미 (네이티브 터치 오버레이 + 네이버 내비 연동 고정 + Android APK 빌드)
 
-웹앱 주소: https://n-kids.github.io/entercoding-delivery/
+## 1. 핵심 업데이트 기능
 
-## 1. 새롭게 추가된 핵심 기능 (웹 / GitHub Pages 바로 적용)
+1. **미디어 재생바 없는 '진짜 터치형 플로팅 오버레이 미니창' (`FloatingOverlayManager.java` / `AndroidOverlay`)**
+   - 안드로이드 APK로 설치하면 배달·콜앱처럼 안드로이드 **`다른 앱 위에 표시` (`SYSTEM_ALERT_WINDOW`)** 권한을 사용하여 네이버 내비게이션 화면 위에 **미디어 재생 컨트롤(재생/일시정지 아이콘)이 전혀 없는 진짜 네이티브 플로팅 미니창**이 뜹니다.
+   - **미니창 안에서 직접 터치 가능**:
+     - `☐ / ☑ 품목 행 터치`: 네이버 내비를 보면서 각 단계별 교재·교사용·추가물품 체크박스를 직접 터치해 체크/해제할 수 있습니다.
+     - `[✓ 완료처리]` 버튼: 현재 목적지 납품(또는 회수)을 미니창에서 즉시 완료 처리합니다.
+     - `[다음 원 ▶]` 버튼: 다음 미완료 원으로 즉시 대상을 전환합니다.
+     - `[접기 ➖ / 펼치기 ➕]` 및 **드래그 이동**: 지도를 가리지 않게 원 이름과 거리만 남기고 작게 접거나 원하는 위치로 자유롭게 끌어다 놓을 수 있습니다.
 
-1. **일반 앱처럼 스마트폰 홈 화면 설치 (`sw.js` + `manifest.webmanifest`)**
-   - 상단 메뉴의 **[📱 폰 앱 설치방법]** → **[📲 홈 화면에 일반 앱으로 바로 설치하기]** 버튼을 누르면 주소창 없는 독립 앱(PWA)으로 설치됩니다.
-   - 터널·지하주차장 등 인터넷이 끊긴 곳에서도 앱 화면과 목록이 즉시 열리도록 오프라인 캐시가 적용되었습니다.
-2. **꺼진 화면·네이버 내비 위에서도 울리는 시스템 상단 도착 알림 (`ServiceWorkerRegistration.showNotification`)**
-   - **[📲 상단 도착알림 켜기]**를 한 번 허용해 두면, 앱이 백그라운드로 내려가 있거나 **네이버 내비게이션** 화면을 보고 있을 때도 원 반경(예: 300m) 진입 시 스마트폰 상단에 **`📍 달빛유치원 도착 (120m) · 3단계:111개 / 총111개`** 알림 배너와 진동이 울립니다.
-   - 상단 알림 배너의 **`[✓ 납품완료 체크]`** 버튼을 누르면 앱을 열지 않고도 즉시 납품 완료로 체크됩니다.
-3. **네이버 내비 위 미니창 모드 (`🪟 내비 위 미니창(PiP)`)**
-   - **[🪟 내비 위 미니창(PiP) 띄우기]**를 누른 뒤 **[🟢 네이버 내비 출발]**을 누르면, 네이버 내비게이션 화면 위에 작은 팝업창으로 **현재 목적지 이름 · 실시간 GPS 거리 · 단계별 납품 수량**이 항상 떠 있습니다.
-   - 미니창(PiP)이 떠 있는 동안에는 스마트폰 OS가 브라우저의 GPS 추적을 절전으로 멈추지 않아 **백그라운드 도착 알림과 한국어 음성(TTS) 안내가 100% 끊김 없이 작동**합니다.
-4. **백그라운드 오디오 세션 & 잠금화면/블루투스 미디어 연동 (`🔋 백그라운드 유지 켜짐`)**
-   - `[📍 실시간 GPS 켜기]` 또는 `[🟢 네이버 내비 출발]`을 누르면 자동으로 무음 오디오 유지 루프와 `MediaSession`이 작동합니다.
-   - 스마트폰 잠금화면과 알림창 미디어 카드에 **가장 가까운 미완료 원 이름, 거리, 납품 수량**이 실시간으로 표시되며, 차량 핸들이나 이어폰의 **다음 곡(⏭) / 이전 곡(⏮)** 버튼으로 다음 미완료 원 수량을 음성으로 안내받을 수 있습니다.
+2. **네이버 내비 길안내 목적지 거리 무관 고정 표시 (`🧭 내비고정`)**
+   - 각 원 카드의 **`[🟢 네이버 내비 출발(수량표시)]`** 또는 **`[📌 PiP고정]`**을 누르면 현재 내비로 안내 중인 원이 **GPS 거리와 상관없이** 오버레이 미니창과 PiP에 끝까지 고정 표시됩니다.
+   - 납품 완료 시 자동으로 고정이 해제되어 다음 코스로 자연스럽게 넘어갑니다.
 
-## 2. GitHub Pages 배포 방법 (기존과 동일)
+---
 
-이 폴더의 파일(`index.html`, `sw.js`, `manifest.webmanifest`, `icon.svg`, `icon-192.png`, `icon-512.png`)을 그대로 `n-kids/entercoding-delivery` 저장소의 `main` 브랜치에 올리면 GitHub Pages가 자동으로 배포합니다.
+## 2. 안드로이드 APK 설치 파일(`.apk`) 만드는 방법 (2가지)
 
-## 3. 화면을 완전히 끄고도 100% 작동하는 안드로이드 설치 파일(`.apk`) 자동 생성 방법
+### 방법 A. PC에 프로그램 설치 없이 GitHub에서 3분 만에 자동 생성하기 (가장 추천)
 
-별도 PC 프로그램 설치 없이 GitHub에서 자동으로 안드로이드 설치 파일(`app-debug.apk`)을 만들 수 있도록 `.github/workflows/build-apk.yml`과 Capacitor 백그라운드 위치 서비스(`@capacitor-community/background-geolocation`)가 포함되어 있습니다.
+이 압축 파일 안에는 GitHub 서버가 대신 안드로이드 앱을 빌드해 주는 자동화 설계도(`.github/workflows/build-apk.yml`)와 네이티브 오버레이 자동 주입 스크립트(`scripts/configure-android.mjs`)가 모두 들어 있습니다.
 
-1. 압축 파일 안의 모든 파일(숨김 폴더인 `.github/workflows/build-apk.yml`, `package.json`, `capacitor.config.json`, `scripts/` 포함)을 GitHub 저장소 `main` 브랜치에 업로드합니다.
-2. GitHub 저장소 상단의 **[Actions]** 탭으로 이동합니다.
-3. 완료된 **Build Android APK (엔터코딩 납품알리미)** 워크플로우를 클릭한 뒤, 하단 **Artifacts**에서 **`entercoding-delivery-android-apk`**를 내려받아 압축을 풀면 **`app-debug.apk`** 파일이 들어 있습니다.
-4. 이 APK 파일을 안드로이드 폰에 설치하고 위치 권한을 **[항상 허용]**으로 설정하면, 화면을 완전히 끄거나 다른 앱을 장시간 사용해도 안드로이드 네이티브 포그라운드 서비스가 GPS를 추적하여 도착 알림을 울려줍니다.
+1. **GitHub 저장소에 파일 업로드**
+   - 압축을 풀고 안에 있는 모든 파일과 폴더(`index.html`, `sw.js`, `manifest.webmanifest`, `package.json`, `capacitor.config.json`, `scripts/`, 그리고 숨김 폴더인 `.github/workflows/build-apk.yml`)를 본인의 GitHub 저장소 `main` 브랜치에 업로드(Push)합니다.
+2. **GitHub Actions 실행 확인**
+   - GitHub 저장소 상단 메뉴의 **[Actions]** 탭을 클릭합니다.
+   - 파일을 올리면 자동으로 **Build Android APK (엔터코딩 납품알리미)** 워크플로우가 실행됩니다. (수동으로 실행하려면 왼쪽에서 워크플로우 선택 후 우측 **[Run workflow]** 클릭)
+3. **완성된 APK 다운로드**
+   - 약 2~3분 뒤 초록색 체크(`✅`)가 표시되면 해당 워크플로우를 클릭합니다.
+   - 화면 맨 아래 **Artifacts** 항목에 있는 **`entercoding-delivery-android-apk`**를 클릭해 다운로드합니다.
+   - 다운로드한 압축 파일을 풀면 **`app-debug.apk`** 설치 파일이 들어 있습니다.
+4. **스마트폰 설치 및 권한 허용**
+   - `app-debug.apk` 파일을 카카오톡(나에게 보내기)이나 구글 드라이브로 안드로이드 폰에 보내 설치합니다.
+   - 앱 실행 후 **`[🪟 내비 위 미니창(오버레이/PiP)]`** 버튼을 누르면 열리는 설정 화면에서 **[다른 앱 위에 표시] 허용**과 **위치 권한 [항상 허용]**을 켜주시면 됩니다.
+
+---
+
+### 방법 B. 내 PC (Windows / Mac)에서 직접 명령어로 APK 빌드하기
+
+1. **사전 준비 프로그램 설치**
+   - **Node.js 20 이상**: https://nodejs.org/
+   - **Java JDK 21 (Temurin 권장)**: https://adoptium.net/
+   - **Android Studio (Android SDK 포함)**: https://developer.android.com/studio
+2. **터미널(명령 프롬프트 / PowerShell)에서 빌드 실행**
+   ```bash
+   # 1) 의존성 패키지 설치
+   npm install
+
+   # 2) 웹 파일 복사 + 안드로이드 프로젝트 생성 + 네이티브 오버레이(FloatingOverlayManager.java) 자동 주입
+   npm run android:init
+
+   # 3) APK 파일 빌드 (Mac / Linux)
+   cd android && ./gradlew assembleDebug
+
+   # 3-참고) Windows PowerShell / CMD인 경우:
+   cd android
+   .\gradlew assembleDebug
+   ```
+3. **생성된 APK 파일 위치 확인**
+   - 빌드가 끝나면 아래 경로에 APK 파일이 생성됩니다:
+     `android/app/build/outputs/apk/debug/app-debug.apk`
