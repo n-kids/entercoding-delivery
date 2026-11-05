@@ -151,6 +151,14 @@
       <p class="hidden sm:block text-xs text-slate-300 leading-relaxed">
         각 원 카드의 <strong class="text-[#03C75A]">[🟢 네이버 내비 출발(수량표시)]</strong>를 누르면 네이버 지도 내비게이션 앱이 바로 열리며, 네이버 내비 상단 도착지 이름에 <strong class="text-amber-300">"달빛유치원 [3단계:111개 / 총111개]"</strong>처럼 수량이 그대로 표시되어 인터넷 창을 보지 않고 네이버 내비만 보고 운전하셔도 도착 시 수량을 바로 확인할 수 있습니다.
       </p>
+      <div id="naviLockStatusBox" class="bg-slate-950/90 border border-[#03C75A]/40 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div id="naviLockStatusText" class="text-slate-300 font-semibold">
+          💡 각 원의 <strong class="text-[#03C75A]">[🟢 네이버 내비 출발]</strong> 또는 <strong class="text-amber-300">[📌 미니창 고정]</strong>을 누르면 <strong>거리와 상관없이</strong> 해당 원이 내비 위 미니창(PiP)에 고정 표시됩니다.
+        </div>
+        <button id="clearNaviLockBtn" type="button" class="hidden shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 transition">
+          🔓 고정 해제 (가까운 순 자동)
+        </button>
+      </div>
       <div id="miniHudPanel" class="hidden bg-slate-950 border-2 border-[#03C75A] rounded-2xl p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -1196,13 +1204,27 @@
       return { done: items.filter(it => isItemChecked(s.id, it.key)).length, total: items.length };
     }
 
-    function confirmCompleteWithUnchecked(id) {
+    function confirmCompleteWithUnchecked(id, btnEl) {
       const s = SCHOOLS.find(x => x.id === Number(id));
       if (!s) return true;
       const pr = itemProgress(s);
       const left = pr.total - pr.done;
       if (left <= 0) return true;
-      return confirm(`아직 확인하지 않은 품목이 ${left}개 있습니다. 그래도 납품완료로 처리할까요?`);
+      if (btnEl && btnEl.getAttribute('data-confirm-unchecked') !== '1') {
+        btnEl.setAttribute('data-confirm-unchecked', '1');
+        const origText = btnEl.textContent;
+        btnEl.textContent = `⚠️ 미확인 ${left}건 · 한 번 더 누르면 완료`;
+        showToast(`아직 확인하지 않은 품목이 ${left}개 있습니다. 한 번 더 누르면 납품완료로 처리됩니다.`);
+        setTimeout(() => {
+          if (btnEl && btnEl.isConnected && btnEl.getAttribute('data-confirm-unchecked') === '1') {
+            btnEl.removeAttribute('data-confirm-unchecked');
+            btnEl.textContent = origText;
+          }
+        }, 3500);
+        return false;
+      }
+      if (btnEl) btnEl.removeAttribute('data-confirm-unchecked');
+      return true;
     }
 
     function totalLabel(s) {
@@ -1305,7 +1327,9 @@
       document.getElementById('hudSchoolName').textContent = `${school.order}. ${school.name} (${school.subRegion})`;
       document.getElementById('hudSchoolAddr').textContent = school.address;
       document.getElementById('hudQtyText').textContent = qtyLabel;
-      document.getElementById('hudNaverNaviLink').href = buildNaverNaviSchemeUrl(school);
+      const naviLink = document.getElementById('hudNaverNaviLink');
+      naviLink.href = buildNaverNaviSchemeUrl(school);
+      naviLink.setAttribute('data-school-id', String(school.id));
       { const el = document.getElementById('hudNaverWebLink'); el.href = buildNaverWebUrl(school); el.setAttribute('data-nmap', buildNaverMapAppUrl(school)); }
     }
 
@@ -1771,6 +1795,7 @@
                   <span class="text-xs font-bold px-2 py-0.5 rounded-md ${s.regionGroup === '김포' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' : s.regionGroup === '고양' ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30' : 'bg-teal-500/15 text-teal-300 border border-teal-500/30'}">${escapeHtml(s.regionGroup)} · ${escapeHtml(s.subRegion)}</span>
                   <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-200 border border-amber-500/30">📘 ${escapeHtml(productLabel(s))}</span>
                   ${(() => { const n = PICKUPS ? pendingPickupsForSchool(s).length : 0; return n ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-rose-500 text-white">↩️ 회수 ${n}</span>` : ''; })()}
+                  ${typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === s.id && !isDone ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-[#03C75A] text-slate-950 shadow">🧭 내비·PiP 고정중</span>` : ''}
                   ${isNear && !isDone ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500 text-slate-950">📍 반경 내 도착</span>` : ''}
                   ${isDone ? `<span class="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✓ 납품완료</span>` : ''}
                   ${isDone ? (() => { const pr = itemProgress(s); const left = pr.total - pr.done; return left > 0 ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">⚠️ 품목 미확인 ${left}건</span>` : ''; })() : ''}
@@ -1801,11 +1826,14 @@
             </div>
 
             <div class="pt-2.5 border-t border-slate-800/80 space-y-2">
-              <div class="grid grid-cols-[1fr_auto] gap-2">
-                <a href="${buildNaverNaviSchemeUrl(s)}" target="_top" data-action="naver-speech" data-id="${s.id}" class="flex items-center justify-center gap-1 px-3 py-3 sm:py-2 rounded-xl text-sm sm:text-xs font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 transition shadow text-center">
+              <div class="grid grid-cols-[1fr_auto_auto] gap-1.5">
+                <a href="${buildNaverNaviSchemeUrl(s)}" target="_top" data-action="naver-speech" data-id="${s.id}" class="flex items-center justify-center gap-1 px-2.5 py-3 sm:py-2 rounded-xl text-sm sm:text-xs font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 transition shadow text-center">
                   🟢 네이버 내비 출발(수량표시)
                 </a>
-                <button type="button" data-action="toggle-done" data-id="${s.id}" class="px-3.5 py-3 sm:py-2 rounded-xl text-sm sm:text-xs font-black ${isDone ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'} transition">
+                <button type="button" data-action="lock-pip" data-id="${s.id}" class="px-2.5 py-3 sm:py-2 rounded-xl text-xs font-extrabold ${typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === s.id && !isDone ? 'bg-amber-500 text-slate-950 border border-amber-400 shadow' : 'bg-slate-800 text-amber-300 hover:bg-slate-700 border border-amber-500/40'} transition" title="거리와 상관없이 이 원을 내비 위 미니창(PiP)에 고정 표시합니다">
+                  ${typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === s.id && !isDone ? '📌 PiP고정중' : '📌 PiP고정'}
+                </button>
+                <button type="button" data-action="toggle-done" data-id="${s.id}" class="px-3 py-3 sm:py-2 rounded-xl text-sm sm:text-xs font-black ${isDone ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'} transition">
                   ${isDone ? '완료 해제' : '✓ 납품완료'}
                 </button>
               </div>
@@ -2149,10 +2177,13 @@
     document.getElementById('closeArrivalModalBtn').addEventListener('click', closeArrivalModal);
     document.getElementById('modalDismissBtn').addEventListener('click', closeArrivalModal);
 
-    document.getElementById('modalCompleteBtn').addEventListener('click', () => {
+    document.getElementById('modalCompleteBtn').addEventListener('click', (e) => {
       if (!activeModalSchoolId) return;
-      if (!completedMap[activeModalSchoolId] && !confirmCompleteWithUnchecked(activeModalSchoolId)) return;
+      if (!completedMap[activeModalSchoolId] && !confirmCompleteWithUnchecked(activeModalSchoolId, e.currentTarget)) return;
       completedMap[activeModalSchoolId] = !completedMap[activeModalSchoolId];
+      if (completedMap[activeModalSchoolId] && typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === activeModalSchoolId) {
+        setNaviLockedSchool(null, { skipRender: true });
+      }
       saveState();
       renderList();
       const s = SCHOOLS.find(item => item.id === activeModalSchoolId);
@@ -2197,19 +2228,34 @@
       if (!school) return;
 
       if (action === 'naver-speech') {
+        if (typeof setNaviLockedSchool === 'function') setNaviLockedSchool(school.id);
         updateHudPanel(school);
         speakSchoolQuantity(school);
         if (typeof ensureBgKeepAliveOnNavi === 'function') {
           try { ensureBgKeepAliveOnNavi(school); } catch (err) {}
         }
-        showToast(`${school.name} [납품수량 포함] 목적지로 네이버 내비를 실행합니다. (백그라운드 GPS·도착알림 유지 작동)`);
+        if (typeof updateBgMediaAndPip === 'function') updateBgMediaAndPip();
+        showToast(`🧭 ${school.name} [내비 연동 고정] · 거리와 상관없이 미니창(PiP)에 이 원의 납품수량이 고정 표시됩니다.`);
+        return;
+      }
+      if (action === 'lock-pip') {
+        if (typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === school.id) {
+          clearNaviLock(false);
+        } else {
+          setNaviLockedSchool(school.id);
+          speakSchoolQuantity(school);
+          showToast(`📌 [${school.name}] 미니창(PiP) 고정 완료! 거리와 상관없이 PiP에 이 원이 최우선 표시됩니다.`);
+        }
         return;
       }
       if (action === 'popup') {
         openArrivalModal(id, false);
       } else if (action === 'toggle-done') {
-        if (!completedMap[id] && !confirmCompleteWithUnchecked(id)) return;
+        if (!completedMap[id] && !confirmCompleteWithUnchecked(id, btn)) return;
         completedMap[id] = !completedMap[id];
+        if (completedMap[id] && typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === id) {
+          setNaviLockedSchool(null, { skipRender: true });
+        }
         saveState();
         renderList();
         showToast(completedMap[id] ? `${school.name} 납품 완료!` : `${school.name} 완료 해제`);
@@ -2248,9 +2294,10 @@
       }
       currentCursorIndex = i;
       const target = SCHOOLS[i];
+      if (typeof setNaviLockedSchool === 'function') setNaviLockedSchool(target.id);
       updateHudPanel(target);
       speakSchoolQuantity(target);
-      showToast(`다음 원: ${target.name} (${buildQuantityLabel(target)})`);
+      showToast(`다음 원(PiP 고정): ${target.name} (${buildQuantityLabel(target)})`);
     });
 
     // ===================== features (import / geocoding / items) =====================
@@ -4041,7 +4088,7 @@
             <p class="text-[11px] mt-1 ${ok ? 'text-emerald-300' : 'text-rose-300'}">${s ? `📦 납품 목록의 원${delivered ? ' · 납품완료' : ' · 납품 시 함께 회수'}` : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${(s && s.address) || p.address ? ' · ' + escapeHtml((s && s.address) || p.address) : ''}</p>
           </div>
           <div class="grid grid-cols-4 gap-1.5 text-[11px] font-bold">
-            ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" class="col-span-2 py-2.5 rounded-xl bg-[#03C75A] text-slate-950 text-center font-black text-xs">🟢 네이버 내비</a>`
+            ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pk-navi="${p.id}" class="col-span-2 py-2.5 rounded-xl bg-[#03C75A] text-slate-950 text-center font-black text-xs">🟢 네이버 내비(PiP고정)</a>`
                  : `<button type="button" data-pk-geo="${p.id}" class="col-span-2 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs">📍 위치 찾기</button>`}
             <a ${naverMapAttrs(pkPseudo(p))} class="py-2.5 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-center">🗺️ 지도</a>
             <button type="button" data-pk-edit="${p.id}" class="py-2.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-700">✏️ 수정</button>
@@ -4080,6 +4127,17 @@
       showToast(`완료된 ${n}건을 정리했습니다.`);
     });
     document.getElementById('pkList').addEventListener('click', (e) => {
+      const nv = e.target.closest('[data-pk-navi]');
+      if (nv) {
+        const pid = nv.getAttribute('data-pk-navi');
+        const p = PICKUPS.find(x => x.id === pid);
+        if (p && typeof setNaviLockedPickup === 'function') {
+          setNaviLockedPickup(p.id);
+          if (typeof ensureBgKeepAliveOnNavi === 'function') { try { ensureBgKeepAliveOnNavi(pkPseudo(p)); } catch (err) {} }
+          showToast(`🧭 [${p.school}] 내비 연동 고정 · 거리와 상관없이 미니창(PiP)에 이 회수·반품 장소가 고정 표시됩니다.`);
+        }
+        return;
+      }
       const d = e.target.closest('[data-pk-done]'); if (d) { pkToggleDone(d.getAttribute('data-pk-done')); return; }
       const ed = e.target.closest('[data-pk-edit]'); if (ed) { openPickupEdit(ed.getAttribute('data-pk-edit')); return; }
       const g = e.target.closest('[data-pk-geo]'); if (g) { pkOpenGeo(g.getAttribute('data-pk-geo')); return; }
@@ -4745,8 +4803,247 @@
       }
     }, { passive: true });
 
-    // 2) 잠금화면 / 상단 미디어 컨트롤(MediaSession)에 실시간 남은 거리 & 납품수량 표시
+    // 2) 잠금화면 / 상단 미디어 컨트롤(MediaSession) 및 PiP 타겟 선정:
+    //    - 사용자가 네이버 내비 출발 버튼을 누른 원(activeNaviSchoolId) 또는 회수처(activeNaviPickupId)가 있으면 거리 상관없이 최우선 고정 표시
+    //    - 납품 완료된 원은 제외 (단, 해당 원에 미완료 회수·반품이 남아 있으면 회수 모드로 표시)
+    //    - 미완료 납품 원과 미완료 회수·반품 장소 중 가까운 곳을 우선 표시
+    //    - 납품할 목록이 없으면 미완료 회수·반품 목록을 자동으로 표시
+    const NAVI_LOCK_KEY = 'entercoding_active_navi_v1';
+    let activeNaviSchoolId = null;
+    let activeNaviPickupId = null;
+    try {
+      const savedLock = JSON.parse(localStorage.getItem(NAVI_LOCK_KEY) || 'null');
+      if (savedLock && typeof savedLock === 'object') {
+        activeNaviSchoolId = savedLock.schoolId != null ? Number(savedLock.schoolId) : null;
+        activeNaviPickupId = savedLock.pickupId || null;
+      }
+    } catch (e) {}
+
+    function saveNaviLockState() {
+      try {
+        localStorage.setItem(NAVI_LOCK_KEY, JSON.stringify({
+          schoolId: activeNaviSchoolId,
+          pickupId: activeNaviPickupId
+        }));
+      } catch (e) {}
+    }
+
+    function updateNaviLockBanner() {
+      const textEl = document.getElementById('naviLockStatusText');
+      const clearBtn = document.getElementById('clearNaviLockBtn');
+      if (!textEl || !clearBtn) return;
+
+      if (activeNaviSchoolId !== null) {
+        const s = SCHOOLS.find(x => x.id === activeNaviSchoolId && !completedMap[x.id]);
+        if (s) {
+          const d = distanceToSchool(s);
+          const distTxt = d !== null ? ` · 현재 거리 ${formatDistance(d)}` : '';
+          textEl.innerHTML = `🧭 <strong class="text-[#03C75A]">내비 길안내 연동 고정 중 (거리 무관 PiP 표시):</strong> <span class="text-white font-extrabold">${escapeHtml(s.name)}</span> <span class="text-amber-300 font-bold">[${escapeHtml(buildQuantityLabel(s))}]</span><span class="text-sky-300">${distTxt}</span>`;
+          clearBtn.classList.remove('hidden');
+          return;
+        }
+      }
+      if (activeNaviPickupId !== null && typeof PICKUPS !== 'undefined') {
+        const p = PICKUPS.find(x => x.id === activeNaviPickupId && !x.done);
+        if (p) {
+          const d = typeof pkDistance === 'function' ? pkDistance(p) : null;
+          const distTxt = d !== null ? ` · 현재 거리 ${formatDistance(d)}` : '';
+          textEl.innerHTML = `🧭 <strong class="text-rose-300">내비 회수·반품 고정 중 (거리 무관 PiP 표시):</strong> <span class="text-white font-extrabold">${escapeHtml(p.school)}</span> <span class="text-amber-200 font-bold">[${escapeHtml(p.type)}: ${escapeHtml(p.items || p.title)}]</span><span class="text-sky-300">${distTxt}</span>`;
+          clearBtn.classList.remove('hidden');
+          return;
+        }
+      }
+      textEl.innerHTML = `💡 각 원의 <strong class="text-[#03C75A]">[🟢 네이버 내비 출발]</strong> 또는 <strong class="text-amber-300">[📌 PiP고정]</strong>을 누르면 <strong>거리와 상관없이</strong> 해당 원이 내비 위 미니창(PiP)에 고정 표시됩니다.`;
+      clearBtn.classList.add('hidden');
+    }
+
+    function setNaviLockedSchool(schoolId, opts = {}) {
+      activeNaviSchoolId = schoolId != null ? Number(schoolId) : null;
+      activeNaviPickupId = null;
+      saveNaviLockState();
+      if (activeNaviSchoolId !== null) {
+        const idx = SCHOOLS.findIndex(s => s.id === activeNaviSchoolId);
+        if (idx !== -1) {
+          currentCursorIndex = idx;
+          updateHudPanel(SCHOOLS[idx]);
+        }
+      }
+      updateNaviLockBanner();
+      updateBgMediaAndPip();
+      if (!opts.skipRender) renderList();
+    }
+
+    function setNaviLockedPickup(pickupId, opts = {}) {
+      activeNaviPickupId = pickupId || null;
+      activeNaviSchoolId = null;
+      saveNaviLockState();
+      updateNaviLockBanner();
+      updateBgMediaAndPip();
+      if (!opts.skipRender && typeof renderPickups === 'function' && currentView === 'pickup') renderPickups();
+    }
+
+    function clearNaviLock(silent) {
+      activeNaviSchoolId = null;
+      activeNaviPickupId = null;
+      saveNaviLockState();
+      updateNaviLockBanner();
+      updateBgMediaAndPip();
+      renderList();
+      if (typeof renderPickups === 'function' && currentView === 'pickup') renderPickups();
+      if (!silent) {
+        showToast('🔓 내비·미니창(PiP) 고정을 해제했습니다. 이제 현재 위치에서 가까운 미완료 원이 자동 표시됩니다.');
+      }
+    }
+
+    function getPendingPickupGroupsWithDist() {
+      if (typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return [];
+      const map = new Map();
+      PICKUPS.forEach(p => {
+        if (!p || p.done) return;
+        const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(p) : null;
+        // 아직 납품 완료되지 않은 원에 연결된 회수건은 납품 완료 전엔 납품 화면에 함께 표시되고, 납품 완료 후엔 단독 회수 그룹으로 표시
+        const key = s ? ('school_' + s.id) : ('name_' + normName(p.school || p.title));
+        if (!map.has(key)) {
+          const dist = typeof pkDistance === 'function' ? pkDistance(p) : null;
+          map.set(key, {
+            key,
+            name: s ? s.name : (typeof pkGuessFullName === 'function' ? pkGuessFullName(p.school) : (p.school || '회수처')),
+            subRegion: s ? (s.subRegion || '') : (regionFromAddress(p.address || '').sub || ''),
+            regionGroup: s ? (s.regionGroup || '') : (regionFromAddress(p.address || '').group || '회수'),
+            address: (s && s.address) || p.address || '',
+            schoolId: s ? s.id : null,
+            dist,
+            items: []
+          });
+        }
+        map.get(key).items.push(p);
+      });
+      const groups = [...map.values()];
+      groups.sort((a, b) => (a.dist ?? 9999999) - (b.dist ?? 9999999));
+      return groups;
+    }
+
+    function getBestPipTarget() {
+      // 1. 사용자가 네이버 내비 출발 또는 PiP 고정을 누른 원(activeNaviSchoolId)이 있고 아직 미완료이면 거리 상관없이 최우선 고정
+      if (activeNaviSchoolId !== null) {
+        const locked = SCHOOLS.find(s => s.id === activeNaviSchoolId && !completedMap[s.id]);
+        if (locked) {
+          return {
+            kind: 'delivery',
+            school: { ...locked, dist: distanceToSchool(locked) },
+            dist: distanceToSchool(locked),
+            pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(locked) : [],
+            isNaviLocked: true
+          };
+        } else {
+          // 납품은 완료되었지만 해당 원에 미완료 회수·반품이 남아있는 경우
+          const sDone = SCHOOLS.find(s => s.id === activeNaviSchoolId);
+          const remPickups = sDone && typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(sDone) : [];
+          if (sDone && remPickups.length > 0) {
+            const d = distanceToSchool(sDone);
+            return {
+              kind: 'pickup',
+              pickupGroup: {
+                key: 'school_' + sDone.id,
+                name: sDone.name,
+                subRegion: sDone.subRegion || '',
+                regionGroup: sDone.regionGroup || '',
+                address: sDone.address || '',
+                schoolId: sDone.id,
+                dist: d,
+                items: remPickups
+              },
+              dist: d,
+              isNaviLocked: true
+            };
+          }
+          activeNaviSchoolId = null;
+          saveNaviLockState();
+          setTimeout(updateNaviLockBanner, 0);
+        }
+      }
+
+      // 1b. 사용자가 회수·반품 탭에서 네이버 내비 출발을 누른 회수처(activeNaviPickupId)가 있으면 거리 상관없이 최우선 고정
+      if (activeNaviPickupId !== null && typeof PICKUPS !== 'undefined') {
+        const lockedP = PICKUPS.find(p => p.id === activeNaviPickupId && !p.done);
+        if (lockedP) {
+          const groups = getPendingPickupGroupsWithDist();
+          const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(lockedP) : null;
+          const key = s ? ('school_' + s.id) : ('name_' + normName(lockedP.school || lockedP.title));
+          const grp = groups.find(g => g.key === key) || {
+            key,
+            name: s ? s.name : (typeof pkGuessFullName === 'function' ? pkGuessFullName(lockedP.school) : lockedP.school),
+            subRegion: s ? s.subRegion : '',
+            regionGroup: s ? s.regionGroup : '회수',
+            address: (s && s.address) || lockedP.address || '',
+            schoolId: s ? s.id : null,
+            dist: typeof pkDistance === 'function' ? pkDistance(lockedP) : null,
+            items: [lockedP]
+          };
+          return {
+            kind: 'pickup',
+            pickupGroup: grp,
+            dist: grp.dist,
+            isNaviLocked: true
+          };
+        } else {
+          activeNaviPickupId = null;
+          saveNaviLockState();
+          setTimeout(updateNaviLockBanner, 0);
+        }
+      }
+
+      const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
+      const pendingDeliveries = enriched.filter(s => !completedMap[s.id]);
+      const pendingWithDist = pendingDeliveries.filter(s => s.dist !== null).sort((a, b) => a.dist - b.dist);
+      const nearestDelivery = pendingWithDist[0] || pendingDeliveries.find(s => s.id === (SCHOOLS[currentCursorIndex] && SCHOOLS[currentCursorIndex].id)) || pendingDeliveries[0] || null;
+
+      // 미완료 회수·반품 그룹 (납품 완료된 원에 남아있는 회수건 + 단독 회수처)
+      const pickupGroups = getPendingPickupGroupsWithDist().filter(g => !g.schoolId || completedMap[g.schoolId]);
+      const nearestPickup = pickupGroups[0] || null;
+
+      // 2. 사용자가 '회수·반품' 탭을 보고 있고 남은 회수 건이 있을 때 -> 가까운 회수·반품 우선
+      if (currentView === 'pickup' && nearestPickup) {
+        return { kind: 'pickup', pickupGroup: nearestPickup, dist: nearestPickup.dist, isNaviLocked: false };
+      }
+
+      // 3. 미완료 납품 원과 미완료 회수·반품이 둘 다 있을 때 -> GPS 거리가 더 가까운 쪽을 우선 표시
+      if (nearestDelivery && nearestPickup) {
+        if (nearestPickup.dist !== null && (nearestDelivery.dist === null || nearestPickup.dist < nearestDelivery.dist)) {
+          return { kind: 'pickup', pickupGroup: nearestPickup, dist: nearestPickup.dist, isNaviLocked: false };
+        }
+        return {
+          kind: 'delivery',
+          school: nearestDelivery,
+          dist: nearestDelivery.dist,
+          pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(nearestDelivery) : [],
+          isNaviLocked: false
+        };
+      }
+
+      // 4. 미완료 납품 원만 남아 있을 때 -> 가장 가까운 미완료 납품 원 표시
+      if (nearestDelivery) {
+        return {
+          kind: 'delivery',
+          school: nearestDelivery,
+          dist: nearestDelivery.dist,
+          pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(nearestDelivery) : [],
+          isNaviLocked: false
+        };
+      }
+
+      // 5. 납품 목록이 모두 완료되었을 때 -> 남은 회수·반품 목록을 자동으로 표시
+      const allPickupGroups = getPendingPickupGroupsWithDist();
+      if (allPickupGroups[0]) {
+        return { kind: 'pickup', pickupGroup: allPickupGroups[0], dist: allPickupGroups[0].dist, isNaviLocked: false };
+      }
+
+      return null;
+    }
+
     function getActiveOrNearestSchool() {
+      const best = getBestPipTarget();
+      if (best && best.kind === 'delivery' && best.school) return best.school;
       const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
       const pendingWithDist = enriched.filter(s => !completedMap[s.id] && s.dist !== null).sort((a, b) => a.dist - b.dist);
       if (pendingWithDist.length > 0) return pendingWithDist[0];
@@ -4756,42 +5053,72 @@
 
     function updateMediaSessionMetadata() {
       if (!('mediaSession' in navigator)) return;
-      const target = getActiveOrNearestSchool();
-      if (!target) return;
-      const distStr = target.dist !== null && target.dist !== undefined ? ` (${formatDistance(target.dist)})` : '';
-      const qtyStr = buildQuantityLabel(target);
+      const best = getBestPipTarget();
+      if (!best) return;
       try {
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: `📍 ${target.name}${distStr}`,
-          artist: `📦 ${qtyStr}`,
-          album: `엔터코딩 납품알리미 · ${target.regionGroup} ${target.subRegion}`,
-          artwork: [
-            { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
-          ]
-        });
+        if (best.kind === 'pickup' && best.pickupGroup) {
+          const grp = best.pickupGroup;
+          const distStr = grp.dist !== null && grp.dist !== undefined ? ` (${formatDistance(grp.dist)})` : '';
+          const itemStr = grp.items.map(p => `[${p.type}] ${p.items || p.title}`).join(' · ');
+          const lockPrefix = best.isNaviLocked ? '🧭 [내비고정] ' : '↩️ [회수·반품] ';
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: `${lockPrefix}${grp.name}${distStr}`,
+            artist: itemStr.slice(0, 90),
+            album: `엔터코딩 납품알리미 · ${grp.regionGroup || ''} ${grp.subRegion || ''}`,
+            artwork: [
+              { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+              { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+            ]
+          });
+        } else if (best.school) {
+          const target = best.school;
+          const distStr = best.dist !== null && best.dist !== undefined ? ` (${formatDistance(best.dist)})` : '';
+          const qtyStr = buildQuantityLabel(target);
+          const lockPrefix = best.isNaviLocked ? '🧭 [내비고정] ' : '📍 ';
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: `${lockPrefix}${target.name}${distStr}`,
+            artist: `📦 ${qtyStr}`,
+            album: `엔터코딩 납품알리미 · ${target.regionGroup} ${target.subRegion}`,
+            artwork: [
+              { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+              { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+            ]
+          });
+        }
+        const speakTarget = best.school || getActiveOrNearestSchool();
         navigator.mediaSession.setActionHandler('play', () => {
           startBgKeepAlive(true);
-          speakSchoolQuantity(target);
+          if (speakTarget) speakSchoolQuantity(speakTarget);
         });
         navigator.mediaSession.setActionHandler('pause', () => {
-          speakSchoolQuantity(target);
+          if (speakTarget) speakSchoolQuantity(speakTarget);
         });
         navigator.mediaSession.setActionHandler('nexttrack', () => {
           const i = findNextPendingIndex(currentCursorIndex, 1);
           if (i !== -1) {
             currentCursorIndex = i;
+            if (activeNaviSchoolId !== null) {
+              activeNaviSchoolId = SCHOOLS[i].id;
+              saveNaviLockState();
+              updateNaviLockBanner();
+            }
             updateHudPanel(SCHOOLS[i]);
             speakSchoolQuantity(SCHOOLS[i]);
-            updateMediaSessionMetadata();
+            updateBgMediaAndPip();
           }
         });
         navigator.mediaSession.setActionHandler('previoustrack', () => {
-          if (SCHOOLS.length > 0) {
-            currentCursorIndex = (currentCursorIndex - 1 + SCHOOLS.length) % SCHOOLS.length;
-            updateHudPanel(SCHOOLS[currentCursorIndex]);
-            speakSchoolQuantity(SCHOOLS[currentCursorIndex]);
-            updateMediaSessionMetadata();
+          const i = findNextPendingIndex(currentCursorIndex, -1);
+          if (i !== -1) {
+            currentCursorIndex = i;
+            if (activeNaviSchoolId !== null) {
+              activeNaviSchoolId = SCHOOLS[i].id;
+              saveNaviLockState();
+              updateNaviLockBanner();
+            }
+            updateHudPanel(SCHOOLS[i]);
+            speakSchoolQuantity(SCHOOLS[i]);
+            updateBgMediaAndPip();
           }
         });
       } catch (e) {}
@@ -4816,6 +5143,7 @@
         const s = SCHOOLS.find(x => x.id === id);
         if (s) {
           completedMap[id] = true;
+          if (activeNaviSchoolId === id) setNaviLockedSchool(null, { skipRender: true });
           saveState();
           renderList();
           showToast(`✓ 알림창에서 [${s.name}] 납품 완료 처리되었습니다.`);
@@ -5004,65 +5332,105 @@ ${school.address || ''}`;
       const ctx = pipCanvasEl.getContext('2d');
       const W = pipCanvasEl.width, H = pipCanvasEl.height;
       const radiusMeters = parseInt(document.getElementById('radiusSelect').value, 10) || 300;
-      const target = getActiveOrNearestSchool();
-      const dist = target ? distanceToSchool(target) : null;
-      const isArrived = dist !== null && dist <= radiusMeters;
+      const best = getBestPipTarget();
+      const dist = best ? best.dist : null;
+      const isArrived = dist !== null && dist !== undefined && dist <= radiusMeters;
+      const isLocked = !!(best && best.isNaviLocked);
+      const isPickupMode = !!(best && best.kind === 'pickup' && best.pickupGroup);
 
       // 배경
-      ctx.fillStyle = isArrived ? '#451a03' : '#0f172a';
+      ctx.fillStyle = isArrived ? '#451a03' : (isPickupMode ? '#3b071e' : '#0f172a');
       ctx.fillRect(0, 0, W, H);
 
       // 테두리
-      ctx.strokeStyle = isArrived ? '#f59e0b' : '#10b981';
+      ctx.strokeStyle = isArrived ? '#f59e0b' : (isLocked ? '#03C75A' : (isPickupMode ? '#f43f5e' : '#10b981'));
       ctx.lineWidth = 6;
       ctx.strokeRect(3, 3, W - 6, H - 6);
 
       // 상단 상태 바
-      ctx.fillStyle = isArrived ? '#f59e0b' : '#064e3b';
+      ctx.fillStyle = isArrived ? '#f59e0b' : (isLocked ? '#03C75A' : (isPickupMode ? '#881337' : '#064e3b'));
       ctx.fillRect(6, 6, W - 12, 42);
-      ctx.fillStyle = isArrived ? '#0f172a' : '#6ee7b7';
-      ctx.font = 'bold 20px "Noto Sans KR", sans-serif';
+      ctx.fillStyle = (isArrived || isLocked) ? '#0f172a' : (isPickupMode ? '#fecdd3' : '#6ee7b7');
+      ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
       const statusStr = isArrived
-        ? `🚨 반경 ${radiusMeters}m 내 도착! 납품수량 확인`
-        : (gpsActive ? `🟢 실시간 GPS 추적 중 (반경 ${radiusMeters}m 알림)` : '📍 현재 목적지 납품수량 안내');
-      ctx.fillText(statusStr, 18, 34);
+        ? `🚨 반경 ${radiusMeters}m 내 도착! 수량 확인`
+        : isLocked
+          ? `🧭 네이버 내비 길안내 고정 중 (거리 무관 표시)`
+          : isPickupMode
+            ? `↩️ 회수·반품 목적지 안내 (가까운 순)`
+            : (gpsActive ? `🟢 실시간 GPS 추적 중 (가까운 순 자동)` : '📍 현재 목적지 납품수량 안내');
+      ctx.fillText(statusStr, 16, 34);
 
-      if (!target) {
+      if (!best) {
         ctx.fillStyle = '#f8fafc';
         ctx.font = 'bold 28px "Noto Sans KR", sans-serif';
-        ctx.fillText('모든 원 납품 완료!', 20, 130);
+        ctx.fillText('모든 납품·회수 완료!', 20, 130);
         return;
       }
 
+      if (isPickupMode) {
+        const grp = best.pickupGroup;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 30px "Noto Sans KR", sans-serif';
+        const nameStr = `↩️ ${grp.name}`;
+        ctx.fillText(nameStr.slice(0, 15), 18, 90);
+
+        ctx.fillStyle = isArrived ? '#fde68a' : '#fda4af';
+        ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
+        const distLabel = dist !== null ? `거리 ${formatDistance(dist)}` : (grp.subRegion || '회수·반품');
+        ctx.fillText(distLabel, W - ctx.measureText(distLabel).width - 18, 88);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(16, 108, W - 32, 76);
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(16, 108, W - 32, 76);
+
+        const itemLine = grp.items.map(p => `[${p.type}] ${p.items || p.title}`).join(' · ') || '회수 품목 확인';
+        ctx.fillStyle = '#fecdd3';
+        ctx.font = '900 24px "Noto Sans KR", sans-serif';
+        ctx.fillText(itemLine.slice(0, 24), 24, 154);
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 18px "Noto Sans KR", sans-serif';
+        const footerStr = `회수·반품 ${grp.items.length}건 · ${grp.address || (grp.regionGroup + ' ' + grp.subRegion)}`;
+        ctx.fillText(footerStr.slice(0, 34), 18, 216);
+        return;
+      }
+
+      const target = best.school;
+      const pickups = best.pickups || [];
+
       // 원 이름 + 거리
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 32px "Noto Sans KR", sans-serif';
+      ctx.font = '900 31px "Noto Sans KR", sans-serif';
       const nameStr = `${target.order}. ${target.name}`;
-      ctx.fillText(nameStr.slice(0, 15), 18, 92);
+      ctx.fillText(nameStr.slice(0, 15), 18, 90);
 
       ctx.fillStyle = isArrived ? '#fde68a' : '#38bdf8';
-      ctx.font = 'bold 24px "Noto Sans KR", sans-serif';
+      ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
       const distLabel = dist !== null ? `거리 ${formatDistance(dist)}` : target.subRegion;
-      ctx.fillText(distLabel, W - ctx.measureText(distLabel).width - 18, 90);
+      ctx.fillText(distLabel, W - ctx.measureText(distLabel).width - 18, 88);
 
       // 수량 배지 박스
       ctx.fillStyle = '#1e293b';
-      ctx.fillRect(16, 110, W - 32, 74);
+      ctx.fillRect(16, 108, W - 32, 76);
       ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 2;
-      ctx.strokeRect(16, 110, W - 32, 74);
+      ctx.strokeRect(16, 108, W - 32, 76);
 
       const parts = stepLabelParts(target);
       const qtyLine = parts.length ? parts.join('  ·  ') : '수량 없음';
       ctx.fillStyle = '#fbbf24';
-      ctx.font = '900 28px "Noto Sans KR", sans-serif';
-      ctx.fillText(qtyLine.slice(0, 22), 28, 156);
+      ctx.font = '900 27px "Noto Sans KR", sans-serif';
+      ctx.fillText(qtyLine.slice(0, 23), 24, 154);
 
-      // 하단 합계 및 동네
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
-      const footerStr = `${productLabel(target)} · ${totalLabel(target)} · [${target.regionGroup} ${target.subRegion}]`;
-      ctx.fillText(footerStr.slice(0, 32), 18, 216);
+      // 하단 합계 및 회수 여부
+      ctx.fillStyle = pickups.length ? '#fda4af' : '#cbd5e1';
+      ctx.font = 'bold 18px "Noto Sans KR", sans-serif';
+      const pkSuffix = pickups.length ? ` · ↩️회수 ${pickups.length}건` : ` · [${target.regionGroup} ${target.subRegion}]`;
+      const footerStr = `${productLabel(target)} · ${totalLabel(target)}${pkSuffix}`;
+      ctx.fillText(footerStr.slice(0, 34), 18, 216);
     }
 
     function updatePipButtons() {
@@ -5229,11 +5597,36 @@ ${school.address || ''}`;
       }
     });
 
+    document.getElementById('clearNaviLockBtn')?.addEventListener('click', () => {
+      clearNaviLock(false);
+    });
+    document.getElementById('hudNaverNaviLink')?.addEventListener('click', (e) => {
+      const sid = parseInt(e.currentTarget.getAttribute('data-school-id'), 10);
+      const s = SCHOOLS.find(x => x.id === sid) || SCHOOLS[currentCursorIndex] || SCHOOLS[0];
+      if (s) {
+        setNaviLockedSchool(s.id);
+        speakSchoolQuantity(s);
+        ensureBgKeepAliveOnNavi(s);
+        showToast(`🧭 [${s.name}] 내비 연동 고정 · 거리와 상관없이 미니창(PiP)에 이 원이 고정 표시됩니다.`);
+      }
+    });
+    document.getElementById('modalNaverAppLink')?.addEventListener('click', () => {
+      if (activeModalSchoolId) {
+        const s = SCHOOLS.find(x => x.id === activeModalSchoolId);
+        if (s) {
+          setNaviLockedSchool(s.id);
+          ensureBgKeepAliveOnNavi(s);
+          showToast(`🧭 [${s.name}] 내비 연동 고정 · 거리와 상관없이 미니창(PiP)에 이 원이 고정 표시됩니다.`);
+        }
+      }
+    });
+
     window.addEventListener('DOMContentLoaded', () => {
       registerServiceWorker();
       updateSysNotifButtons();
       updateBgKeepAliveButtons();
       updatePwaInstallUi();
+      updateNaviLockBanner();
       initCapacitorNativeBridge();
     });
 
