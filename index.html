@@ -5656,7 +5656,7 @@ ${school.address || ''}`;
       if (best.kind === 'delivery' && best.school) {
         const s = best.school;
         completedMap[s.id] = true;
-        saveCompleted();
+        saveState();
         if (activeNaviSchoolId === s.id) {
           activeNaviSchoolId = null;
           saveNaviLockState();
