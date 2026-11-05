@@ -693,3 +693,307 @@ public class MainActivity extends BridgeActivity {
   fs.writeFileSync(mainActivityPath, mainJavaCode, 'utf8');
   console.log('Injected FloatingOverlayManager.java (with Naver Navigation button) and MainActivity.java.');
 }
+// === APK 지도 열기 + 한국어 음성 브리지 패치 ===
+{
+  const patchMainPath = findMainActivity(javaRoot);
+
+  if (!patchMainPath || !fs.existsSync(patchMainPath)) {
+    throw new Error(
+      '[DeliveryAppBridge] MainActivity.java를 찾지 못했습니다.'
+    );
+  }
+
+  let mainSource = fs.readFileSync(patchMainPath, 'utf8');
+  const packageMatch = mainSource.match(
+    /package\s+([a-zA-Z0-9_.]+)\s*;/
+  );
+
+  if (!packageMatch) {
+    throw new Error(
+      '[DeliveryAppBridge] MainActivity의 package를 찾지 못했습니다.'
+    );
+  }
+
+  const bridgePackage = packageMatch[1];
+  const bridgeFile = path.join(
+    path.dirname(patchMainPath),
+    'DeliveryAppBridge.java'
+  );
+
+  const bridgeSource = `package ${bridgePackage};
+
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.speech.tts.TextToSpeech;
+import android.webkit.JavascriptInterface;
+import android.widget.Toast;
+import java.util.Locale;
+
+public class DeliveryAppBridge {
+    private final Activity activity;
+    private final Handler handler =
+        new Handler(Looper.getMainLooper());
+
+    private TextToSpeech tts;
+    private boolean ready = false;
+    private String pendingText = null;
+
+    public DeliveryAppBridge(Activity activity) {
+        this.activity = activity;
+
+        handler.post(() -> {
+            tts = new TextToSpeech(
+                activity.getApplicationContext(),
+                status -> handler.post(() -> {
+                    if (status != TextToSpeech.SUCCESS) {
+                        notifyUser("음성 엔진을 초기화하지 못했습니다.");
+                        return;
+                    }
+
+                    int result = tts.setLanguage(Locale.KOREAN);
+
+                    if (result == TextToSpeech.LANG_MISSING_DATA
+                        || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        notifyUser(
+                            "한국어 음성 데이터가 없거나 지원되지 않습니다."
+                        );
+                        return;
+                    }
+
+                    ready = true;
+
+                    if (pendingText != null) {
+                        String text = pendingText;
+                        pendingText = null;
+                        speakInternal(text);
+                    }
+                })
+            );
+        });
+    }
+
+    private void notifyUser(String message) {
+        Toast.makeText(
+            activity,
+            message,
+            Toast.LENGTH_LONG
+        ).show();
+    }
+
+    @JavascriptInterface
+    public void speak(String text) {
+        if (text == null || text.trim().isEmpty()) return;
+
+        handler.post(() -> {
+            if (!ready) {
+                pendingText = text;
+                return;
+            }
+            speakInternal(text);
+        });
+    }
+
+    private void speakInternal(String text) {
+        if (tts == null || !ready) return;
+
+        int result = tts.speak(
+            text,
+            TextToSpeech.QUEUE_ADD,
+            null,
+            "delivery-" + System.nanoTime()
+        );
+
+        if (result == TextToSpeech.ERROR) {
+            notifyUser("음성 안내를 재생하지 못했습니다.");
+        }
+    }
+
+    @JavascriptInterface
+    public void stopSpeaking() {
+        handler.post(() -> {
+            pendingText = null;
+            if (tts != null) tts.stop();
+        });
+    }
+
+    @JavascriptInterface
+    public void openNaverMap(String url) {
+        handler.post(() -> {
+            try {
+                Uri uri = Uri.parse(url);
+                String scheme = uri.getScheme();
+                String host = uri.getHost();
+
+                boolean naverWeb =
+                    ("https".equalsIgnoreCase(scheme)
+                        || "http".equalsIgnoreCase(scheme))
+                    && host != null
+                    && (
+                        host.equalsIgnoreCase("map.naver.com")
+                        || host.equalsIgnoreCase("m.map.naver.com")
+                        || host.equalsIgnoreCase("naver.me")
+                    );
+
+                if (!naverWeb) {
+                    notifyUser("허용되지 않은 지도 주소입니다.");
+                    return;
+                }
+
+                Intent naverIntent =
+                    new Intent(Intent.ACTION_VIEW, uri);
+                naverIntent.setPackage("com.nhn.android.nmap");
+
+                try {
+                    activity.startActivity(naverIntent);
+                    return;
+                } catch (
+                    android.content.ActivityNotFoundException ignored
+                ) {
+                    // 네이버 지도에서 처리하지 못하면 기본 앱으로 열기
+                }
+
+                Intent fallback =
+                    new Intent(Intent.ACTION_VIEW, uri);
+                activity.startActivity(fallback);
+
+            } catch (Exception e) {
+                notifyUser("네이버 지도를 열지 못했습니다.");
+            }
+        });
+    }
+
+    public void shutdown() {
+        handler.post(() -> {
+            ready = false;
+            pendingText = null;
+            if (tts != null) {
+                tts.stop();
+                tts.shutdown();
+                tts = null;
+            }
+        });
+    }
+}
+`;
+
+  fs.writeFileSync(bridgeFile, bridgeSource, 'utf8');
+
+  if (!mainSource.includes(
+    'private DeliveryAppBridge deliveryAppBridge;'
+  )) {
+    const activityPattern =
+      /public\s+class\s+MainActivity\s+extends\s+BridgeActivity\s*\{/;
+
+    if (!activityPattern.test(mainSource)) {
+      throw new Error(
+        '[DeliveryAppBridge] MainActivity 선언 형태가 예상과 다릅니다.'
+      );
+    }
+
+    mainSource = mainSource.replace(
+      activityPattern,
+      `$&
+    private DeliveryAppBridge deliveryAppBridge;
+`
+    );
+  }
+
+  if (!mainSource.includes(
+    'webView.addJavascriptInterface(deliveryAppBridge, "DeliveryNative")'
+  )) {
+    const registrationAnchor =
+      'webView.addJavascriptInterface(overlayManager, "AndroidOverlay");';
+
+    if (!mainSource.includes(registrationAnchor)) {
+      throw new Error(
+        '[DeliveryAppBridge] AndroidOverlay 등록 위치를 찾지 못했습니다.'
+      );
+    }
+
+    mainSource = mainSource.replace(
+      registrationAnchor,
+      `${registrationAnchor}
+            deliveryAppBridge = new DeliveryAppBridge(this);
+            webView.addJavascriptInterface(
+                deliveryAppBridge, "DeliveryNative"
+            );
+`
+    );
+  }
+
+  if (!mainSource.includes(
+    'deliveryAppBridge.shutdown();'
+  )) {
+    const destroyPattern =
+      /(?:public|protected)\s+void\s+onDestroy\s*\(\s*\)\s*\{/;
+
+    if (destroyPattern.test(mainSource)) {
+      mainSource = mainSource.replace(
+        destroyPattern,
+        `$&
+        if (deliveryAppBridge != null) {
+            deliveryAppBridge.shutdown();
+        }
+`
+      );
+    } else {
+      const lastBrace = mainSource.lastIndexOf('}');
+
+      mainSource =
+        mainSource.slice(0, lastBrace)
+        + `
+    @Override
+    public void onDestroy() {
+        if (deliveryAppBridge != null) {
+            deliveryAppBridge.shutdown();
+        }
+        super.onDestroy();
+    }
+`
+        + mainSource.slice(lastBrace);
+    }
+  }
+
+  fs.writeFileSync(patchMainPath, mainSource, 'utf8');
+
+  const patchManifestPath =
+    'android/app/src/main/AndroidManifest.xml';
+
+  let patchedManifest = fs.readFileSync(
+    patchManifestPath, 'utf8'
+  );
+
+  if (!patchedManifest.includes(
+    'android.intent.action.TTS_SERVICE'
+  )) {
+    const ttsQuery = `
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+`;
+
+    if (patchedManifest.includes('</queries>')) {
+      patchedManifest = patchedManifest.replace(
+        '</queries>',
+        `${ttsQuery}    </queries>`
+      );
+    } else {
+      patchedManifest = patchedManifest.replace(
+        '</manifest>',
+        `    <queries>${ttsQuery}    </queries>
+</manifest>`
+      );
+    }
+
+    fs.writeFileSync(
+      patchManifestPath, patchedManifest, 'utf8'
+    );
+  }
+
+  console.log(
+    'DeliveryAppBridge: 외부 지도 열기 및 한국어 TTS 연결 완료'
+  );
+}
