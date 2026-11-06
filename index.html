@@ -215,14 +215,14 @@
             네이버 내비 상단 목적지에 <span class="text-amber-300 font-black">"원명 [수량]"</span> 자동 표시
           </h2>
         </div>
-        <div class="flex items-center gap-1.5 w-full sm:w-auto">
-          <button id="bannerPipHudBtn" type="button" class="hidden flex-1 sm:flex-initial px-3 py-2 sm:py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow">
+        <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+          <button id="bannerPipHudBtn" type="button" class="hidden flex-1 sm:flex-initial whitespace-nowrap px-3 py-2 sm:py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow text-center justify-center">
             🪟 내비 위 미니창(PiP)
           </button>
-          <button id="bannerBgKeepAliveBtn" type="button" class="flex-1 sm:flex-initial px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition">
+          <button id="bannerBgKeepAliveBtn" type="button" class="flex-1 sm:flex-initial whitespace-nowrap px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition text-center justify-center">
             🔋 백그라운드 유지
           </button>
-          <button id="toggleMiniHudBtn" type="button" class="w-full sm:w-auto px-3 py-2 sm:py-1.5 rounded-xl text-xs font-extrabold bg-[#03C75A]/20 hover:bg-[#03C75A]/30 text-emerald-300 border border-[#03C75A]/40 transition">
+          <button id="toggleMiniHudBtn" type="button" class="flex-1 sm:flex-initial whitespace-nowrap px-3 py-2 sm:py-1.5 rounded-xl text-xs font-extrabold bg-[#03C75A]/20 hover:bg-[#03C75A]/30 text-emerald-300 border border-[#03C75A]/40 transition text-center justify-center">
             🚗 대형 HUD 모드
           </button>
         </div>
@@ -4070,35 +4070,114 @@ function speakSchoolQuantity(school) {
     function newPickupId() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
     // ---- text analysis & user-registered Works task item parser ----
+    function stripWorksUserId(str) {
+      return String(str || '')
+        .replace(/\s*\(\s*userId\s+[0-9a-fA-F\-]+\s*\)/gi, '')
+        .replace(/\buserId\s+[0-9a-fA-F\-]+/gi, '')
+        .trim();
+    }
+
+    function isWorksMetaSegment(str) {
+      const s = stripWorksUserId(str).trim();
+      if (!s) return true;
+      if (/^(미완료된\s*할\s*일|완료된\s*할\s*일|기한|없음|기한\s*없음|메시지방|발주\/추가\/취소\s*방|카테고리|미분류\s*할\s*일|요청자|담당자|완료하기|미완료로\s*변경)$/i.test(s)) return true;
+      if (/^(요청자|담당자|보낸\s*사람|기한|메시지방|카테고리|생성일|등록자|원\s*이름)\s*[:：]/i.test(s)) return true;
+      if (/^DATA\s*:/i.test(s)) return true;
+      return false;
+    }
+
+    function cleanWorksItemsSummary(str) {
+      let s = stripWorksUserId(str);
+      s = s.replace(/(?:^|[\s,·|]+)(?:요청자|담당자|보낸\s*사람|기한|메시지방|카테고리)\s*[:：]\s*[^,·|\n]+/gi, '');
+      s = s.replace(/(?:^|[\s,·|]+)원문\s*[:：]\s*/gi, ' · ');
+      s = s.replace(/^[\s,·|:\-]+|[\s,·|:\-]+$/g, '').replace(/(?:\s*[·,]\s*){2,}/g, ', ').trim();
+      return s;
+    }
+
+    function cleanWorksContentDisplay(str) {
+      if (!str) return '';
+      return String(str)
+        .split(/\r?\n/)
+        .map(line => stripWorksUserId(line))
+        .filter(line => !/^DATA\s*:/i.test(line))
+        .join('\n')
+        .trim();
+    }
+
+    function normalizeFieldQuantities(fqs, isDone) {
+      if (!Array.isArray(fqs)) return [];
+      const out = [];
+      const seen = new Map();
+      fqs.forEach(q => {
+        if (!q || typeof q !== 'object') return;
+        const rawLabel = stripWorksUserId(q.label ?? q.item ?? q.name ?? '');
+        const label = rawLabel
+          .replace(/^[\s\-•·*▶▷►✔✓□■◆◇○●\d]+[.)]\s*/, '')
+          .replace(/^(?:추가\s*납품|추가|납품|교구|선물용품|선물|품목|원문)\s*[:：\-]\s*/, '')
+          .replace(/\s*(?:추가\s*납품|추가|납품|배송|발송|요청|전달|회수|반품|수거|보내기|드리기)\s*$/, '')
+          .replace(/^[\s,.:·\-|]+|[\s,.:·\-|]+$/g, '')
+          .trim();
+        const qty = Math.max(0, parseInt(q.qty ?? q.plannedQty ?? q.actualQty ?? 0, 10) || 0);
+        if (!label || !qty || isWorksMetaSegment(label)) return;
+        if (/^(기한|메시지방|카테고리|요청자|담당자|월|일|시|분|층|호)$/.test(label)) return;
+        const rawDone = q.done !== undefined ? Number(q.done) : (q.checked ? qty : (q.actualQty !== undefined && q.checked ? Number(q.actualQty) : 0));
+        const done = isDone ? qty : Math.min(qty, Math.max(0, Number.isFinite(rawDone) ? rawDone : 0));
+        const unit = String(q.unit || '개').trim() || '개';
+        const key = normName(label);
+        if (!key) return;
+        if (seen.has(key)) {
+          const idx = seen.get(key);
+          if (out[idx].qty !== qty) out[idx].qty += qty;
+          out[idx].plannedQty = out[idx].qty;
+          return;
+        }
+        seen.set(key, out.length);
+        out.push({
+          label,
+          qty,
+          done,
+          item: label,
+          plannedQty: qty,
+          actualQty: qty,
+          unit,
+          checked: done >= qty
+        });
+      });
+      return out;
+    }
+
     function parseWorksTaskItems(titleRest, worksContent) {
       const rows = [];
       const seen = new Map();
       const addRow = (rawLabel, rawQty) => {
-        let label = String(rawLabel || '')
+        let label = stripWorksUserId(rawLabel || '')
           .replace(/^[\s\-•·*▶▷►✔✓□■◆◇○●\d]+[.)]\s*/, '')
-          .replace(/^(?:추가\s*납품|추가|납품|교구|선물용품|선물|품목)\s*[:：\-]\s*/, '')
+          .replace(/^(?:추가\s*납품|추가|납품|교구|선물용품|선물|품목|원문)\s*[:：\-]\s*/, '')
           .replace(/\s*(?:추가\s*납품|추가|납품|배송|발송|요청|전달|회수|반품|수거|보내기|드리기)\s*$/, '')
           .replace(/^[\s,.:·\-|]+|[\s,.:·\-|]+$/g, '')
           .trim();
         const qty = parseInt(rawQty, 10);
         if (!label || !Number.isFinite(qty) || qty <= 0) return false;
-        if (/^(기한|메시지방|카테고리|요청자|담당자|월|일|시|분|층|호)$/.test(label)) return false;
+        if (isWorksMetaSegment(label) || /^(기한|메시지방|카테고리|요청자|담당자|월|일|시|분|층|호)$/.test(label)) return false;
         const key = normName(label);
         if (!key) return false;
         if (seen.has(key)) {
           const idx = seen.get(key);
           if (rows[idx].qty !== qty) rows[idx].qty += qty;
+          rows[idx].plannedQty = rows[idx].qty;
           return true;
         }
         seen.set(key, rows.length);
-        rows.push({ label, qty, done: 0 });
+        rows.push({ label, qty, done: 0, item: label, plannedQty: qty, actualQty: qty, unit: '개', checked: false });
         return true;
       };
 
       const itemLineRe = /^(.+?)\s*[:：=|×xX\-]?\s*(\d+)\s*(?:개|권|부|세트|박스|통|장|매|조|점|명|달|set|ea)?(?:\s*(?:추가\s*납품|추가|납품|배송|발송|회수|반품|수거|요청|전달|더))?$/i;
 
-      if (titleRest) {
-        String(titleRest).split(/\s*[,，/·]\s*/).map(s => s.trim()).filter(Boolean).forEach(seg => {
+      const cleanTitleRest = cleanWorksItemsSummary(titleRest || '');
+      if (cleanTitleRest) {
+        String(cleanTitleRest).split(/\s*[,，/·]\s*/).map(s => s.trim()).filter(Boolean).forEach(seg => {
+          if (isWorksMetaSegment(seg)) return;
           const m = seg.match(itemLineRe);
           if (m && !/^\d+\s*[월일층호]$/.test(seg) && !/번\s*배송/.test(seg)) {
             addRow(m[1], m[2]);
@@ -4107,16 +4186,17 @@ function speakSchoolQuantity(school) {
       }
 
       const contentSummaryParts = [];
-      const META_LINE = /^(미완료된\s*할\s*일|완료된\s*할\s*일|기한|없음|기한\s*없음|메시지방|발주\/추가\/취소\s*방|카테고리|미분류\s*할\s*일|요청자|담당자|완료하기|미완료로\s*변경)$/;
       if (worksContent) {
-        String(worksContent).split(/\r?\n/).map(s => s.trim()).filter(Boolean).forEach(line => {
-          if (META_LINE.test(line)) return;
-          const subSegs = line.includes(',') ? line.split(/\s*[,，]\s*/) : [line];
+        String(worksContent).split(/\r?\n/).map(s => stripWorksUserId(s).trim()).filter(Boolean).forEach(line => {
+          if (isWorksMetaSegment(line)) return;
+          const cleanedLine = line.replace(/^원문\s*[:：]\s*/i, '').trim();
+          if (!cleanedLine || isWorksMetaSegment(cleanedLine)) return;
+          const subSegs = cleanedLine.includes(',') ? cleanedLine.split(/\s*[,，]\s*/) : [cleanedLine];
           subSegs.forEach(seg => {
             const s = seg.trim();
-            if (!s || META_LINE.test(s)) return;
+            if (!s || isWorksMetaSegment(s)) return;
             const m = s.match(itemLineRe);
-            if (m) {
+            if (m && !/^\d+\s*[월일층호]$/.test(s) && !/번\s*배송/.test(s)) {
               if (addRow(m[1], m[2])) {
                 contentSummaryParts.push(`${m[1].trim()} ${parseInt(m[2], 10)}`);
               }
@@ -4128,29 +4208,38 @@ function speakSchoolQuantity(school) {
       }
 
       const totalQty = rows.reduce((sum, r) => sum + r.qty, 0);
-      let baseItems = String(titleRest || '').trim();
-      const contentStr = contentSummaryParts.join(', ');
+      let baseItems = cleanTitleRest;
+      const contentStr = cleanWorksItemsSummary(contentSummaryParts.join(', '));
       let combinedItems = baseItems;
       if (contentStr) {
         if (!baseItems || /^(납품|추가\s*납품|추가|교구|선물용품\s*납품|선물\s*납품|발주|배송)$/.test(baseItems)) {
           combinedItems = baseItems ? `${baseItems} (${contentStr})` : contentStr;
-        } else if (!normName(baseItems).includes(normName(contentStr))) {
+        } else if (!normName(baseItems).includes(normName(contentStr)) && !normName(contentStr).includes(normName(baseItems))) {
           combinedItems = `${baseItems} · ${contentStr}`;
         }
       }
-      return { fieldQuantities: rows, totalQty, combinedItems: combinedItems || baseItems };
+      return { fieldQuantities: rows, totalQty, combinedItems: cleanWorksItemsSummary(combinedItems || baseItems) };
     }
 
     function pkMergeFieldQuantities(existingRows, parsedRows, isDone) {
-      if (!Array.isArray(parsedRows) || !parsedRows.length) {
-        return Array.isArray(existingRows) ? existingRows : [];
+      const normExisting = normalizeFieldQuantities(existingRows, isDone);
+      const normParsed = normalizeFieldQuantities(parsedRows, isDone);
+      if (!normParsed.length) {
+        return normExisting;
       }
-      const prev = Array.isArray(existingRows) ? existingRows : [];
-      // If user already manually configured custom rows with progress that don't match parsed at all, preserve done counts
-      return parsedRows.map(r => {
-        const match = prev.find(old => normName(old.label) === normName(r.label));
+      return normParsed.map(r => {
+        const match = normExisting.find(old => normName(old.label) === normName(r.label));
         const doneVal = isDone ? r.qty : Math.min(r.qty, Math.max(0, Number(match && match.done || 0)));
-        return { label: r.label, qty: r.qty, done: doneVal };
+        return {
+          ...r,
+          label: r.label,
+          qty: r.qty,
+          done: doneVal,
+          item: r.label,
+          plannedQty: r.qty,
+          actualQty: r.qty,
+          checked: doneVal >= r.qty
+        };
       });
     }
 
@@ -4244,19 +4333,19 @@ function speakSchoolQuantity(school) {
       };
     }
     function pkMakeRow(o) {
-      const rawContent = String(o.worksContent || o.content || '').trim();
+      const rawContent = cleanWorksContentDisplay(o.worksContent || o.content || '');
       const a = analyzePickupTitle(o.title, rawContent);
       const detectedType = worksTypeFromTitle(o.title, rawContent);
       return {
-        include: true, title: String(o.title || '').trim(),
+        include: true, title: stripWorksUserId(o.title || ''),
         school: (o.school && String(o.school).trim()) || a.school, schoolId: a.schoolId,
         type: PK_TYPES.includes(o.type) ? o.type : (t => pkMode === 'extra' && !PK_EXTRA_TYPES.includes(t) ? '추가' : t)(detectedType),
-        items: (o.items && String(o.items).trim() && !rawContent) ? String(o.items).trim() : a.items,
+        items: (o.items && String(o.items).trim() && !rawContent) ? cleanWorksItemsSummary(o.items) : a.items,
         qty: o.qty || a.qty,
-        fieldQuantities: Array.isArray(o.fieldQuantities) && o.fieldQuantities.length ? o.fieldQuantities : a.fieldQuantities,
+        fieldQuantities: Array.isArray(o.fieldQuantities) && o.fieldQuantities.length ? normalizeFieldQuantities(o.fieldQuantities, false) : a.fieldQuantities,
         worksContent: rawContent,
         due: o.due && /^\d{4}-\d{2}-\d{2}$/.test(o.due) ? o.due : pkDueFrom(o.due || ''),
-        assignee: String(o.assignee || '').trim(), memo: String(o.memo || '').trim()
+        assignee: stripWorksUserId(o.assignee || ''), memo: String(o.memo || '').trim()
       };
     }
 
@@ -4619,7 +4708,7 @@ function speakSchoolQuantity(school) {
           ${unlinked.map(p => {
             const c = pkCoords(p); const ok = hasCoords(c);
             const dist = pkDistance(p);
-            const fqs = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
+            const fqs = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
             return `
             <article class="rounded-xl border border-violet-500/40 bg-slate-950/90 p-3 space-y-2" data-pk-card="${escapeHtml(p.id)}">
               <div class="flex flex-wrap items-center justify-between gap-1.5">
@@ -4739,7 +4828,7 @@ function speakSchoolQuantity(school) {
         const ds = pkDueState(p);
         const dueCls = ds === 'over' ? 'bg-rose-500 text-white border-rose-400' : ds === 'soon' ? 'bg-amber-500/20 text-amber-200 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700';
         const delivered = s && completedMap[s.id];
-        const fqs = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
+        const fqs = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
         return `
         <article class="rounded-2xl border ${p.done ? 'border-slate-800 bg-slate-900/50 opacity-60' : 'border-slate-700 bg-slate-900'} p-3 space-y-2.5" data-pk-card="${p.id}">
           <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
@@ -4853,7 +4942,7 @@ function speakSchoolQuantity(school) {
       const ds = pkDueState(p); const dist = pkDistance(p); const extra = pkGroupOf(p) === 'extra';
       const addr = (s && s.address) || p.address || '';
       const delivered = s && completedMap[s.id];
-      const fqs = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
+      const fqs = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
       const row = (k, v) => v ? `<div class="flex gap-2 py-1.5 border-b border-slate-800 last:border-0"><span class="shrink-0 w-16 text-slate-400">${k}</span><span class="flex-1 min-w-0 text-slate-100 break-keep">${v}</span></div>` : '';
       document.getElementById('pkDetailBox').className = `bg-slate-900 border-2 ${extra ? 'border-violet-500/60' : 'border-rose-500/60'} rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3 max-h-[94dvh] overflow-y-auto overscroll-contain pb-safe`;
       document.getElementById('pkDetailBox').innerHTML = `
@@ -5033,6 +5122,34 @@ function speakSchoolQuantity(school) {
       const geo = []; let changed = false;
       PICKUPS.forEach(p => {
         if (!p) return;
+        if (p.worksContent) {
+          const cleanedWc = cleanWorksContentDisplay(p.worksContent);
+          if (cleanedWc !== p.worksContent) {
+            p.worksContent = cleanedWc;
+            changed = true;
+          }
+        }
+        if (p.items) {
+          const cleanedIt = cleanWorksItemsSummary(p.items);
+          if (cleanedIt !== p.items) {
+            p.items = cleanedIt;
+            changed = true;
+          }
+        }
+        if (p.assignee) {
+          const cleanedAs = stripWorksUserId(p.assignee);
+          if (cleanedAs !== p.assignee) {
+            p.assignee = cleanedAs;
+            changed = true;
+          }
+        }
+        if (Array.isArray(p.fieldQuantities) && p.fieldQuantities.length) {
+          const needsNorm = p.fieldQuantities.some(q => !q || typeof q.label !== 'string' || !q.label || typeof q.qty !== 'number' || !Number.isFinite(q.qty));
+          if (needsNorm) {
+            p.fieldQuantities = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
+            changed = true;
+          }
+        }
         const isWorksItem = p.source === 'works-api' || p.source === 'works' || !!p.worksTaskId;
         if (isWorksItem && (p.title || p.worksContent)) {
           const a = analyzePickupTitle(p.title || '', p.worksContent || '');
@@ -5058,9 +5175,12 @@ function speakSchoolQuantity(school) {
             changed = true;
           }
           if (Array.isArray(a.fieldQuantities) && a.fieldQuantities.length) {
-            const curFq = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
+            const curFq = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
             if (curFq.length < a.fieldQuantities.length) {
               p.fieldQuantities = pkMergeFieldQuantities(curFq, a.fieldQuantities, !!p.done);
+              changed = true;
+            } else if (Array.isArray(p.fieldQuantities) && p.fieldQuantities.length !== curFq.length) {
+              p.fieldQuantities = curFq;
               changed = true;
             }
           }
@@ -6679,7 +6799,8 @@ ${school.address || ''}`;
         const naviUrl = firstP && typeof pkNaviUrl === 'function' ? pkNaviUrl(firstP) : `nmap://search?query=${encodeURIComponent(grp.address || grp.name)}&appname=entercoding.delivery`;
         const webNaviUrl = `https://map.naver.com/p/search/${encodeURIComponent(grp.address || grp.name)}`;
         const distLabel = best.dist !== null && best.dist !== undefined ? `거리 ${formatDistance(best.dist)}` : (grp.subRegion || (isExtra ? '추가 납품' : '회수·반품'));
-        const singleFq = grp.items.length === 1 && firstP && Array.isArray(firstP.fieldQuantities) && firstP.fieldQuantities.length ? firstP.fieldQuantities : null;
+        const normFirstFq = firstP ? normalizeFieldQuantities(firstP.fieldQuantities, !!firstP.done) : [];
+        const singleFq = grp.items.length === 1 && normFirstFq.length ? normFirstFq : null;
         const overlayItems = singleFq
           ? singleFq.map((q, idx) => ({
               index: idx,
@@ -6799,6 +6920,7 @@ ${school.address || ''}`;
         const grp = best.pickupGroup;
         const firstP = grp.items && grp.items[0];
         if (grp.items.length === 1 && firstP && Array.isArray(firstP.fieldQuantities) && firstP.fieldQuantities.length) {
+          firstP.fieldQuantities = normalizeFieldQuantities(firstP.fieldQuantities, !!firstP.done);
           const row = firstP.fieldQuantities[idx];
           if (row) {
             row.done = Number(row.done || 0) >= Number(row.qty) ? 0 : Number(row.qty);
@@ -7529,10 +7651,13 @@ ${school.address || ''}`;
       const remaining=(qty,done)=>Math.max(0,Number(qty)-Number(done||0));
       function delivered(s,it){return completedMap[s.id]?Number(it.qty):Math.min(Number(it.qty),Math.max(0,Number(s.fieldOps?.delivered?.[it.key]||0)));}
       function pickupRows(p){
+        if(Array.isArray(p.fieldQuantities)&&p.fieldQuantities.length){
+          p.fieldQuantities=normalizeFieldQuantities(p.fieldQuantities,!!p.done);
+        }
         if(!Array.isArray(p.fieldQuantities)||!p.fieldQuantities.length){
           if(typeof parseWorksTaskItems==='function'){
             const parsed=parseWorksTaskItems(p.items||p.title||'',p.worksContent||'');
-            if(parsed.fieldQuantities.length)p.fieldQuantities=parsed.fieldQuantities.map(r=>({...r,done:p.done?r.qty:0}));
+            if(parsed.fieldQuantities.length)p.fieldQuantities=normalizeFieldQuantities(parsed.fieldQuantities,!!p.done);
           }
         }
         return Array.isArray(p.fieldQuantities)?p.fieldQuantities:[];
