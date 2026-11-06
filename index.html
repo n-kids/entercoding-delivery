@@ -18,10 +18,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Noto Sans KR', 'Inter', sans-serif;
-      background-color: #0f172a;
+      font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0b1120;
       color: #f8fafc;
       -webkit-tap-highlight-color: transparent;
+      letter-spacing: -0.01em;
+    }
+    .delivery-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .delivery-card:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+      box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.4), 0 0 16px rgba(245, 158, 11, 0.1);
+    }
+    .delivery-card-arrived {
+      border-color: rgba(245, 158, 11, 0.8) !important;
+      box-shadow: 0 0 24px rgba(245, 158, 11, 0.28) !important;
+    }
+    .delivery-card-done {
+      opacity: 0.58;
+      background: rgba(15, 23, 42, 0.55);
+    }
+    .naver-btn-glow {
+      box-shadow: 0 4px 14px rgba(3, 199, 90, 0.35);
+      transition: all 0.15s ease;
+    }
+    .naver-btn-glow:hover {
+      box-shadow: 0 6px 20px rgba(3, 199, 90, 0.48);
+      transform: translateY(-1px);
+    }
+    .naver-btn-glow:active {
+      transform: scale(0.98);
     }
     .hscroll { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; }
     .hscroll::-webkit-scrollbar { display: none; }
@@ -52,71 +83,114 @@
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
 
   <!-- Top Sticky Header -->
-  <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-3 sm:px-4 py-2 sm:py-3">
-    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-      <div class="flex items-center gap-2 min-w-0 flex-1">
-        <div id="gpsIndicator" class="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-slate-500 transition-colors shrink-0"></div>
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-4 py-2 sm:py-2.5 shadow-md">
+    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <!-- Brand & Status -->
+      <div class="flex items-center gap-2.5 min-w-0 flex-1">
+        <div id="gpsIndicator" class="w-3.5 h-3.5 rounded-full bg-slate-500 transition-colors shrink-0 shadow-sm" title="GPS 수신 상태"></div>
         <div class="min-w-0">
-          <h1 class="text-[15px] sm:text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
-            <span class="truncate"><span class="hidden sm:inline">교재 원별 </span>납품 <span class="hidden min-[400px]:inline sm:inline">GPS </span>알리미</span>
-            <span class="hidden sm:inline text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">카드: 노란색표시</span>
-            <button id="syncBadge" type="button" class="shrink-0 px-2 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap bg-slate-800 text-slate-300 border-slate-700" title="여러 기기 실시간 공유 상태">☁️ 연결 중</button>
-          </h1>
-          <p id="gpsStatusText" class="text-[11px] sm:text-xs text-slate-400 truncate sm:whitespace-normal">GPS 대기 중 · 상단 [실시간 GPS 켜기] 또는 아래 [현재 구역 빠른 선택]을 눌러주세요</p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-[15px] sm:text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+              <span>교재 납품 알리미</span>
+            </h1>
+            <button id="syncBadge" type="button" class="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold border whitespace-nowrap bg-slate-800/90 text-slate-300 border-slate-700 hover:border-slate-600 transition" title="여러 기기 실시간 공유 상태">☁️ 연결 중</button>
+          </div>
+          <p id="gpsStatusText" class="text-[11px] text-slate-400 truncate sm:whitespace-normal leading-tight mt-0.5">GPS 대기 중 · [GPS 켜기] 또는 아래 [동네 선택]을 눌러주세요</p>
         </div>
       </div>
 
+      <!-- Quick Action Controls -->
       <div class="flex items-center gap-1.5 shrink-0">
-        <button id="toggleGpsBtn" type="button" class="px-3 py-2.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5">
+        <!-- Main GPS Button -->
+        <button id="toggleGpsBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/25 flex items-center gap-1.5 active:scale-95">
           <span id="gpsBtnIcon">📍</span>
           <span id="gpsBtnLabel"><span class="sm:hidden">GPS 켜기</span><span class="hidden sm:inline">실시간 GPS 켜기</span></span>
         </button>
-        <button id="headerMenuBtn" type="button" aria-expanded="false" aria-controls="headerTools" class="sm:hidden px-3 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-100 border border-slate-700">☰ 메뉴</button>
+
+        <!-- Desktop Quick Action Buttons: 품목, 불러오기, 수량관리 -->
+        <div class="hidden sm:flex items-center gap-1.5">
+          <button id="openItemsModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-violet-500/15 hover:bg-violet-500/25 text-violet-200 border border-violet-500/40 transition flex items-center gap-1" title="차량 상차 전 품목별 적재 수량 확인">
+            <span>📦</span><span>품목 확인</span>
+          </button>
+          <button id="openImportModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-sky-500/15 hover:bg-sky-500/25 text-sky-200 border border-sky-500/40 transition flex items-center gap-1" title="엑셀·사진·텍스트 납품 정보 불러오기">
+            <span>📥</span><span>불러오기</span>
+          </button>
+          <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1" title="원별 수량 수정 및 새 납품처 추가">
+            <span>✏️</span><span>수량 수정</span>
+          </button>
+        </div>
+
+        <!-- Menu / All Tools Button -->
+        <button id="headerMenuBtn" type="button" aria-expanded="false" aria-controls="headerTools" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1">
+          <span>⚙️</span><span>설정·도구</span>
+        </button>
       </div>
 
-      <div id="headerTools" class="hidden sm:flex w-full sm:w-auto grid-cols-2 sm:flex-wrap items-stretch sm:items-center gap-1.5 [&>button]:py-2.5 sm:[&>button]:py-2 [&>button]:text-left sm:[&>button]:text-center">
-        <button id="downloadStandaloneBtn" type="button" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-lg shadow-amber-500/20" title="이 앱을 HTML 파일로 내려받습니다 (GPS는 https 주소에서 가장 잘 작동)">
-          📲 단독 앱 파일 받기
-        </button>
-        <button id="toggleVoiceBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 transition" title="도착 시 수량 음성 안내(TTS) 켜기/끄기">
-          🗣️ 음성안내 켜짐
-        </button>
-        <button id="toggleWakeLockBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="운전 중 스마트폰 화면 꺼짐 방지">
-          💡 화면켜짐유지
-        </button>
-        <button id="enterBlackoutBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-950 hover:bg-slate-800 text-amber-300 border border-amber-500/40 transition" title="화면을 까맣게 꺼두었다가 원 근처 도착 시 자동으로 화면을 켜고 수량을 띄웁니다">
-          🌙 절전 블랙화면 대기
-        </button>
-        <button id="toggleSoundBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="도착 알림음 켜기/끄기">
-          🔔 알림음 켜짐
-        </button>
-        <button id="openItemsModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-violet-500 hover:bg-violet-400 text-slate-950 transition shadow-lg shadow-violet-500/20">
-          📦 납품 품목 확인
-        </button>
-        <button id="openImportModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-sky-500 hover:bg-sky-400 text-slate-950 transition shadow-lg shadow-sky-500/20">
-          📥 납품 정보 불러오기
-        </button>
-        <button id="openSyncModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-          ☁️ 기기 공유
-        </button>
-        <button id="openSettingsModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-          ⚙️ 연동 설정
-        </button>
-        <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-          ✏️ 수량수정/추가
-        </button>
-        <button id="toggleBgKeepAliveBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition" title="네이버 내비 사용 중이거나 화면이 꺼져도 백그라운드에서 GPS와 도착 알림이 멈추지 않도록 유지합니다">
-          🔋 백그라운드 유지 켜짐
-        </button>
-        <button id="togglePipHudBtn" type="button" class="hidden px-2.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition" title="네이버 내비게이션 화면 위에 납품수량과 남은 거리를 작은 팝업창(PiP)으로 항상 띄워둡니다">
-          🪟 내비 위 미니창(PiP)
-        </button>
-        <button id="toggleSysNotifBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="앱이 내려가 있을 때에도 상단 배너와 진동으로 도착 알림을 울립니다">
-          📲 상단 도착알림 켜기
-        </button>
-        <button id="openInstallModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition">
-          📱 폰 앱 설치방법
-        </button>
+      <!-- Header Tools Panel (Drawer / Popover with organized categories) -->
+      <div id="headerTools" class="hidden w-full bg-slate-950/95 border border-slate-800 rounded-2xl p-3.5 mt-2 shadow-2xl backdrop-blur-xl space-y-3">
+        <!-- Mobile Main Actions Grid -->
+        <div class="sm:hidden grid grid-cols-3 gap-2 pb-3 border-b border-slate-800">
+          <button type="button" data-proxy="openItemsModalBtn" class="py-2.5 px-2 rounded-xl text-xs font-extrabold bg-violet-500/20 text-violet-200 border border-violet-500/40 text-center flex flex-col items-center gap-1">
+            <span class="text-base">📦</span><span>품목 확인</span>
+          </button>
+          <button type="button" data-proxy="openImportModalBtn" class="py-2.5 px-2 rounded-xl text-xs font-extrabold bg-sky-500/20 text-sky-200 border border-sky-500/40 text-center flex flex-col items-center gap-1">
+            <span class="text-base">📥</span><span>불러오기</span>
+          </button>
+          <button type="button" data-proxy="openEditModalBtn" class="py-2.5 px-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 border border-slate-700 text-center flex flex-col items-center gap-1">
+            <span class="text-base">✏️</span><span>수량 수정</span>
+          </button>
+        </div>
+
+        <!-- Section 1: 운행 보조 설정 -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+            <span>🚗</span><span>운행 보조 및 알림 설정</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button id="toggleWakeLockBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition text-left sm:text-center" title="운전 중 스마트폰 화면 꺼짐 방지">
+              💡 화면켜짐유지
+            </button>
+            <button id="toggleVoiceBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 transition text-left sm:text-center" title="도착 시 수량 음성 안내(TTS) 켜기/끄기">
+              🗣️ 음성안내 켜짐
+            </button>
+            <button id="toggleSoundBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition text-left sm:text-center" title="도착 알림음 켜기/끄기">
+              🔔 알림음 켜짐
+            </button>
+            <button id="toggleBgKeepAliveBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition text-left sm:text-center" title="네이버 내비 사용 중이거나 화면이 꺼져도 백그라운드 GPS 및 도착 알림 유지">
+              🔋 백그라운드 유지
+            </button>
+            <button id="toggleSysNotifBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition text-left sm:text-center" title="앱이 내려가 있어도 상단 팝업 배너로 도착 알림">
+              📲 상단 도착알림
+            </button>
+            <button id="enterBlackoutBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-950 hover:bg-slate-800 text-amber-300 border border-amber-500/40 transition text-left sm:text-center" title="화면을 꺼두었다가 원 도착 시 자동 켜짐">
+              🌙 절전 블랙화면
+            </button>
+            <button id="togglePipHudBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-extrabold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition text-left sm:text-center" title="네이버 내비 위에 수량 미니창 항상 띄우기">
+              🪟 내비 위 미니창
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 2: 기기 연동 및 관리 -->
+        <div class="space-y-1.5 pt-2 border-t border-slate-800/80">
+          <div class="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1">
+            <span>⚙️</span><span>기기 연동 및 관리</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button id="openSyncModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition text-left sm:text-center">
+              ☁️ 기기 실시간 공유
+            </button>
+            <button id="openSettingsModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition text-left sm:text-center">
+              🔑 지도·AI 키 설정
+            </button>
+            <button id="openInstallModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition text-left sm:text-center">
+              📱 앱 설치 & APK 가이드
+            </button>
+            <button id="downloadStandaloneBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition text-left sm:text-center" title="현재 앱을 단독 HTML 파일로 백업 저장">
+              💾 단독 HTML 파일 받기
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -137,17 +211,19 @@
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <span class="px-2 py-1 rounded-lg text-[11px] sm:text-xs font-black bg-[#03C75A] text-slate-950 shadow shrink-0">N 내비 연동</span>
-          <h2 class="text-[13px] sm:text-base font-extrabold text-white leading-snug">네이버 내비 목적지에 납품수량을 함께 표시</h2>
+          <h2 class="text-[13px] sm:text-base font-extrabold text-white leading-snug">
+            네이버 내비 상단 목적지에 <span class="text-amber-300 font-black">"원명 [수량]"</span> 자동 표시
+          </h2>
         </div>
-        <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
-          <button id="bannerPipHudBtn" type="button" class="hidden flex-1 sm:flex-initial px-3 py-2.5 sm:py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow">
-            🪟 내비 위 미니창(PiP) 띄우기
+        <div class="flex items-center gap-1.5 w-full sm:w-auto">
+          <button id="bannerPipHudBtn" type="button" class="hidden flex-1 sm:flex-initial px-3 py-2 sm:py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow">
+            🪟 내비 위 미니창(PiP)
           </button>
-          <button id="bannerBgKeepAliveBtn" type="button" class="flex-1 sm:flex-initial px-3 py-2.5 sm:py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition">
-            🔋 백그라운드 알림 유지: 켜짐
+          <button id="bannerBgKeepAliveBtn" type="button" class="flex-1 sm:flex-initial px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition">
+            🔋 백그라운드 유지
           </button>
           <button id="toggleMiniHudBtn" type="button" class="w-full sm:w-auto px-3 py-2 sm:py-1.5 rounded-xl text-xs font-extrabold bg-[#03C75A]/20 hover:bg-[#03C75A]/30 text-emerald-300 border border-[#03C75A]/40 transition">
-            🚗 내비 동행 대형 HUD 모드
+            🚗 대형 HUD 모드
           </button>
         </div>
       </div>
@@ -285,6 +361,9 @@
         </div>
       </div>
     </section>
+
+    <!-- Works Auto-Synced Extra Delivery / Pickup Tasks Section (Visible on Delivery Tab) -->
+    <section id="deliveryWorksSection" class="hidden bg-gradient-to-r from-violet-950/80 via-slate-900 to-slate-900 border-2 border-violet-500/40 rounded-2xl p-3 sm:p-4 shadow-xl space-y-2.5"></section>
 
     <!-- School Cards List -->
     <section id="schoolList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></section>
@@ -979,10 +1058,10 @@
       <button id="domOverlayMainNaviBtn" type="button" class="w-full py-2 px-3 rounded-xl text-xs font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 shadow-md transition flex items-center justify-center gap-1">
         🟢 네이버 내비 길안내 출발 (수량표시)
       </button>
-      <div class="grid grid-cols-3 gap-1.5">
-        <button id="domOverlayBodyOpenAppBtn" type="button" class="py-1.5 px-2 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow">📱 앱열기</button>
-        <button id="domOverlayCompleteBtn" type="button" class="py-1.5 px-2 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow">✓ 완료처리</button>
-        <button id="domOverlayNextBtn" type="button" class="py-1.5 px-2 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-500 text-white shadow">다음 원 ▶</button>
+      <button id="domOverlayBodyOpenAppBtn" type="button" class="hidden">📱 앱열기</button>
+      <div class="grid grid-cols-2 gap-1.5">
+        <button id="domOverlayCompleteBtn" type="button" class="py-2 px-2 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow">✓ 완료처리</button>
+        <button id="domOverlayNextBtn" type="button" class="py-2 px-2 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-500 text-white shadow">다음 원 ▶</button>
       </div>
     </div>
   </div>
@@ -1983,27 +2062,27 @@ function speakSchoolQuantity(school) {
         };
 
         return `
-          <article class="rounded-2xl border ${isNear && !isDone ? 'border-amber-400 ring-2 ring-amber-400/30 bg-slate-900' : isDone ? 'border-slate-800 bg-slate-900/40 opacity-65' : 'border-slate-800 bg-slate-900'} p-4 shadow-lg flex flex-col justify-between gap-3 transition">
+          <article class="delivery-card rounded-2xl p-4 shadow-lg flex flex-col justify-between gap-3 ${isNear && !isDone ? 'delivery-card-arrived ring-2 ring-amber-400/50' : isDone ? 'delivery-card-done' : ''}" data-school-card="${s.id}">
             <div>
               <div class="flex items-start justify-between gap-2">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-700">${s.order}</span>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-xs font-black flex items-center justify-center border border-slate-700 shadow-sm">${s.order}</span>
                   <span class="text-xs font-bold px-2 py-0.5 rounded-md ${s.regionGroup === '김포' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' : s.regionGroup === '고양' ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30' : 'bg-teal-500/15 text-teal-300 border border-teal-500/30'}">${escapeHtml(s.regionGroup)} · ${escapeHtml(s.subRegion)}</span>
                   <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-200 border border-amber-500/30">📘 ${escapeHtml(productLabel(s))}</span>
-                  ${(() => { const l = PICKUPS ? pendingPickupsForSchool(s) : []; const r = l.filter(p => pkGroupOf(p) === 'return').length, x = l.length - r; return (r ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-rose-500 text-white">↩️ 회수 ${r}</span>` : '') + (x ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-violet-500 text-white">➕ 추가 ${x}</span>` : ''); })()}
-                  ${typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === s.id && !isDone ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-[#03C75A] text-slate-950 shadow">🧭 내비·PiP 고정중</span>` : ''}
-                  ${isNear && !isDone ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500 text-slate-950">📍 반경 내 도착</span>` : ''}
+                  ${(() => { const l = PICKUPS ? pendingPickupsForSchool(s) : []; const r = l.filter(p => pkGroupOf(p) === 'return').length, x = l.length - r; return (r ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-rose-500 text-white shadow-sm">↩️ 회수 ${r}</span>` : '') + (x ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-violet-500 text-white shadow-sm">➕ 추가 ${x}</span>` : ''); })()}
+                  ${typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === s.id && !isDone ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-[#03C75A] text-slate-950 shadow">🧭 내비고정중</span>` : ''}
+                  ${isNear && !isDone ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 animate-pulse">📍 근처도착</span>` : ''}
                   ${isDone ? `<span class="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✓ 납품완료</span>` : ''}
                   ${isDone ? (() => { const pr = itemProgress(s); const left = pr.total - pr.done; return left > 0 ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">⚠️ 품목 미확인 ${left}건</span>` : ''; })() : ''}
                 </div>
-                <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 border border-slate-700">합계 ${total}개${teacherTotal(s) ? `<span class="text-sky-300 font-bold"> (교사${teacherTotal(s)})</span>` : ''}</span>
+                <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 border border-slate-700 shadow-sm whitespace-nowrap shrink-0">합계 ${total}개${teacherTotal(s) ? `<span class="text-sky-300 font-bold"> (교사${teacherTotal(s)})</span>` : ''}</span>
               </div>
 
-              <div class="mt-2 flex items-baseline justify-between gap-2">
-                <h3 class="text-lg font-black text-white">${escapeHtml(s.name)}</h3>
-                <span class="text-xs font-semibold ${isNear ? 'text-amber-400 font-bold' : 'text-slate-400'}">${s.dist !== null ? `거리 ${formatDistance(s.dist)}` : ''}</span>
+              <div class="mt-2.5 flex items-baseline justify-between gap-2 cursor-pointer group" data-action="popup" data-id="${s.id}" title="클릭하여 상세 수량 및 품목 확인">
+                <h3 class="text-lg sm:text-xl font-black text-white group-hover:text-amber-300 transition-colors">${escapeHtml(s.name)}</h3>
+                <span class="text-xs font-bold ${isNear ? 'text-amber-400' : 'text-slate-400'} shrink-0">${s.dist !== null ? `거리 ${formatDistance(s.dist)}` : ''}</span>
               </div>
-              <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(s.address)}${s.noCoords ? ' <span class="text-rose-300 font-bold">· 위치 미등록 (도착 시 [📌 현위치 저장]을 눌러주세요)</span>' : ''}</p>
+              <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">${escapeHtml(s.address)}${s.noCoords ? ' <span class="text-rose-300 font-bold">· 위치 미등록 (도착 시 [📌 현위치 저장])</span>' : ''}</p>
 
               <!-- 1~4단계 (학생용) + 교사용 Quantity Grid -->
               ${isMulti(s) ? `<div class="mt-3 overflow-x-auto">${productTableHtml(s, false)}</div>` : `<div class="grid grid-cols-4 gap-1.5 mt-3">
@@ -2014,33 +2093,55 @@ function speakSchoolQuantity(school) {
                 const pr = itemProgress(s);
                 if (!pr.total) return '';
                 const allOk = pr.done === pr.total;
-                return `<div class="mt-2 flex flex-wrap items-center gap-1.5">
-                  <button type="button" data-action="popup" data-id="${s.id}" class="px-2 py-1 rounded-lg text-[11px] font-black border ${allOk ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' : 'bg-violet-500/15 text-violet-200 border-violet-500/40'}">📦 품목 ${pr.done}/${pr.total} 확인${allOk ? ' ✓' : ''}</button>
-                  ${ex.map(x => `<span class="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-violet-200 border border-slate-700">${escapeHtml(x.name)}${x.qty ? ' ' + x.qty : ''}</span>`).join('')}
+                return `<div class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                  <button type="button" data-action="popup" data-id="${s.id}" class="px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${allOk ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25' : 'bg-violet-500/15 text-violet-200 border-violet-500/40 hover:bg-violet-500/25'}">📦 품목 ${pr.done}/${pr.total} 확인${allOk ? ' ✓' : ''}</button>
+                  ${ex.map(x => `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-800 text-violet-200 border border-slate-700">${escapeHtml(x.name)}${x.qty ? ' ' + x.qty : ''}</span>`).join('')}
+                </div>`;
+              })()}
+              ${(() => {
+                const l = typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) && typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(s) : [];
+                if (!l.length) return '';
+                return `<div class="mt-2.5 rounded-xl bg-violet-950/40 border border-violet-500/40 px-3 py-2 space-y-1.5">
+                  <div class="text-[11px] font-extrabold text-violet-200 flex items-center justify-between">
+                    <span>🔗 웍스 연동 할 일 ${l.length}건</span>
+                    <span class="text-[10px] text-slate-400">납품 시 함께 처리</span>
+                  </div>
+                  ${l.map(p => `<div class="flex items-center justify-between gap-1.5 text-xs pt-0.5 border-t border-violet-900/40">
+                    <span class="font-bold text-amber-200 truncate">[${escapeHtml(p.type)}] ${escapeHtml(p.items || p.title)}${p.qty ? ` (${p.qty}개)` : ''}</span>
+                    <button type="button" data-pk-done="${escapeHtml(p.id)}" class="shrink-0 px-2 py-0.5 rounded bg-violet-500 hover:bg-violet-400 text-white text-[11px] font-black transition">✓ 완료</button>
+                  </div>`).join('')}
                 </div>`;
               })()}
             </div>
 
             <div class="pt-2.5 border-t border-slate-800/80 space-y-2">
-              <div class="grid grid-cols-[1fr_auto] gap-1.5">
-                <a href="${buildNaverNaviSchemeUrl(s)}" target="_top" data-action="naver-speech" data-id="${s.id}" class="flex items-center justify-center gap-1 px-2.5 py-3 sm:py-2 rounded-xl text-sm sm:text-xs font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 transition shadow text-center">
-                  🟢 네이버 내비 출발 (자동 팝업)
+              <div class="grid grid-cols-[1fr_auto] gap-2">
+                <a href="${buildNaverNaviSchemeUrl(s)}" target="_top" data-action="naver-speech" data-id="${s.id}" class="naver-btn-glow flex items-center justify-center gap-1.5 px-3 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 text-center transition shadow">
+                  <span class="text-sm">🟢</span><span>네이버 내비 길안내 (수량표시)</span>
                 </a>
                 <button type="button" data-action="lock-pip" data-id="${s.id}" class="hidden">📌 PiP고정</button>
-                <button type="button" data-action="toggle-done" data-id="${s.id}" class="px-3 py-3 sm:py-2 rounded-xl text-sm sm:text-xs font-black ${isDone ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'} transition">
+                <button type="button" data-action="toggle-done" data-id="${s.id}" class="px-3.5 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition shadow-sm ${isDone ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-emerald-500/20'}">
                   ${isDone ? '완료 해제' : '✓ 납품완료'}
                 </button>
               </div>
-              <div class="grid grid-cols-4 gap-1.5 text-[11px] sm:text-xs font-bold">
-                <a ${naverMapAttrs(s)} class="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition text-center"><span>🗺️</span><span>네이버지도</span></a>
-                <button type="button" data-action="popup" data-id="${s.id}" class="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition"><span>🔍</span><span>크게 보기</span></button>
-                <a href="${kakaoNavUrl}" target="_blank" rel="noopener noreferrer" class="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition text-center"><span>🧭</span><span>카카오맵</span></a>
-                <button type="button" data-action="calibrate" data-id="${s.id}" class="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="현재 서 있는 위치를 이 원의 정확한 도착 좌표로 저장"><span>📌</span><span>현위치 저장</span></button>
+              <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
+                <button type="button" data-action="popup" data-id="${s.id}" class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 border border-slate-700 transition flex items-center justify-center gap-1">
+                  <span>🔍</span><span>상세·수량확인</span>
+                </button>
+                <a ${naverMapAttrs(s)} class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition flex items-center justify-center gap-1 text-center">
+                  <span>🗺️</span><span>네이버지도</span>
+                </a>
+                <button type="button" data-action="calibrate" data-id="${s.id}" class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 ${s.noCoords ? 'text-rose-300 border-rose-500/40 bg-rose-500/10' : 'text-slate-400 hover:text-slate-200 border-slate-700'} transition flex items-center justify-center gap-1" title="현재 서 있는 GPS 위치를 이 원의 도착 좌표로 저장">
+                  <span>📌</span><span>현위치저장</span>
+                </button>
               </div>
             </div>
           </article>
         `;
       }).join('');
+      if (typeof renderDeliveryWorksSection === 'function') {
+        try { renderDeliveryWorksSection(); } catch (e) {}
+      }
     }
 
     const GPS_BTN_ON_CLASS = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-500 hover:bg-rose-400 text-white transition shadow-lg shadow-rose-500/20 flex items-center gap-1.5';
@@ -2833,16 +2934,29 @@ function speakSchoolQuantity(school) {
       });
       // score
       const addrKey = normName(addr).replace(/^경기(도)?/, '');
+      const nameRegionMatch = String(name || '').match(/^(강화|김포|고양|파주|일산|운정|검단|인천|연천|양주|동두천|포천|의정부|부천|서울)/);
+      const nameRegionHint = nameRegionMatch ? nameRegionMatch[1] : '';
       uniq.forEach(c => {
         let sc = Math.max(name ? nameScore(name, c.name) : 0, ...variants.map(v => nameScore(v, c.name)));
         const ca = normName(c.address).replace(/^경기(도)?/, '');
         const cj = normName(c.jibun).replace(/^경기(도)?/, '');
+        const fullAddrText = `${c.address || ''} ${c.jibun || ''}`;
+        const matchesNameRegion = !!(nameRegionHint && fullAddrText.includes(nameRegionHint));
         if (addrKey && (ca.includes(addrKey) || addrKey.includes(ca) || cj.includes(addrKey))) sc += 0.6;
-        if (regionHint && (c.address + c.jibun).includes(regionHint)) sc += 0.1;
+        if (regionHint && fullAddrText.includes(regionHint)) sc += 0.1;
+        if (matchesNameRegion) sc += 0.25;
         if (/어린이집|유치원|학교|교육/.test(c.category)) sc += 0.1;
         if (c.rough) sc -= 0.4;
         const ctr = workAreaCenter();
-        if (ctr && !addrKey) { const km = computeHaversineMeters(ctr.lat, ctr.lng, c.lat, c.lng) / 1000; if (km > 35) sc -= 0.5; else if (km > 20) sc -= 0.15; c.km = km; }
+        if (ctr && !addrKey) {
+          const km = computeHaversineMeters(ctr.lat, ctr.lng, c.lat, c.lng) / 1000;
+          if (!matchesNameRegion) {
+            if (km > 35) sc -= 0.5;
+            else if (km > 20) sc -= 0.15;
+          }
+          c.km = km;
+          c.matchesNameRegion = matchesNameRegion;
+        }
         c.score = sc;
       });
       uniq.sort((a, b) => b.score - a.score);
@@ -2850,7 +2964,7 @@ function speakSchoolQuantity(school) {
       let best = null;
       if (top && !top.rough) {
         const nameOk = (name && nameScore(name, top.name) >= 0.85) || variants.some(v => nameScore(v, top.name) >= 0.85);
-        const far = isFinite(top.km) && top.km > 35;
+        const far = isFinite(top.km) && top.km > 35 && !top.matchesNameRegion;
         const addrOk = addrKey && (normName(top.address).replace(/^경기(도)?/, '').includes(addrKey) || normName(top.jibun).includes(addrKey));
         const second = uniq[1];
         const ambiguous = second && second.score >= top.score - 0.05 && computeHaversineMeters(top.lat, top.lng, second.lat, second.lng) > 150 && !addrOk;
@@ -3955,14 +4069,100 @@ function speakSchoolQuantity(school) {
     }
     function newPickupId() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
-    // ---- text analysis ----
-    function pkTypeOf(t) {
-      const s = String(t || '');
+    // ---- text analysis & user-registered Works task item parser ----
+    function parseWorksTaskItems(titleRest, worksContent) {
+      const rows = [];
+      const seen = new Map();
+      const addRow = (rawLabel, rawQty) => {
+        let label = String(rawLabel || '')
+          .replace(/^[\s\-•·*▶▷►✔✓□■◆◇○●\d]+[.)]\s*/, '')
+          .replace(/^(?:추가\s*납품|추가|납품|교구|선물용품|선물|품목)\s*[:：\-]\s*/, '')
+          .replace(/\s*(?:추가\s*납품|추가|납품|배송|발송|요청|전달|회수|반품|수거|보내기|드리기)\s*$/, '')
+          .replace(/^[\s,.:·\-|]+|[\s,.:·\-|]+$/g, '')
+          .trim();
+        const qty = parseInt(rawQty, 10);
+        if (!label || !Number.isFinite(qty) || qty <= 0) return false;
+        if (/^(기한|메시지방|카테고리|요청자|담당자|월|일|시|분|층|호)$/.test(label)) return false;
+        const key = normName(label);
+        if (!key) return false;
+        if (seen.has(key)) {
+          const idx = seen.get(key);
+          if (rows[idx].qty !== qty) rows[idx].qty += qty;
+          return true;
+        }
+        seen.set(key, rows.length);
+        rows.push({ label, qty, done: 0 });
+        return true;
+      };
+
+      const itemLineRe = /^(.+?)\s*[:：=|×xX\-]?\s*(\d+)\s*(?:개|권|부|세트|박스|통|장|매|조|점|명|달|set|ea)?(?:\s*(?:추가\s*납품|추가|납품|배송|발송|회수|반품|수거|요청|전달|더))?$/i;
+
+      if (titleRest) {
+        String(titleRest).split(/\s*[,，/·]\s*/).map(s => s.trim()).filter(Boolean).forEach(seg => {
+          const m = seg.match(itemLineRe);
+          if (m && !/^\d+\s*[월일층호]$/.test(seg) && !/번\s*배송/.test(seg)) {
+            addRow(m[1], m[2]);
+          }
+        });
+      }
+
+      const contentSummaryParts = [];
+      const META_LINE = /^(미완료된\s*할\s*일|완료된\s*할\s*일|기한|없음|기한\s*없음|메시지방|발주\/추가\/취소\s*방|카테고리|미분류\s*할\s*일|요청자|담당자|완료하기|미완료로\s*변경)$/;
+      if (worksContent) {
+        String(worksContent).split(/\r?\n/).map(s => s.trim()).filter(Boolean).forEach(line => {
+          if (META_LINE.test(line)) return;
+          const subSegs = line.includes(',') ? line.split(/\s*[,，]\s*/) : [line];
+          subSegs.forEach(seg => {
+            const s = seg.trim();
+            if (!s || META_LINE.test(s)) return;
+            const m = s.match(itemLineRe);
+            if (m) {
+              if (addRow(m[1], m[2])) {
+                contentSummaryParts.push(`${m[1].trim()} ${parseInt(m[2], 10)}`);
+              }
+            } else {
+              contentSummaryParts.push(s);
+            }
+          });
+        });
+      }
+
+      const totalQty = rows.reduce((sum, r) => sum + r.qty, 0);
+      let baseItems = String(titleRest || '').trim();
+      const contentStr = contentSummaryParts.join(', ');
+      let combinedItems = baseItems;
+      if (contentStr) {
+        if (!baseItems || /^(납품|추가\s*납품|추가|교구|선물용품\s*납품|선물\s*납품|발주|배송)$/.test(baseItems)) {
+          combinedItems = baseItems ? `${baseItems} (${contentStr})` : contentStr;
+        } else if (!normName(baseItems).includes(normName(contentStr))) {
+          combinedItems = `${baseItems} · ${contentStr}`;
+        }
+      }
+      return { fieldQuantities: rows, totalQty, combinedItems: combinedItems || baseItems };
+    }
+
+    function pkMergeFieldQuantities(existingRows, parsedRows, isDone) {
+      if (!Array.isArray(parsedRows) || !parsedRows.length) {
+        return Array.isArray(existingRows) ? existingRows : [];
+      }
+      const prev = Array.isArray(existingRows) ? existingRows : [];
+      // If user already manually configured custom rows with progress that don't match parsed at all, preserve done counts
+      return parsedRows.map(r => {
+        const match = prev.find(old => normName(old.label) === normName(r.label));
+        const doneVal = isDone ? r.qty : Math.min(r.qty, Math.max(0, Number(match && match.done || 0)));
+        return { label: r.label, qty: r.qty, done: doneVal };
+      });
+    }
+
+    function pkTypeOf(t, content) {
+      const s = `${String(t || '')}\n${String(content || '')}`;
       if (/반품|반송/.test(s)) return '반품';
       if (/회수|수거|가져오|픽업/.test(s)) return '회수';
       if (/A\s*\/\s*S|에이에스|수리|고장|파손|불량|교체/i.test(s)) return 'A/S';
-      if (/교구/.test(s) && /추가|납품|보내|배송|전달/.test(s)) return '교구';
-      if (/추가\s*(납품|배송|발송|요청)|\d+\s*(권|개|부|세트)\s*(더|추가)/.test(s)) return '추가';
+      if (/교구/.test(s) && /추가|납품|보내|배송|전달|발주|요청/.test(s)) return '교구';
+      if (/추가\s*(납품|배송|발송|요청|발주)?|\d+\s*(권|개|부|세트|박스|조|점)\s*(더|추가)/.test(s)) return '추가';
+      if (/납품|발주|배송|발송|출고|갖다\s*주|보내\s*주/.test(s)) return '추가';
+      if (parseWorksTaskItems('', s).fieldQuantities.length > 0 && !/방문/.test(s)) return '추가';
       if (/증정|선물|드리기|전달/.test(s)) return '증정';
       if (/방문/.test(s)) return '방문';
       return '기타';
@@ -3978,13 +4178,13 @@ function speakSchoolQuantity(school) {
       else if (now - dt > 1000 * 3600 * 24 * 240) y += 1;
       return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     }
-    // 웍스 줄임말 → 지도 검색용 정식 이름 후보 ("시립다울" → "다울어린이집", "고양시립다울어린이집" …)
+    // 웍스 줄임말 → 지도 검색용 정식 이름 후보 ("시립다울" → "다울어린이집", "강화늘푸른" → "강화 늘푸른어린이집" …)
     function pkNameVariants(n) {
       const s = String(n || '').replace(/\s+/g, '').trim();
       if (!s) return [];
       const out = [pkGuessFullName(s)];
       let m;
-      if ((m = s.match(/^(고양|김포|파주|서울)?(시립|구립|국공립)(.+?)(어린이집)?$/))) {
+      if ((m = s.match(/^(고양|김포|파주|서울|인천|강화|연천|양주)?(시립|구립|국공립)(.+?)(어린이집)?$/))) {
         const core = m[3];
         out.push(core + '어린이집');
         if (m[1]) out.push(m[1] + '시립' + core + '어린이집'); else { out.push('고양시립' + core + '어린이집'); out.push('김포시립' + core + '어린이집'); }
@@ -3993,6 +4193,17 @@ function speakSchoolQuantity(school) {
         out.push(m[1] + '초등학교병설유치원'); out.push(m[1] + '초등학교 병설유치원'); out.push(m[1] + '초등학교');
       } else if (!/(유치원|어린이집|학교|센터)$/.test(s)) {
         out.push(s + '유치원'); out.push(s + '어린이집');
+      }
+      const regM = s.match(/^(강화|김포|고양|파주|일산|운정|검단|인천|연천|양주|동두천|포천|의정부|부천)(.+)$/);
+      if (regM && regM[2].length >= 2) {
+        const reg = regM[1], core = regM[2].replace(/(유치원|어린이집)$/, '');
+        if (core.length >= 2) {
+          out.push(`${reg} ${core}어린이집`);
+          out.push(`${reg} ${core}유치원`);
+          out.push(`${reg} ${core}`);
+          out.push(`${core}어린이집`);
+          out.push(`${core}유치원`);
+        }
       }
       return out.filter((v, i, a) => v && a.indexOf(v) === i);
     }
@@ -4003,11 +4214,12 @@ function speakSchoolQuantity(school) {
       if (/^(시립|구립|국공립|고양시립|김포시립)/.test(s) || /어린이$/.test(s)) return s + '어린이집';
       return s;
     }
-    // "연천초병설 11월 마음빛깔 2번배송됨. 회수요청" → { school, items }
-    function analyzePickupTitle(title) {
-      const t = String(title || '').replace(/\s+/g, ' ').trim();
+    // "연천초병설 11월 마음빛깔 2번배송됨. 회수요청" 또는 "강화늘푸른 책상4개, 스파게티패드 1개, 선물용품 납품" + 본문 품목 → { school, items, qty, fieldQuantities }
+    function analyzePickupTitle(title, worksContent) {
+      const rawTitle = String(title || '').replace(/^\s*\[[^\]]*\]\s*/, '').replace(/\s+/g, ' ').trim();
+      const t = rawTitle;
       // first word (without "(...)" and trailing action words) = school name as written
-      let first = (t.split(' ')[0] || '').replace(/[(\[].*$/, '').replace(/(샘플)?(회수|반품|수거|증정|선물|방문)(요청|하기)?[.]?$/, '');
+      let first = (t.split(' ')[0] || '').replace(/[(\[].*$/, '').replace(/(샘플)?(회수|반품|수거|증정|선물|방문|납품|추가)(요청|하기)?[.]?$/, '');
       if (first.length < 2) first = t.split(' ').slice(0, 2).join(' ');
       // link to a delivery school only when the name really matches
       let match = null, best = 0;
@@ -4020,23 +4232,36 @@ function speakSchoolQuantity(school) {
       let rest = t;
       if (first && t.indexOf(first) === 0) rest = t.slice(first.length);
       rest = rest.replace(/^[\s,.:·-]+/, '').trim();
+      const parsed = parseWorksTaskItems(rest, worksContent);
       const qtyM = t.match(/(\d+)\s*(개|권|부|세트|박스|set)/i);
-      return { school, schoolId: match ? match.id : null, items: rest, qty: qtyM ? parseInt(qtyM[1], 10) : 0 };
+      const qty = parsed.totalQty || (qtyM ? parseInt(qtyM[1], 10) : 0);
+      return {
+        school,
+        schoolId: match ? match.id : null,
+        items: parsed.combinedItems || rest,
+        qty,
+        fieldQuantities: parsed.fieldQuantities
+      };
     }
     function pkMakeRow(o) {
-      const a = analyzePickupTitle(o.title);
+      const rawContent = String(o.worksContent || o.content || '').trim();
+      const a = analyzePickupTitle(o.title, rawContent);
+      const detectedType = worksTypeFromTitle(o.title, rawContent);
       return {
         include: true, title: String(o.title || '').trim(),
         school: (o.school && String(o.school).trim()) || a.school, schoolId: a.schoolId,
-        type: PK_TYPES.includes(o.type) ? o.type : (t => pkMode === 'extra' && !PK_EXTRA_TYPES.includes(t) ? '추가' : t)(pkTypeOf(o.title)),
-        items: (o.items && String(o.items).trim()) || a.items, qty: a.qty,
+        type: PK_TYPES.includes(o.type) ? o.type : (t => pkMode === 'extra' && !PK_EXTRA_TYPES.includes(t) ? '추가' : t)(detectedType),
+        items: (o.items && String(o.items).trim() && !rawContent) ? String(o.items).trim() : a.items,
+        qty: o.qty || a.qty,
+        fieldQuantities: Array.isArray(o.fieldQuantities) && o.fieldQuantities.length ? o.fieldQuantities : a.fieldQuantities,
+        worksContent: rawContent,
         due: o.due && /^\d{4}-\d{2}-\d{2}$/.test(o.due) ? o.due : pkDueFrom(o.due || ''),
-        assignee: String(o.assignee || '').trim(), memo: ''
+        assignee: String(o.assignee || '').trim(), memo: String(o.memo || '').trim()
       };
     }
 
-    // NAVER WORKS 할 일 text (copied text or OCR result)
-    const PK_HEADER = /(^|\s)(노트\s+일정|미분류|완료된\s*할\s*일|할\s*일\s*\(\d+\)|전체\s*\S?\s*담당|발주\/|취소\s*방)/;
+    // NAVER WORKS 할 일 text (copied text or OCR result - supports both List View, Detail View screenshot, and Multi-line paste)
+    const PK_HEADER = /(^|\s)(노트\s+일정|미분류|완료된\s*할\s*일|미완료된\s*할\s*일|할\s*일\s*\(\d+\)|전체\s*\S?\s*담당|발주\/|취소\s*방)/;
     function pkCleanLine(l) {
       return String(l || '')
         .replace(/[|ㅣ]/g, '|')
@@ -4047,25 +4272,95 @@ function speakSchoolQuantity(school) {
     }
     function parseWorksText(text) {
       const raw = String(text || '').split(/\r?\n/).map(pkCleanLine).filter(Boolean);
-      const isMeta = l => /^기한\s*[:：]?|담당자\s*[:：]|^기한\s*없음/.test(l);
+      if (!raw.length) return [];
+
+      // 1) NAVER WORKS [할 일] 상세 화면 (Detail View like "미완료된 할 일 / 제목 / 품목 줄바꿈 / 기한 / 없음 / 메시지방 / 카테고리 / 요청자 / 담당자")
+      const isDetailScreen = raw.some(l => /^(미완료된\s*할\s*일|메시지방|요청자|완료하기)$/.test(l)) ||
+        (raw.includes('기한') && (raw.includes('담당자') || raw.includes('카테고리')));
+      if (isDetailScreen) {
+        let title = '';
+        const contentLines = [];
+        let due = '', assignee = '', mode = 'body';
+        const DETAIL_META_LABELS = { '기한': 'due', '메시지방': 'room', '카테고리': 'cat', '요청자': 'req', '담당자': 'assignee' };
+        for (let i = 0; i < raw.length; i++) {
+          const l = raw[i];
+          if (/^(미완료된\s*할\s*일|완료된\s*할\s*일|할\s*일\s*상세|완료하기|미완료로\s*변경|수정|삭제)$/.test(l)) continue;
+          if (DETAIL_META_LABELS[l]) {
+            mode = DETAIL_META_LABELS[l];
+            continue;
+          }
+          const inlineMeta = l.match(/^(기한|메시지방|카테고리|요청자|담당자)\s*[:：]\s*(.+)$/);
+          if (inlineMeta && !l.includes('|')) {
+            const k = DETAIL_META_LABELS[inlineMeta[1]];
+            const val = inlineMeta[2].trim();
+            if (k === 'due') due = /없음/.test(val) ? '' : pkDueFrom(val);
+            else if (k === 'assignee') assignee = val;
+            mode = 'meta_wait';
+            continue;
+          }
+          if (mode === 'due') { due = /없음/.test(l) ? '' : pkDueFrom(l); mode = 'meta_wait'; continue; }
+          if (mode === 'room' || mode === 'cat' || mode === 'req') { mode = 'meta_wait'; continue; }
+          if (mode === 'assignee') { assignee = l; mode = 'meta_wait'; continue; }
+          if (mode === 'body') {
+            if (!title) title = l;
+            else contentLines.push(l);
+          }
+        }
+        if (title) {
+          return [pkMakeRow({ title, worksContent: contentLines.join('\n'), due, assignee })];
+        }
+      }
+
+      // 2) NAVER WORKS [할 일] 목록 화면 (List View with "기한 : ... | 담당자 : ...")
+      const isMeta = l => /^기한\s*[:：].*\||\|\s*담당자\s*[:：]|^기한\s*없음\s*\|/.test(l) || (/^기한\s*[:：]?|^담당자\s*[:：]|^기한\s*없음/.test(l) && l.length > 3);
       const out = [];
       if (raw.some(isMeta)) {
         let buf = [];
-        // drop app chrome lines before the first task
+        const itemLineRe = /^(.+?)\s*[:：=|×xX\-]?\s*(\d+)\s*(?:개|권|부|세트|박스|통|장|매|조|점|명|달|set|ea)?$/i;
         raw.forEach(l => {
           if (isMeta(l)) {
             const due = /기한\s*없음/.test(l) ? '' : pkDueFrom((l.match(/기한\s*[:：]?\s*([^|]*)/) || [])[1] || '');
             const am = l.match(/담당자\s*[:：]?\s*([가-힣A-Za-z0-9]+)/);
-            const title = buf.reduce((acc, x) => acc ? (/[,.]$/.test(acc) ? acc + ' ' + x : acc + x) : x, '');
-            if (title) out.push(pkMakeRow({ title, due, assignee: am ? am[1] : '' }));
+            if (buf.length) {
+              const firstLine = buf[0];
+              const restLines = buf.slice(1);
+              if (restLines.length && restLines.every(x => itemLineRe.test(x))) {
+                out.push(pkMakeRow({ title: firstLine, worksContent: restLines.join('\n'), due, assignee: am ? am[1] : '' }));
+              } else {
+                const title = buf.reduce((acc, x) => acc ? (/[,.]$/.test(acc) ? acc + ' ' + x : acc + ' ' + x) : x, '');
+                if (title) out.push(pkMakeRow({ title, due, assignee: am ? am[1] : '' }));
+              }
+            }
             buf = [];
-          } else if (PK_HEADER.test(l) && !out.length && !/회수|반품|증정|방문|샘플/.test(l)) {
+          } else if (PK_HEADER.test(l) && !out.length && !/회수|반품|증정|방문|샘플|납품|추가|교구/.test(l)) {
             buf = [];
           } else buf.push(l);
         });
-      } else {
-        raw.forEach(l => { if (!PK_HEADER.test(l) && l.length >= 3) out.push(pkMakeRow({ title: l })); });
+        return out;
       }
+
+      // 3) 자유 형식 붙여넣기 (첫 줄 원이름+제목 아래에 품목별 수량이 줄바꿈으로 적힌 경우 묶어서 처리)
+      const itemOnlyRe = /^([가-힣A-Za-z0-9()·\s]+?)\s*[:：=|×xX\-]?\s*(\d+)\s*(?:개|권|부|세트|박스|통|장|매|조|점|명|set|ea)?$/;
+      const looksLikeSchoolOrTaskTitle = l => {
+        if (/^\s*\[[^\]]+\]/.test(l)) return true;
+        if (/(유치원|어린이집|병설|시립|구립|국공립|학원|초등학교|센터|회수|반품|납품|배송|발주|방문|A\/S|에이에스|샘플)/.test(l)) return true;
+        if (l.includes(',')) return true;
+        const first = (l.split(/\s+/)[0] || '');
+        if (SCHOOLS.some(s => nameScore(first, s.name) >= 0.85)) return true;
+        return false;
+      };
+      let curTask = null;
+      raw.forEach(l => {
+        if (PK_HEADER.test(l) && !/회수|반품|증정|방문|샘플|납품|추가|교구/.test(l)) return;
+        if (l.length < 2) return;
+        if (curTask && itemOnlyRe.test(l) && !looksLikeSchoolOrTaskTitle(l)) {
+          curTask.contentLines.push(l);
+        } else {
+          if (curTask) out.push(pkMakeRow({ title: curTask.title, worksContent: curTask.contentLines.join('\n') }));
+          curTask = { title: l, contentLines: [] };
+        }
+      });
+      if (curTask) out.push(pkMakeRow({ title: curTask.title, worksContent: curTask.contentLines.join('\n') }));
       return out;
     }
 
@@ -4080,20 +4375,21 @@ function speakSchoolQuantity(school) {
       const blob = await resizeImage(file, 5000, 0.85);
       const data = await blobToBase64(blob);
       const known = SCHOOLS.map(s => s.name).join(', ');
-      const prompt = `이 사진은 네이버 웍스 [할 일] 목록 화면입니다. 각 할 일마다 다음을 읽어 JSON 배열로 출력하세요.
-- title: 할 일 제목 전체(줄바꿈된 부분은 이어 붙임, 원문 그대로)
-- school: 제목에서 유치원·어린이집 이름(예: "연천초병설", "시립다울", "예솔유치원"). 원문 표기 그대로.
-- type: 회수 / 반품 / 교구 / A/S / 증정 / 방문 / 기타 중 하나 (오배송 회수는 회수, 샘플 회수는 회수, 책 선물은 증정, 교구 추가 납품은 교구, 수리·교체·부품 전달은 A/S)
-- items: 회수·반품할 품목과 수량(예: "마음빛깔 2단계 5개", "울랄라, 책톡톡, 맵프렌즈 샘플")
+      const prompt = `이 사진은 네이버 웍스 [할 일] 목록 화면 또는 [할 일] 상세 화면(사용자가 직접 등록한 할 일 포함)입니다. 각 할 일마다 다음을 읽어 JSON 배열로 출력하세요.
+- title: 할 일 제목 전체(원문 그대로)
+- content: 상세 화면 본문에 줄바꿈으로 적힌 세부 품목·수량 내용(예: "보석화장대 12\n코딩기차마을 13\n스마트테트리스 17"). 없으면 빈 문자열
+- school: 제목에서 유치원·어린이집·원 이름(예: "강화늘푸른", "연천초병설", "시립다울", "예솔유치원"). 원문 표기 그대로
+- type: 회수 / 반품 / 추가 / 교구 / A/S / 증정 / 방문 / 기타 중 하나 (말머리 [추가]가 없더라도 납품·발주·배송·선물용품 납품이나 품목별 수량 나열이면 추가, 교구 납품이면 교구, 오배송·샘플 회수는 회수, 수리·교체는 A/S)
+- items: 납품·회수·반품할 모든 품목과 수량 요약(제목과 본문 품목 모두 포함)
 - due: "기한 : 11. 9. (월)"이면 "11.9", 기한 없음이면 빈 문자열
-- assignee: 담당자 이름
-화면 상단 메뉴(노트, 일정, 할 일, 폴더, 전체, 담당, 요청, 미분류 할 일)는 제외하세요.
+- assignee: 담당자 이름(예: "서부동심")
+화면 상단/하단 메뉴(미완료된 할 일, 완료하기, 메시지방, 발주/추가/취소 방, 카테고리, 미분류 할 일, 노트, 일정)는 제외하세요.
 원 이름 철자 참고(기존 납품처): ${known}`;
       const body = {
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: blob.type || 'image/jpeg', data } }] }],
         generationConfig: {
           temperature: 0, responseMimeType: 'application/json',
-          responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { title: { type: 'STRING' }, school: { type: 'STRING' }, type: { type: 'STRING' }, items: { type: 'STRING' }, due: { type: 'STRING' }, assignee: { type: 'STRING' } }, required: ['title'] } }
+          responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { title: { type: 'STRING' }, content: { type: 'STRING' }, school: { type: 'STRING' }, type: { type: 'STRING' }, items: { type: 'STRING' }, due: { type: 'STRING' }, assignee: { type: 'STRING' } }, required: ['title'] } }
         }
       };
       const rows = await geminiGenerate(body, msg => pkSetStatus('info', msg));
@@ -4115,7 +4411,7 @@ function speakSchoolQuantity(school) {
     function pkShowReview(rows, label) {
       pkReviewRows = rows.map(r => ({ ...r, include: !pkIsDuplicate(r), dup: pkIsDuplicate(r) }));
       const box = document.getElementById('pkReview');
-      if (!pkReviewRows.length) { box.classList.add('hidden'); pkSetStatus('err', `${label}에서 할 일을 찾지 못했습니다. 웍스 [할 일] 목록이 보이도록 캡처했는지 확인해 주세요.`); return; }
+      if (!pkReviewRows.length) { box.classList.add('hidden'); pkSetStatus('err', `${label}에서 할 일을 찾지 못했습니다. 웍스 [할 일] 목록이나 상세 화면이 보이도록 캡처했는지 확인해 주세요.`); return; }
       const dups = pkReviewRows.filter(r => r.dup).length;
       pkSetStatus('ok', `✓ ${label}에서 <strong>${pkReviewRows.length}건</strong>을 읽었습니다.${dups ? ` 이미 목록에 있는 ${dups}건은 선택 해제했습니다.` : ''} 원 이름과 종류를 확인한 뒤 추가하세요.`);
       pkRenderReview();
@@ -4133,6 +4429,8 @@ function speakSchoolQuantity(school) {
             <button type="button" data-pkr-del="${i}" class="shrink-0 w-8 h-8 rounded-lg bg-slate-900 text-rose-300 border border-slate-700 font-bold" aria-label="이 줄 삭제">✕</button>
           </div>
           <div class="text-xs text-slate-300 pl-7 leading-snug">${escapeHtml(r.title)}</div>
+          ${r.worksContent ? `<div class="text-[11px] text-amber-200 pl-7 whitespace-pre-line leading-snug">${escapeHtml(r.worksContent)}</div>` : ''}
+          ${Array.isArray(r.fieldQuantities) && r.fieldQuantities.length ? `<div class="flex flex-wrap gap-1 pl-7">${r.fieldQuantities.map(q => `<span class="px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-200 border border-violet-500/40 text-[11px] font-bold">${escapeHtml(q.label)} ${q.qty}</span>`).join('')}</div>` : ''}
           <div class="flex flex-wrap gap-1 pl-7 text-[11px]">
             ${r.schoolId ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-200 border border-emerald-500/30">📦 납품 목록의 원과 연결</span>' : ''}
             ${r.due ? `<span class="px-1.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">기한 ${pkDueLabel(r.due)}</span>` : ''}
@@ -4172,13 +4470,23 @@ function speakSchoolQuantity(school) {
       const now = Date.now();
       const added = sel.map((r, i) => ({
         id: newPickupId(), title: r.title, school: String(r.school || '').trim(), schoolId: r.schoolId || null,
-        type: r.type, items: r.items || '', qty: r.qty || 0, due: r.due || '', assignee: r.assignee || '', memo: r.memo || '',
+        type: r.type, items: r.items || '', qty: r.qty || 0,
+        fieldQuantities: Array.isArray(r.fieldQuantities) && r.fieldQuantities.length ? r.fieldQuantities : [],
+        worksContent: r.worksContent || '',
+        due: r.due || '', assignee: r.assignee || '', memo: r.memo || '',
         address: '', lat: null, lng: null, done: false, doneAt: null, createdAt: now + i, source: 'works'
       }));
       PICKUPS = PICKUPS.concat(added);
       savePickups();
       pkReviewRows = []; document.getElementById('pkReview').classList.add('hidden');
-      pkSetStatus('ok', `✓ ${added.length}건을 회수·반품 목록에 추가했습니다. 납품 목록에 없는 원은 위치를 자동으로 찾는 중입니다…`);
+      const hasExtra = added.some(p => pkGroupOf(p) === 'extra');
+      const hasReturn = added.some(p => pkGroupOf(p) === 'return');
+      if (hasExtra && !hasReturn && pkMode !== 'extra') {
+        pkMode = 'extra'; pkFilter = 'pending';
+      } else if (hasReturn && !hasExtra && pkMode !== 'return') {
+        pkMode = 'return'; pkFilter = 'pending';
+      }
+      pkSetStatus('ok', `✓ ${added.length}건을 ${hasExtra && !hasReturn ? '추가 납품' : hasReturn && !hasExtra ? '회수·반품' : '할 일'} 목록에 추가했습니다. 납품 목록에 없는 원은 위치를 자동으로 찾는 중입니다…`);
       document.getElementById('pkTextBox').classList.add('hidden');
       renderPickups(); renderList();
       pkAutoGeocode(added);
@@ -4197,7 +4505,7 @@ function speakSchoolQuantity(school) {
           try {
             const vs = pkNameVariants(p.school);
             const r = await geocodeSchool(vs[0] || p.school, p.address || '', { variants: vs.slice(1) });
-            if (r.best) { p.lat = r.best.lat; p.lng = r.best.lng; if (!p.address) p.address = r.best.address || ''; found++; savePickups(); renderPickups(); }
+            if (r.best) { p.lat = r.best.lat; p.lng = r.best.lng; if (!p.address) p.address = r.best.address || ''; found++; savePickups(); renderPickups(); renderList(); }
           } catch (e) {}
           if (pkGeoQueued) break;
           if (!kakaoUsable()) await sleep(1100);
@@ -4277,6 +4585,98 @@ function speakSchoolQuantity(school) {
     function pendingPickupsForSchool(school) {
       return PICKUPS.filter(p => !p.done && (p.schoolId === school.id || (!p.schoolId && nameScore(p.school, school.name) >= 0.9)));
     }
+    function renderDeliveryWorksSection() {
+      const sec = document.getElementById('deliveryWorksSection');
+      if (!sec) return;
+      if (typeof pkEnrichWorks === 'function') pkEnrichWorks();
+      const pendingAll = (PICKUPS || []).filter(p => p && !p.done);
+      const unlinked = pendingAll.filter(p => !pkLinkedSchool(p));
+      const extraPending = pendingAll.filter(p => pkGroupOf(p) === 'extra');
+      const returnPending = pendingAll.filter(p => pkGroupOf(p) === 'return');
+      if (!pendingAll.length) {
+        sec.classList.add('hidden');
+        sec.innerHTML = '';
+        return;
+      }
+      sec.classList.remove('hidden');
+      sec.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-2 py-0.5 rounded-lg text-[11px] font-black bg-violet-500 text-white">🔗 네이버 웍스 할 일 자동 연동</span>
+            <span class="text-xs sm:text-sm font-extrabold text-white">
+              추가 납품 <strong class="text-violet-300">${extraPending.length}건</strong> · 회수·반품 <strong class="text-rose-300">${returnPending.length}건</strong>
+              ${unlinked.length ? `<span class="text-amber-300 ml-1">(정규 납품 외 단독 방문 원 ${unlinked.length}건)</span>` : ''}
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" data-dw-sync class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition">🔄 웍스 동기화</button>
+            ${extraPending.length ? `<button type="button" data-dw-tab="extra" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-violet-500/25 hover:bg-violet-500/40 text-violet-200 border border-violet-500/40 transition">➕ 추가 납품 탭 보기</button>` : ''}
+            ${returnPending.length ? `<button type="button" data-dw-tab="pickup" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-rose-500/25 hover:bg-rose-500/40 text-rose-200 border border-rose-500/40 transition">↩️ 회수·반품 탭 보기</button>` : ''}
+          </div>
+        </div>
+        ${unlinked.length ? `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+          ${unlinked.map(p => {
+            const c = pkCoords(p); const ok = hasCoords(c);
+            const dist = pkDistance(p);
+            const fqs = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
+            return `
+            <article class="rounded-xl border border-violet-500/40 bg-slate-950/90 p-3 space-y-2" data-pk-card="${escapeHtml(p.id)}">
+              <div class="flex flex-wrap items-center justify-between gap-1.5">
+                <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                  <span class="px-2 py-0.5 rounded-full border ${PK_TYPE_CLASS[p.type] || PK_TYPE_CLASS['기타']}">${pkIcon(p.type)} ${escapeHtml(p.type)}</span>
+                  <span class="text-base font-black text-white">${escapeHtml(pkGuessFullName(p.school || '원 이름 없음'))}</span>
+                  ${p.qty ? `<span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-extrabold">총 ${p.qty}개</span>` : ''}
+                </div>
+                ${dist !== null ? `<span class="text-xs font-bold text-indigo-300">${formatDistance(dist)}</span>` : ''}
+              </div>
+              <p class="text-xs sm:text-sm font-bold text-amber-200 leading-snug">${escapeHtml(p.items || p.title)}</p>
+              ${fqs.length ? `<div class="flex flex-wrap gap-1">${fqs.map(q => `<span class="px-2 py-0.5 rounded-md bg-slate-800 text-violet-200 border border-slate-700 text-[11px] font-bold">${escapeHtml(q.label)} <strong class="text-amber-300">${q.qty}</strong></span>`).join('')}</div>` : ''}
+              <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold pt-0.5">
+                ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-dw-navi="${escapeHtml(p.id)}" class="py-2 px-2 rounded-lg bg-[#03C75A] text-slate-950 text-center font-black">🟢 내비 출발</a>`
+                     : `<button type="button" data-dw-geo="${escapeHtml(p.id)}" class="py-2 px-2 rounded-lg bg-amber-500 text-slate-950 font-black">📍 위치 찾기</button>`}
+                <button type="button" data-dw-detail="${escapeHtml(p.id)}" class="py-2 px-2 rounded-lg bg-slate-800 text-amber-300 border border-slate-700">🔍 상세보기</button>
+                <button type="button" data-dw-done="${escapeHtml(p.id)}" class="py-2 px-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-extrabold">✓ 완료</button>
+              </div>
+            </article>`;
+          }).join('')}
+        </div>` : ''}
+      `;
+    }
+    document.getElementById('deliveryWorksSection')?.addEventListener('click', (e) => {
+      const syncBtn = e.target.closest('[data-dw-sync]');
+      if (syncBtn) { worksFetchPickups(false); return; }
+      const tabBtn = e.target.closest('[data-dw-tab]');
+      if (tabBtn) { setView(tabBtn.getAttribute('data-dw-tab')); return; }
+      const nv = e.target.closest('[data-dw-navi]');
+      if (nv) {
+        e.preventDefault();
+        const pid = nv.getAttribute('data-dw-navi');
+        const p = PICKUPS.find(x => x.id === pid);
+        if (p) {
+          if (typeof setNaviLockedPickup === 'function') setNaviLockedPickup(p.id);
+          if (typeof ensureBgKeepAliveOnNavi === 'function') { try { ensureBgKeepAliveOnNavi(pkPseudo(p)); } catch (err) {} }
+          if (typeof openPopupModeWithScreenOff === 'function') openPopupModeWithScreenOff();
+          const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(p) : null;
+          const webUrl = `https://map.naver.com/p/search/${encodeURIComponent((s && s.address) || p.address || (s ? s.name : p.school) || '')}`;
+          openNaverMapApp(pkNaviUrl(p), webUrl);
+        }
+        return;
+      }
+      const geoBtn = e.target.closest('[data-dw-geo]');
+      if (geoBtn) { pkOpenGeo(geoBtn.getAttribute('data-dw-geo')); return; }
+      const dtBtn = e.target.closest('[data-dw-detail]');
+      if (dtBtn) { openPkDetail(dtBtn.getAttribute('data-dw-detail')); return; }
+      const doneBtn = e.target.closest('[data-dw-done]');
+      if (doneBtn) { pkToggleDone(doneBtn.getAttribute('data-dw-done')); return; }
+    });
+    document.getElementById('schoolList')?.addEventListener('click', (e) => {
+      const d = e.target.closest('[data-pk-done]');
+      if (d) {
+        e.stopPropagation();
+        pkToggleDone(d.getAttribute('data-pk-done'));
+      }
+    });
     function renderPickupFilters() {
       pkEnrichWorks();
       const mine = PICKUPS.filter(pkInMode);
@@ -4298,7 +4698,7 @@ function speakSchoolQuantity(school) {
       const tab2 = document.getElementById('exTabCount'); if (tab2) { tab2.textContent = nEx; tab2.classList.toggle('hidden', !nEx); }
       const ex = pkMode === 'extra';
       const h = document.getElementById('pkHeading'); if (h) h.textContent = ex ? '➕ 추가 납품' : '↩️ 회수·반품';
-      const st = document.getElementById('pkSubText'); if (st) st.textContent = ex ? '정규 납품(주문앱)과 별도로, 웍스 [추가]·[교구]·[A/S] 할 일이 자동으로 들어옵니다.' : '웍스 [회수]·[반품] 할 일이 자동으로 들어옵니다. 캡처·붙여넣기로도 추가할 수 있습니다.';
+      const st = document.getElementById('pkSubText'); if (st) st.textContent = ex ? '정규 납품(주문앱)과 별도로, 웍스 [추가]·[교구]·[A/S] 및 직접 등록한 납품 할 일이 자동으로 들어옵니다.' : '웍스 [회수]·[반품] 및 직접 등록한 회수 할 일이 자동으로 들어옵니다. 캡처·붙여넣기로도 추가할 수 있습니다.';
       const pipBtn = document.getElementById('pkPipHudBtn');
       if (pipBtn) {
         const active = typeof isAnyOverlayActive === 'function' && isAnyOverlayActive();
@@ -4331,7 +4731,7 @@ function speakSchoolQuantity(school) {
       });
       const box = document.getElementById('pkList');
       if (!list.length) {
-        box.innerHTML = `<div class="md:col-span-2 text-center text-sm text-slate-400 bg-slate-900 border border-dashed border-slate-700 rounded-2xl p-6">${PICKUPS.some(pkInMode) ? '조건에 맞는 할 일이 없습니다.' : pkMode === 'extra' ? '아직 추가 납품 할 일이 없습니다.<br>웍스에 <strong class="text-violet-300">[추가]·[교구]·[A/S]</strong> 할 일이 생기면 자동으로 들어옵니다.' : '아직 회수·반품 할 일이 없습니다.<br>웍스에 <strong class="text-rose-300">[회수]·[반품]</strong> 할 일이 생기면 자동으로 들어옵니다.'}</div>`;
+        box.innerHTML = `<div class="md:col-span-2 text-center text-sm text-slate-400 bg-slate-900 border border-dashed border-slate-700 rounded-2xl p-6">${PICKUPS.some(pkInMode) ? '조건에 맞는 할 일이 없습니다.' : pkMode === 'extra' ? '아직 추가 납품 할 일이 없습니다.<br>웍스에 <strong class="text-violet-300">[추가]·[교구]·[A/S] 또는 직접 등록한 납품 할 일</strong>이 생기면 자동으로 들어옵니다.' : '아직 회수·반품 할 일이 없습니다.<br>웍스에 <strong class="text-rose-300">[회수]·[반품] 또는 직접 등록한 할 일</strong>이 생기면 자동으로 들어옵니다.'}</div>`;
         return;
       }
       box.innerHTML = list.map(({ p, dist }) => {
@@ -4339,11 +4739,13 @@ function speakSchoolQuantity(school) {
         const ds = pkDueState(p);
         const dueCls = ds === 'over' ? 'bg-rose-500 text-white border-rose-400' : ds === 'soon' ? 'bg-amber-500/20 text-amber-200 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700';
         const delivered = s && completedMap[s.id];
+        const fqs = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
         return `
         <article class="rounded-2xl border ${p.done ? 'border-slate-800 bg-slate-900/50 opacity-60' : 'border-slate-700 bg-slate-900'} p-3 space-y-2.5" data-pk-card="${p.id}">
           <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
             <span class="px-2 py-0.5 rounded-full border ${PK_TYPE_CLASS[p.type] || PK_TYPE_CLASS['기타']}">${pkIcon(p.type)} ${escapeHtml(p.type)}</span>
             <span class="px-2 py-0.5 rounded-full border ${dueCls}">기한 ${escapeHtml(pkDueLabel(p.due))}${ds === 'over' ? ' 지남' : ''}</span>
+            ${p.qty ? `<span class="px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-300 border-emerald-500/40">총 ${p.qty}개</span>` : ''}
             ${p.assignee ? `<span class="px-2 py-0.5 rounded-full border bg-slate-800 text-slate-300 border-slate-700">👤 ${escapeHtml(p.assignee)}</span>` : ''}
             ${p.worksTaskId ? (p.worksSyncPending ? `<span class="px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-200 border-amber-500/40">⚠️ 웍스 반영 대기</span>` : `<span class="px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-200 border-emerald-500/30">🔗 웍스${p.worksClosedRemote ? ' · 웍스에서 완료됨' : ''}</span>`) : ''}
             ${dist !== null ? `<span class="px-2 py-0.5 rounded-full border bg-indigo-500/15 text-indigo-200 border-indigo-500/30">${formatDistance(dist)}</span>` : ''}
@@ -4351,10 +4753,11 @@ function speakSchoolQuantity(school) {
           <div data-pk-detail="${p.id}" class="cursor-pointer">
             <h3 class="text-lg font-black text-white leading-tight ${p.done ? 'line-through' : ''}">${escapeHtml(s ? s.name : (p.school || '원 이름 없음'))}</h3>
             ${p.items ? `<p class="text-sm font-bold text-amber-200 mt-1 leading-snug">${escapeHtml(p.items)}</p>` : ''}
+            ${fqs.length ? `<div class="flex flex-wrap gap-1 mt-1.5">${fqs.map(q => `<span class="px-2 py-0.5 rounded-md bg-slate-800 text-violet-200 border border-slate-700 text-[11px] font-bold">${escapeHtml(q.label)} <strong class="text-amber-300">${q.qty}</strong></span>`).join('')}</div>` : ''}
             ${p.title && normName(p.title) !== normName((p.school || '') + (p.items || '')) ? `<p class="text-[11px] text-slate-500 mt-1 leading-snug">웍스 원문: ${escapeHtml(p.title)}</p>` : ''}
             ${p.memo ? `<p class="text-xs text-sky-200 mt-1">📝 ${escapeHtml(p.memo)}</p>` : ''}
-            ${p.worksContent ? `<p class="text-[11px] text-slate-400 mt-1">📄 웍스 요청 내용 있음 · 눌러서 상세보기</p>` : ''}
-            <p class="text-[11px] mt-1 ${ok ? 'text-emerald-300' : 'text-rose-300'}">${s ? `📦 납품 목록의 원${delivered ? ' · 납품완료' : ' · 납품 시 함께 회수'}` : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${(s && s.address) || p.address ? ' · ' + escapeHtml((s && s.address) || p.address) : ''}</p>
+            ${p.worksContent && !fqs.length ? `<p class="text-[11px] text-slate-300 mt-1 whitespace-pre-line">${escapeHtml(p.worksContent)}</p>` : ''}
+            <p class="text-[11px] mt-1 ${ok ? 'text-emerald-300' : 'text-rose-300'}">${s ? `📦 납품 목록의 원${delivered ? ' · 납품완료' : ' · 납품 시 함께 처리'}` : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${(s && s.address) || p.address ? ' · ' + escapeHtml((s && s.address) || p.address) : ''}</p>
           </div>
           <div>
             ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pk-navi="${p.id}" class="block w-full py-2.5 px-3 rounded-xl bg-[#03C75A] hover:bg-emerald-400 text-slate-950 text-center font-black text-xs sm:text-sm transition shadow">🟢 네이버 내비 길안내 출발 (자동 팝업)</a>`
@@ -4371,6 +4774,9 @@ function speakSchoolQuantity(school) {
     function pkToggleDone(id) {
       const p = PICKUPS.find(x => x.id === id); if (!p) return;
       p.done = !p.done; p.doneAt = p.done ? Date.now() : null;
+      if (Array.isArray(p.fieldQuantities)) {
+        p.fieldQuantities.forEach(r => { r.done = p.done ? r.qty : 0; });
+      }
       if (p.worksTaskId) { p.worksSyncPending = true; p.worksClosedRemote = false; }
       savePickups(); renderPickups(); renderList();
       if (p.worksTaskId) worksPushDone(p);
@@ -4447,6 +4853,7 @@ function speakSchoolQuantity(school) {
       const ds = pkDueState(p); const dist = pkDistance(p); const extra = pkGroupOf(p) === 'extra';
       const addr = (s && s.address) || p.address || '';
       const delivered = s && completedMap[s.id];
+      const fqs = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
       const row = (k, v) => v ? `<div class="flex gap-2 py-1.5 border-b border-slate-800 last:border-0"><span class="shrink-0 w-16 text-slate-400">${k}</span><span class="flex-1 min-w-0 text-slate-100 break-keep">${v}</span></div>` : '';
       document.getElementById('pkDetailBox').className = `bg-slate-900 border-2 ${extra ? 'border-violet-500/60' : 'border-rose-500/60'} rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3 max-h-[94dvh] overflow-y-auto overscroll-contain pb-safe`;
       document.getElementById('pkDetailBox').innerHTML = `
@@ -4462,17 +4869,18 @@ function speakSchoolQuantity(school) {
           </div>
           <button type="button" data-pkd-close class="shrink-0 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg" aria-label="닫기">✕</button>
         </div>
-        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5">
-          <div class="flex items-center justify-between gap-2 mb-1">
+        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 space-y-2">
+          <div class="flex items-center justify-between gap-2">
             <span class="text-xs font-bold ${extra ? 'text-violet-300' : 'text-rose-300'}">${extra ? '➕ 추가 납품 품목' : '↩️ 회수·반품 품목'}</span>
-            ${p.qty ? `<span class="shrink-0 text-sm font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${p.qty}개</span>` : ''}
+            ${p.qty ? `<span class="shrink-0 text-sm font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">총 ${p.qty}개</span>` : ''}
           </div>
           <p class="text-xl font-black text-amber-200 leading-snug break-keep">${escapeHtml(p.items || p.title || '품목 정보 없음')}</p>
+          ${fqs.length ? `<div class="grid grid-cols-2 gap-1.5 pt-1">${fqs.map(q => `<div class="flex items-center justify-between rounded-xl bg-slate-900 border border-slate-800 px-2.5 py-1.5 text-xs"><span class="font-bold text-slate-200 truncate">${escapeHtml(q.label)}</span><span class="font-black text-amber-300 ml-1">${q.qty}개</span></div>`).join('')}</div>` : ''}
           ${p.memo ? `<p class="text-sm text-sky-200 mt-2">📝 ${escapeHtml(p.memo)}</p>` : ''}
         </div>
         ${p.worksContent || (p.title && normName(p.title) !== normName((p.school || '') + (p.items || ''))) ? `
         <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 space-y-1.5">
-          <div class="text-xs font-bold text-emerald-300">🔗 웍스 할 일</div>
+          <div class="text-xs font-bold text-emerald-300">🔗 웍스 할 일 원문</div>
           ${p.title ? `<p class="text-sm font-bold text-slate-100 break-keep">${escapeHtml(p.title)}</p>` : ''}
           ${p.worksContent ? `<p class="text-[13px] text-slate-300 leading-relaxed whitespace-pre-line break-keep">${escapeHtml(String(p.worksContent).slice(0, 3000))}</p>` : ''}
         </div>` : ''}
@@ -4523,7 +4931,7 @@ function speakSchoolQuantity(school) {
       }
       if (e.target.closest('[data-pkd-speak]')) {
         const s = pkLinkedSchool(p);
-        const t = `${s ? s.name : p.school}. ${p.type === '추가' ? '추가 납품' : p.type}입니다. ${p.items || p.title || ''}${p.qty && !/\d+\s*(개|권|부|세트|박스)/.test(p.items || '') ? ', ' + p.qty + '개' : ''}.${p.memo ? ' 메모, ' + p.memo : ''}`;
+        const t = `${s ? s.name : p.school}. ${p.type === '추가' ? '추가 납품' : p.type}입니다. ${p.items || p.title || ''}${p.qty && !/\d+\s*(개|권|부|세트|박스)/.test(p.items || '') ? ', 총 ' + p.qty + '개' : ''}.${p.memo ? ' 메모, ' + p.memo : ''}`;
         if (typeof speakDeliveryText === 'function') speakDeliveryText(t); else showToast('음성 안내를 쓸 수 없는 기기입니다.');
         return;
       }
@@ -4534,7 +4942,7 @@ function speakSchoolQuantity(school) {
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pkDetailId) closePkDetail(); });
 
 
-    // ---- 네이버웍스 [회수] 할 일 연동 (뉴키즈봇 서버 경유) ----
+    // ---- 네이버웍스 할 일 연동 (뉴키즈봇 서버 경유 + 사용자 직접 등록 할 일 자동 인식) ----
     var WORKS_BOT_URL = (function () { try { return (localStorage.getItem('entercoding_works_bot_url') || 'https://newkids-bot.onrender.com').replace(/\/+$/, ''); } catch (e) { return 'https://newkids-bot.onrender.com'; } })();
     var worksFetching = false, worksLastFetchAt = 0;
     function worksInfo(kind, text) {
@@ -4546,12 +4954,18 @@ function speakSchoolQuantity(school) {
       if (!sb || !syncUser) return null;
       try { const { data } = await sb.auth.getSession(); return data && data.session ? data.session.access_token : null; } catch (e) { return null; }
     }
-    async function worksApi(path, method) {
+    async function worksApi(path, method, payload) {
       const token = await worksToken();
       if (!token) { const e = new Error('공유 로그인이 필요합니다. 상단 ☁️ 공유 로그인을 먼저 해 주세요.'); e.login = true; throw e; }
-      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 60000); // 서버가 잠들어 있으면 깨어나는 데 시간이 걸림
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 60000);
       try {
-        const res = await fetch(WORKS_BOT_URL + path, { method: method || 'GET', headers: { Authorization: 'Bearer ' + token }, signal: ctl.signal });
+        const headers = { Authorization: 'Bearer ' + token };
+        const opts = { method: method || 'GET', headers, signal: ctl.signal };
+        if (payload !== undefined) {
+          headers['Content-Type'] = 'application/json';
+          opts.body = JSON.stringify(payload);
+        }
+        const res = await fetch(WORKS_BOT_URL + path, opts);
         let body = null; try { body = await res.json(); } catch (e) {}
         if (!res.ok) throw new Error((body && (body.detail || body.message)) || ('HTTP ' + res.status));
         return body || {};
@@ -4561,24 +4975,36 @@ function speakSchoolQuantity(school) {
         throw e;
       } finally { clearTimeout(tm); }
     }
-    function worksTypeFromTitle(title) {
+    function worksTypeFromTitle(title, content) {
       const m = String(title || '').match(/^\s*\[([^\]]*)\]/);
       const k = m ? m[1].replace(/[\s\/]/g, '').toUpperCase() : '';
-      if (k === '회수') return '회수';
-      if (k === '반품') return '반품';
+      if (k === '회수' || k === '수거') return '회수';
+      if (k === '반품' || k === '반송') return '반품';
       if (k === '교구') return '교구';
-      if (k === '추가') return '추가';
-      if (k === 'AS' || k === '에이에스') return 'A/S';
-      return pkTypeOf(title);
+      if (k === '추가' || k === '납품' || k === '발주' || k === '배송' || k === '출고') return '추가';
+      if (k === 'AS' || k === '에이에스' || k === '수리' || k === '교체') return 'A/S';
+      if (k === '증정' || k === '선물') return '증정';
+      if (k === '방문') return '방문';
+      return pkTypeOf(title, content);
     }
     function worksRowFromTask(t) {
       const title = String(t.title || '').trim();
+      const content = String(t.content || t.description || t.body || '').trim();
       const body = title.replace(/^\s*\[[^\]]*\]\s*/, '');
-      const a = analyzePickupTitle(body);
+      const a = analyzePickupTitle(body, content);
+      const assignees = Array.isArray(t.assignees) && t.assignees.length
+        ? t.assignees.join(', ')
+        : String(t.assignee || t.requester || t.creator || '').trim();
       return {
-        type: worksTypeFromTitle(title), school: a.school, schoolId: a.schoolId, items: a.items, qty: a.qty,
-        due: t.dueDate && /^\d{4}-\d{2}-\d{2}/.test(t.dueDate) ? String(t.dueDate).slice(0, 10) : '',
-        assignee: (t.assignees || []).join(', ')
+        type: worksTypeFromTitle(title, content),
+        school: a.school,
+        schoolId: a.schoolId,
+        items: a.items,
+        qty: a.qty,
+        fieldQuantities: a.fieldQuantities,
+        worksContent: content,
+        due: t.dueDate && /^\d{4}-\d{2}-\d{2}/.test(t.dueDate) ? String(t.dueDate).slice(0, 10) : pkDueFrom(t.dueDate || ''),
+        assignee: assignees
       };
     }
     async function worksPushDone(p) {
@@ -4588,11 +5014,11 @@ function speakSchoolQuantity(school) {
         await worksApi(`/app/pickups/${encodeURIComponent(p.worksTaskId)}/${want ? 'complete' : 'incomplete'}`, 'POST');
         const cur = PICKUPS.find(x => x.id === p.id) || p;
         if (!!cur.done === want) { cur.worksSyncPending = false; cur.worksStatus = want ? 'DONE' : 'TODO'; }
-        savePickups(); renderPickups();
+        savePickups(); renderPickups(); renderList();
         showToast(want ? '웍스 할 일도 완료 처리했습니다.' : '웍스 할 일도 미완료로 되돌렸습니다.');
         return true;
       } catch (e) {
-        savePickups(); renderPickups();
+        savePickups(); renderPickups(); renderList();
         showToast('⚠️ 웍스 반영 실패: ' + (e.message || e) + ' · 다음에 불러올 때 다시 시도합니다.');
         return false;
       }
@@ -4601,19 +5027,146 @@ function speakSchoolQuantity(school) {
       const list = PICKUPS.filter(p => p.worksTaskId && p.worksSyncPending);
       for (const p of list) { await worksPushDone(p); }
     }
-    // 봇 서버가 실시간으로 올린 항목: 이 앱의 원 목록과 한 번 더 맞춰 보고, 없으면 위치를 찾는다
+    // 봇 서버 또는 웍스에서 들어온 항목: 원 목록 매칭 + 본문(worksContent) 품목/수량 파싱 + 사용자 직접 등록 할 일 분류 보정 + 위치 자동 탐색
     function pkEnrichWorks() {
       if (typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return;
       const geo = []; let changed = false;
       PICKUPS.forEach(p => {
-        if (p.source !== 'works-api' || p.schoolChecked !== false) return;
-        p.schoolChecked = true; changed = true;
-        if (!p.schoolId) { const a = analyzePickupTitle(p.title || ''); if (a.schoolId) { p.schoolId = a.schoolId; p.school = a.school; } }
-        if (!p.done && !pkLinkedSchool(p) && !hasCoords({ lat: p.lat, lng: p.lng })) geo.push(p);
+        if (!p) return;
+        const isWorksItem = p.source === 'works-api' || p.source === 'works' || !!p.worksTaskId;
+        if (isWorksItem && (p.title || p.worksContent)) {
+          const a = analyzePickupTitle(p.title || '', p.worksContent || '');
+          const wantType = worksTypeFromTitle(p.title || '', p.worksContent || '');
+          if (!p.userEditedType && (!p.type || p.type === '기타' || (p.type === '증정' && wantType === '추가')) && wantType !== p.type) {
+            p.type = wantType;
+            changed = true;
+          }
+          if (!p.schoolId && a.schoolId) {
+            p.schoolId = a.schoolId;
+            p.school = a.school;
+            changed = true;
+          } else if (!p.school && a.school) {
+            p.school = a.school;
+            changed = true;
+          }
+          if (a.items && (!p.items || (p.worksContent && p.items.length < a.items.length && !p.userEditedItems))) {
+            p.items = a.items;
+            changed = true;
+          }
+          if (a.qty && (!p.qty || p.qty < a.qty)) {
+            p.qty = a.qty;
+            changed = true;
+          }
+          if (Array.isArray(a.fieldQuantities) && a.fieldQuantities.length) {
+            const curFq = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
+            if (curFq.length < a.fieldQuantities.length) {
+              p.fieldQuantities = pkMergeFieldQuantities(curFq, a.fieldQuantities, !!p.done);
+              changed = true;
+            }
+          }
+        }
+        if (p.source === 'works-api' && p.schoolChecked === false) {
+          p.schoolChecked = true;
+          changed = true;
+          if (!p.done && !pkLinkedSchool(p) && !hasCoords({ lat: p.lat, lng: p.lng })) geo.push(p);
+        } else if (isWorksItem && !p.done && !pkLinkedSchool(p) && !hasCoords({ lat: p.lat, lng: p.lng }) && !p._geoTriedOnce) {
+          p._geoTriedOnce = true;
+          geo.push(p);
+        }
       });
-      if (!changed) return;
-      savePickups();
+      if (!changed && !geo.length) return;
+      if (changed) savePickups();
       if (geo.length) setTimeout(() => { try { pkAutoGeocode(geo); } catch (e) {} }, 500);
+    }
+    function worksUpsertTasks(tasks, opts = {}) {
+      if (!Array.isArray(tasks) || !tasks.length) return { added: [], closed: 0, reopened: 0, updated: 0 };
+      const remote = {};
+      tasks.forEach(t => {
+        const tid = t && (t.taskId || t.id);
+        if (tid) remote[tid] = t;
+      });
+      const now = Date.now();
+      const added = [];
+      let closed = 0, reopened = 0, updated = 0;
+      tasks.forEach((t, i) => {
+        const tid = t && (t.taskId || t.id);
+        if (!tid) return;
+        let p = PICKUPS.find(x => x.worksTaskId === tid || x.id === 'w_' + tid);
+        const r = worksRowFromTask(t);
+        if (!p) {
+          p = {
+            id: 'w_' + tid,
+            title: String(t.title || '').replace(/^\s*\[[^\]]*\]\s*/, ''),
+            school: r.school,
+            schoolId: r.schoolId,
+            type: r.type,
+            items: r.items || '',
+            qty: r.qty || 0,
+            fieldQuantities: Array.isArray(r.fieldQuantities) ? r.fieldQuantities : [],
+            due: r.due,
+            assignee: r.assignee,
+            memo: '',
+            address: '',
+            lat: null,
+            lng: null,
+            done: false,
+            doneAt: null,
+            createdAt: now + i,
+            source: 'works-api',
+            worksTaskId: tid,
+            worksStatus: 'TODO',
+            worksContent: r.worksContent || '',
+            worksSyncPending: false
+          };
+          PICKUPS.push(p);
+          added.push(p);
+          return;
+        }
+        if (p.due !== r.due || p.assignee !== r.assignee || (p.worksContent || '') !== (r.worksContent || '')) {
+          p.due = r.due;
+          p.assignee = r.assignee;
+          p.worksContent = r.worksContent || '';
+          updated++;
+        }
+        if (!p.userEditedType && r.type && (p.type === '기타' || (p.type === '증정' && r.type === '추가')) && p.type !== r.type) {
+          p.type = r.type;
+          updated++;
+        }
+        if (r.items && (!p.items || (r.worksContent && p.items.length < r.items.length && !p.userEditedItems))) {
+          p.items = r.items;
+          updated++;
+        }
+        if (r.qty && (!p.qty || p.qty < r.qty)) {
+          p.qty = r.qty;
+          updated++;
+        }
+        if (Array.isArray(r.fieldQuantities) && r.fieldQuantities.length) {
+          const curFq = Array.isArray(p.fieldQuantities) ? p.fieldQuantities : [];
+          if (curFq.length < r.fieldQuantities.length) {
+            p.fieldQuantities = pkMergeFieldQuantities(curFq, r.fieldQuantities, !!p.done);
+            updated++;
+          }
+        }
+        if (p.done && !p.worksSyncPending && p.worksStatus === 'DONE') {
+          p.done = false;
+          p.doneAt = null;
+          p.worksClosedRemote = false;
+          reopened++;
+        }
+        if (!p.done) p.worksStatus = 'TODO';
+      });
+      if (opts.checkClosed) {
+        PICKUPS.forEach(p => {
+          if (p.worksTaskId && !remote[p.worksTaskId] && !p.done && !p.worksSyncPending) {
+            p.done = true;
+            p.doneAt = now;
+            p.worksStatus = 'DONE';
+            p.worksClosedRemote = true;
+            closed++;
+          }
+        });
+      }
+      return { added, closed, reopened, updated };
     }
     var worksServerSync = null; // null=모름, true=봇 서버 실시간 동기화 켜짐, false=꺼짐(앱이 직접 맞춤)
     function worksSummary(r) {
@@ -4635,11 +5188,30 @@ function speakSchoolQuantity(school) {
         let fallback = false;
         try {
           await worksRetryPending();
-          const r = await worksApi('/app/pickups/sync', 'POST');
+          const r = await worksApi('/app/pickups/sync?all=1&include_manual=1&unfiltered=1', 'POST', { all: true, include_manual: true, includeManual: true, unfiltered: true });
           worksServerSync = true; worksLastFetchAt = Date.now();
           if (typeof syncPullAll === 'function') { try { await syncPullAll(); } catch (e) {} }
-          worksInfo('ok', r.busy ? '✓ 다른 기기에서 맞추는 중입니다 · 실시간 자동 반영 중' : worksSummary(r));
-          if (!auto) showToast(r.added ? `웍스에서 할 일 ${r.added}건을 새로 가져왔습니다.` : '웍스 할 일을 최신으로 맞췄습니다.');
+          // 또한 /app/pickups 목록도 함께 조회하여 사용자가 직접 등록한 할 일이나 본문 품목이 누락 없이 반영되도록 병합
+          let extraAdded = 0;
+          try {
+            const listData = await worksApi('/app/pickups?all=1&include_manual=1&unfiltered=1');
+            const rawTasks = [
+              ...(Array.isArray(listData.tasks) ? listData.tasks : []),
+              ...(Array.isArray(listData.allTasks) ? listData.allTasks : []),
+              ...(Array.isArray(listData.manualTasks) ? listData.manualTasks : []),
+              ...(Array.isArray(r.tasksList) ? r.tasksList : [])
+            ];
+            if (rawTasks.length) {
+              const up = worksUpsertTasks(rawTasks, { checkClosed: false });
+              extraAdded = up.added.length;
+              if (up.added.length) pkAutoGeocode(up.added.filter(p => !pkLinkedSchool(p)));
+            }
+          } catch (e) {}
+          pkEnrichWorks();
+          savePickups(); renderPickups(); renderList();
+          const totalAdded = (r.added || 0) + extraAdded;
+          worksInfo('ok', r.busy ? '✓ 다른 기기에서 맞추는 중입니다 · 실시간 자동 반영 중' : worksSummary({ ...r, added: totalAdded }));
+          if (!auto || totalAdded) showToast(totalAdded ? `웍스에서 할 일 ${totalAdded}건을 새로 가져왔습니다.` : '웍스 할 일을 최신으로 맞췄습니다.');
         } catch (e) {
           if (/NK_SHEET_KEY|실시간 동기화 설정|HTTP 404|Not Found/.test(e.message || '')) { worksServerSync = false; fallback = true; }
           else { worksInfo('err', '✕ ' + (e.message || e)); if (!auto) showToast('웍스 할 일을 불러오지 못했습니다.'); }
@@ -4657,33 +5229,23 @@ function speakSchoolQuantity(school) {
       worksInfo('', '봇 서버에 연결하는 중입니다. 처음에는 최대 1분 걸릴 수 있습니다.');
       try {
         await worksRetryPending();
-        const data = await worksApi('/app/pickups');
-        const tasks = Array.isArray(data.tasks) ? data.tasks : [];
-        const remote = {}; tasks.forEach(t => { if (t.taskId) remote[t.taskId] = t; });
-        const now = Date.now(); const added = []; let closed = 0, reopened = 0, updated = 0;
-        tasks.forEach((t, i) => {
-          let p = PICKUPS.find(x => x.worksTaskId === t.taskId);
-          const r = worksRowFromTask(t);
-          if (!p) {
-            p = { id: 'w_' + t.taskId, title: String(t.title || '').replace(/^\s*\[[^\]]*\]\s*/, ''), school: r.school, schoolId: r.schoolId,
-              type: r.type, items: r.items || '', qty: r.qty || 0, due: r.due, assignee: r.assignee, memo: '',
-              address: '', lat: null, lng: null, done: false, doneAt: null, createdAt: now + i, source: 'works-api',
-              worksTaskId: t.taskId, worksStatus: 'TODO', worksContent: t.content || '', worksSyncPending: false };
-            PICKUPS.push(p); added.push(p); return;
-          }
-          if (p.due !== r.due || p.assignee !== r.assignee || (p.worksContent || '') !== (t.content || '')) { p.due = r.due; p.assignee = r.assignee; p.worksContent = t.content || ''; updated++; }
-          // 앱에서 완료했고 웍스에도 반영됐는데 웍스가 다시 미완료라면 → 웍스에서 되돌린 것
-          if (p.done && !p.worksSyncPending && p.worksStatus === 'DONE') { p.done = false; p.doneAt = null; p.worksClosedRemote = false; reopened++; }
-          if (!p.done) p.worksStatus = 'TODO';
-        });
-        // 앱에는 남아 있는데 웍스 미완료 목록에 없으면 → 웍스에서 완료(또는 삭제)된 것
-        PICKUPS.forEach(p => {
-          if (p.worksTaskId && !remote[p.worksTaskId] && !p.done && !p.worksSyncPending) { p.done = true; p.doneAt = now; p.worksStatus = 'DONE'; p.worksClosedRemote = true; closed++; }
-        });
+        let data = null;
+        try {
+          data = await worksApi('/app/pickups?all=1&include_manual=1&unfiltered=1');
+        } catch (e) {
+          data = await worksApi('/app/pickups');
+        }
+        const tasks = [
+          ...(Array.isArray(data.tasks) ? data.tasks : []),
+          ...(Array.isArray(data.allTasks) ? data.allTasks : []),
+          ...(Array.isArray(data.manualTasks) ? data.manualTasks : [])
+        ];
+        const { added, closed, reopened } = worksUpsertTasks(tasks, { checkClosed: true });
+        pkEnrichWorks();
         savePickups(); renderPickups(); renderList();
         worksLastFetchAt = Date.now();
         const tm = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-        const byType = {}; tasks.forEach(t => { const k = worksTypeFromTitle(t.title); byType[k] = (byType[k] || 0) + 1; });
+        const byType = {}; tasks.forEach(t => { const k = worksTypeFromTitle(t.title, t.content); byType[k] = (byType[k] || 0) + 1; });
         const parts = [`웍스 ${tasks.length}건 확인${tasks.length ? ' (' + Object.keys(byType).map(k => k + ' ' + byType[k]).join(', ') + ')' : ''}`];
         if (added.length) parts.push(`새로 ${added.length}건 추가`);
         if (closed) parts.push(`웍스에서 완료된 ${closed}건 완료 표시`);
@@ -4701,7 +5263,12 @@ function speakSchoolQuantity(school) {
       }
     }
     document.getElementById('pkWorksFetchBtn').addEventListener('click', () => worksFetchPickups(false));
-    window.addEventListener('online', () => { if (typeof syncUser !== 'undefined' && syncUser && PICKUPS.some(p => p.worksSyncPending)) worksRetryPending(); });
+    window.addEventListener('online', () => {
+      if (typeof syncUser !== 'undefined' && syncUser) {
+        if (PICKUPS.some(p => p.worksSyncPending)) worksRetryPending();
+        if (Date.now() - worksLastFetchAt > 30000) worksFetchPickups(true);
+      }
+    });
 
     // ---- location for a pickup (reuses the map pin modal) ----
     function pkOpenGeo(id, afterSave) {
@@ -4733,7 +5300,9 @@ function speakSchoolQuantity(school) {
       document.getElementById('pkEdAddress').value = p ? p.address || '' : '';
       document.getElementById('pkEdMemo').value = p ? p.memo || '' : '';
       const raw = document.getElementById('pkEdRaw');
-      raw.textContent = p && p.title ? '웍스 원문: ' + p.title : ''; raw.classList.toggle('hidden', !(p && p.title));
+      raw.textContent = p && (p.title || p.worksContent) ? ('웍스 원문: ' + (p.title || '') + (p.worksContent ? '\n' + p.worksContent : '')) : '';
+      raw.className = 'text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 whitespace-pre-line';
+      raw.classList.toggle('hidden', !(p && (p.title || p.worksContent)));
       document.getElementById('pkEdDeleteBtn').classList.toggle('hidden', !p);
       pkUpdateEditLoc();
       document.getElementById('pkEditModal').classList.remove('hidden');
@@ -4750,9 +5319,18 @@ function speakSchoolQuantity(school) {
       const m = findSchoolByName(name);
       if (normName(name) !== normName(p.school) || !p.schoolId) { p.schoolId = m ? m.id : null; }
       p.school = name;
-      p.type = document.getElementById('pkEdType').value;
+      const newType = document.getElementById('pkEdType').value;
+      if (p.type && p.type !== newType) p.userEditedType = true;
+      p.type = newType;
       p.due = document.getElementById('pkEdDue').value || '';
-      p.items = document.getElementById('pkEdItems').value.trim();
+      const newItems = document.getElementById('pkEdItems').value.trim();
+      if (p.items && p.items !== newItems) p.userEditedItems = true;
+      p.items = newItems;
+      const parsed = parseWorksTaskItems(p.items, p.worksContent || '');
+      if (parsed.fieldQuantities.length) {
+        p.fieldQuantities = pkMergeFieldQuantities(p.fieldQuantities, parsed.fieldQuantities, !!p.done);
+        p.qty = parsed.totalQty;
+      }
       p.assignee = document.getElementById('pkEdAssignee').value.trim();
       const addr = document.getElementById('pkEdAddress').value.trim();
       if (addr !== (p.address || '')) { p.address = addr; if (!p.schoolId) { p.lat = null; p.lng = null; } }
@@ -5122,13 +5700,21 @@ function speakSchoolQuantity(school) {
 
     async function syncStart(user) {
       syncUser = user;
-      setTimeout(() => { try { if (currentView === 'pickup' && Date.now() - worksLastFetchAt > 180000) worksFetchPickups(true); } catch (e) {} }, 4000);
+      setTimeout(() => { try { if (Date.now() - worksLastFetchAt > 45000) worksFetchPickups(true); } catch (e) {} }, 1800);
       setSyncState('loading');
       try { localStorage.removeItem(SYNC_PREF_KEY); } catch (e) {}
       await syncPullAll();
+      if (typeof pkEnrichWorks === 'function') pkEnrichWorks();
       syncSubscribe();
       clearInterval(syncPullTimer);
-      syncPullTimer = setInterval(() => { if (document.visibilityState === 'visible') syncPullAll(); }, 60000);
+      syncPullTimer = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          syncPullAll();
+          if (typeof worksFetchPickups === 'function' && Date.now() - worksLastFetchAt >= 55000) {
+            try { worksFetchPickups(true); } catch (e) {}
+          }
+        }
+      }, 60000);
     }
     function syncStop() {
       syncUser = null;
@@ -5161,7 +5747,7 @@ function speakSchoolQuantity(school) {
 
     window.addEventListener('online', () => { if (syncUser) { setSyncState('loading'); syncPullAll(); } });
     window.addEventListener('offline', () => { if (syncUser) setSyncState('offline'); });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && syncUser) syncPullAll(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && syncUser) { syncPullAll(); if (typeof worksFetchPickups === 'function' && Date.now() - worksLastFetchAt >= 30000) { try { worksFetchPickups(true); } catch (e) {} } } });
 
     // ---------- sync modal ----------
     function askSyncConflict() {
@@ -6043,7 +6629,7 @@ ${school.address || ''}`;
         ['arrivalModal', 'pkDetailModal', 'pkAlertModal', 'installModal', 'itemsModal', 'editModal', 'importModal', 'settingsModal', 'syncModal', 'geoModal'].forEach(id => {
           document.getElementById(id)?.classList.add('hidden');
         });
-        const fp = document.getElementById('fieldPanel');
+        const fp = document.getElementById('opsPanel');
         if (fp) fp.hidden = true;
         if (headerEl) headerEl.classList.add('hidden');
         if (mainEl) mainEl.classList.add('hidden');
@@ -6093,21 +6679,32 @@ ${school.address || ''}`;
         const naviUrl = firstP && typeof pkNaviUrl === 'function' ? pkNaviUrl(firstP) : `nmap://search?query=${encodeURIComponent(grp.address || grp.name)}&appname=entercoding.delivery`;
         const webNaviUrl = `https://map.naver.com/p/search/${encodeURIComponent(grp.address || grp.name)}`;
         const distLabel = best.dist !== null && best.dist !== undefined ? `거리 ${formatDistance(best.dist)}` : (grp.subRegion || (isExtra ? '추가 납품' : '회수·반품'));
+        const singleFq = grp.items.length === 1 && firstP && Array.isArray(firstP.fieldQuantities) && firstP.fieldQuantities.length ? firstP.fieldQuantities : null;
+        const overlayItems = singleFq
+          ? singleFq.map((q, idx) => ({
+              index: idx,
+              checked: !!(firstP.done || Number(q.done || 0) >= Number(q.qty)),
+              label: `${q.label} : ${q.qty}개`
+            }))
+          : grp.items.map((p, idx) => ({
+              index: idx,
+              checked: !!p.done,
+              label: `[${p.type}] ${p.items || p.title}`
+            }));
+        const doneCnt = overlayItems.filter(it => it.checked).length;
         return {
           modeBadge: isExtra ? (best.isNaviLocked ? '🧭 추가납품·고정' : '➕ 추가 납품') : (best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품'),
           modeColor: isExtra ? '#7C3AED' : (best.isNaviLocked ? '#059669' : '#E11D48'),
           name: `${isExtra ? '➕' : '↩️'} ${grp.name}`,
           distText: distLabel,
-          progressText: `${isExtra ? '추가 납품' : '회수·반품'} ${grp.items.length}건 · 터치 시 완료 체크`,
+          progressText: singleFq
+            ? `품목체크 ${doneCnt}/${singleFq.length} · 총 ${firstP.qty || singleFq.reduce((a, r) => a + r.qty, 0)}개`
+            : `${isExtra ? '추가 납품' : '회수·반품'} ${grp.items.length}건 · 터치 시 완료 체크`,
           naviUrl,
           webNaviUrl,
           closeOnOpenApp: true,
           autoHideOnAppOpen: true,
-          items: grp.items.map((p, idx) => ({
-            index: idx,
-            checked: !!p.done,
-            label: `[${p.type}] ${p.items || p.title}`
-          }))
+          items: overlayItems
         };
       }
       const s = best.school;
@@ -6199,7 +6796,20 @@ ${school.address || ''}`;
       const best = getBestPipTarget();
       if (!best) return;
       if (best.kind === 'pickup' && best.pickupGroup) {
-        const p = best.pickupGroup.items[idx];
+        const grp = best.pickupGroup;
+        const firstP = grp.items && grp.items[0];
+        if (grp.items.length === 1 && firstP && Array.isArray(firstP.fieldQuantities) && firstP.fieldQuantities.length) {
+          const row = firstP.fieldQuantities[idx];
+          if (row) {
+            row.done = Number(row.done || 0) >= Number(row.qty) ? 0 : Number(row.qty);
+            savePickups();
+            renderPickups();
+            renderList();
+            syncNativeAndDomOverlays();
+          }
+          return;
+        }
+        const p = grp.items[idx];
         if (p && typeof pkToggleDone === 'function') {
           pkToggleDone(p.id);
           syncNativeAndDomOverlays();
@@ -6918,7 +7528,15 @@ ${school.address || ''}`;
       }
       const remaining=(qty,done)=>Math.max(0,Number(qty)-Number(done||0));
       function delivered(s,it){return completedMap[s.id]?Number(it.qty):Math.min(Number(it.qty),Math.max(0,Number(s.fieldOps?.delivered?.[it.key]||0)));}
-      function pickupRows(p){return Array.isArray(p.fieldQuantities)?p.fieldQuantities:[];}
+      function pickupRows(p){
+        if(!Array.isArray(p.fieldQuantities)||!p.fieldQuantities.length){
+          if(typeof parseWorksTaskItems==='function'){
+            const parsed=parseWorksTaskItems(p.items||p.title||'',p.worksContent||'');
+            if(parsed.fieldQuantities.length)p.fieldQuantities=parsed.fieldQuantities.map(r=>({...r,done:p.done?r.qty:0}));
+          }
+        }
+        return Array.isArray(p.fieldQuantities)?p.fieldQuantities:[];
+      }
       function loads(){
         const a=[];
         SCHOOLS.filter(s=>!completedMap[s.id]).forEach(s=>deliveryItems(s).forEach(it=>{const q=remaining(it.qty,delivered(s,it));if(q)a.push({owner:s,key:'s:'+s.id+':'+it.key,label:it.label,school:s.name,qty:q});}));
