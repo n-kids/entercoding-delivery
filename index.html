@@ -64,6 +64,8 @@
     .last\:border-0:last-child{border-width:0}
     .border-rose-500\/60{border-color:rgba(244,63,94,.6)}.border-violet-500\/60{border-color:rgba(139,92,246,.6)}
     .bg-teal-500\/20{background-color:rgba(20,184,166,.2)}.text-teal-200{color:rgb(153 246 228)}.border-teal-500\/40{border-color:rgba(20,184,166,.4)}
+    .bg-slate-900\/90{background-color:rgba(15,23,42,.95)}.bg-slate-950\/95{background-color:rgba(2,6,23,.96)}.bg-slate-800\/90{background-color:rgba(30,41,59,.92)}
+    @media (min-width:640px){.sm\:flex-initial{flex:0 1 auto}.sm\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.sm\:text-center{text-align:center}.sm\:justify-start{justify-content:flex-start}}
     button, a, select, input { touch-action: manipulation; }
     .card-badge {
       background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
@@ -82,46 +84,44 @@
 </head>
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
 
-  <!-- Top Sticky Header -->
-  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 px-3 sm:px-4 py-2 sm:py-2.5 shadow-md">
-    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
-      <!-- Brand & Status -->
-      <div class="flex items-center gap-2.5 min-w-0 flex-1">
-        <div id="gpsIndicator" class="w-3.5 h-3.5 rounded-full bg-slate-500 transition-colors shrink-0 shadow-sm" title="GPS 수신 상태"></div>
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-[15px] sm:text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
-              <span>교재 납품 알리미</span>
-            </h1>
-            <button id="syncBadge" type="button" class="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold border whitespace-nowrap bg-slate-800/90 text-slate-300 border-slate-700 hover:border-slate-600 transition" title="여러 기기 실시간 공유 상태">☁️ 연결 중</button>
-          </div>
-          <p id="gpsStatusText" class="text-[11px] text-slate-400 truncate sm:whitespace-normal leading-tight mt-0.5">GPS 대기 중 · [GPS 켜기] 또는 아래 [동네 선택]을 눌러주세요</p>
+  <!-- Top Header (Scrolls naturally; full-width status text on top, buttons aligned below) -->
+  <header class="relative z-30 bg-slate-900 border-b border-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 shadow-lg">
+    <div class="max-w-4xl mx-auto flex flex-col gap-2">
+      <!-- Brand & Status (Full-Width Top Row) -->
+      <div class="w-full min-w-0 space-y-1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <div id="gpsIndicator" class="w-3.5 h-3.5 rounded-full bg-slate-500 transition-colors shrink-0" title="GPS 수신 상태"></div>
+          <h1 class="text-[15px] sm:text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+            <span>교재 납품 알리미</span>
+          </h1>
+          <button id="syncBadge" type="button" class="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold border whitespace-nowrap bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-600 transition" title="여러 기기 실시간 공유 상태">☁️ 연결 중</button>
         </div>
+        <p id="gpsStatusText" class="w-full text-[11px] sm:text-xs text-slate-300 leading-snug break-keep">GPS 대기 중 · [GPS 켜기] 또는 아래 [동네 선택]을 눌러주세요</p>
       </div>
 
-      <!-- Quick Action Controls -->
-      <div class="flex items-center gap-1.5 shrink-0">
+      <!-- Quick Action Controls (Aligned in a horizontal bar below the text) -->
+      <div class="flex flex-wrap items-center justify-between sm:justify-start gap-2 w-full pt-1.5 border-t border-slate-800">
         <!-- Main GPS Button -->
-        <button id="toggleGpsBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/25 flex items-center gap-1.5 active:scale-95">
+        <button id="toggleGpsBtn" type="button" class="flex-1 sm:flex-initial justify-center px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 whitespace-nowrap">
           <span id="gpsBtnIcon">📍</span>
           <span id="gpsBtnLabel"><span class="sm:hidden">GPS 켜기</span><span class="hidden sm:inline">실시간 GPS 켜기</span></span>
         </button>
 
         <!-- Desktop Quick Action Buttons: 품목, 불러오기, 수량관리 -->
         <div class="hidden sm:flex items-center gap-1.5">
-          <button id="openItemsModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-violet-500/15 hover:bg-violet-500/25 text-violet-200 border border-violet-500/40 transition flex items-center gap-1" title="차량 상차 전 품목별 적재 수량 확인">
+          <button id="openItemsModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-violet-500/15 hover:bg-violet-500/25 text-violet-200 border border-violet-500/40 transition flex items-center gap-1 whitespace-nowrap" title="차량 상차 전 품목별 적재 수량 확인">
             <span>📦</span><span>품목 확인</span>
           </button>
-          <button id="openImportModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-sky-500/15 hover:bg-sky-500/25 text-sky-200 border border-sky-500/40 transition flex items-center gap-1" title="엑셀·사진·텍스트 납품 정보 불러오기">
+          <button id="openImportModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-sky-500/15 hover:bg-sky-500/25 text-sky-200 border border-sky-500/40 transition flex items-center gap-1 whitespace-nowrap" title="엑셀·사진·텍스트 납품 정보 불러오기">
             <span>📥</span><span>불러오기</span>
           </button>
-          <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1" title="원별 수량 수정 및 새 납품처 추가">
+          <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 whitespace-nowrap" title="원별 수량 수정 및 새 납품처 추가">
             <span>✏️</span><span>수량 수정</span>
           </button>
         </div>
 
         <!-- Menu / All Tools Button -->
-        <button id="headerMenuBtn" type="button" aria-expanded="false" aria-controls="headerTools" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1">
+        <button id="headerMenuBtn" type="button" aria-expanded="false" aria-controls="headerTools" class="flex-1 sm:flex-initial justify-center px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1 whitespace-nowrap">
           <span>⚙️</span><span>설정·도구</span>
         </button>
       </div>
@@ -2069,7 +2069,6 @@ function speakSchoolQuantity(school) {
                   <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-xs font-black flex items-center justify-center border border-slate-700 shadow-sm">${s.order}</span>
                   <span class="text-xs font-bold px-2 py-0.5 rounded-md ${s.regionGroup === '김포' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' : s.regionGroup === '고양' ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30' : 'bg-teal-500/15 text-teal-300 border border-teal-500/30'}">${escapeHtml(s.regionGroup)} · ${escapeHtml(s.subRegion)}</span>
                   <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-200 border border-amber-500/30">📘 ${escapeHtml(productLabel(s))}</span>
-                  ${(() => { const l = PICKUPS ? pendingPickupsForSchool(s) : []; const r = l.filter(p => pkGroupOf(p) === 'return').length, x = l.length - r; return (r ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-rose-500 text-white shadow-sm">↩️ 회수 ${r}</span>` : '') + (x ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-violet-500 text-white shadow-sm">➕ 추가 ${x}</span>` : ''); })()}
                   ${typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === s.id && !isDone ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-[#03C75A] text-slate-950 shadow">🧭 내비고정중</span>` : ''}
                   ${isNear && !isDone ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 animate-pulse">📍 근처도착</span>` : ''}
                   ${isDone ? `<span class="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✓ 납품완료</span>` : ''}
@@ -2098,20 +2097,7 @@ function speakSchoolQuantity(school) {
                   ${ex.map(x => `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-800 text-violet-200 border border-slate-700">${escapeHtml(x.name)}${x.qty ? ' ' + x.qty : ''}</span>`).join('')}
                 </div>`;
               })()}
-              ${(() => {
-                const l = typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) && typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(s) : [];
-                if (!l.length) return '';
-                return `<div class="mt-2.5 rounded-xl bg-violet-950/40 border border-violet-500/40 px-3 py-2 space-y-1.5">
-                  <div class="text-[11px] font-extrabold text-violet-200 flex items-center justify-between">
-                    <span>🔗 웍스 연동 할 일 ${l.length}건</span>
-                    <span class="text-[10px] text-slate-400">납품 시 함께 처리</span>
-                  </div>
-                  ${l.map(p => `<div class="flex items-center justify-between gap-1.5 text-xs pt-0.5 border-t border-violet-900/40">
-                    <span class="font-bold text-amber-200 truncate">[${escapeHtml(p.type)}] ${escapeHtml(p.items || p.title)}${p.qty ? ` (${p.qty}개)` : ''}</span>
-                    <button type="button" data-pk-done="${escapeHtml(p.id)}" class="shrink-0 px-2 py-0.5 rounded bg-violet-500 hover:bg-violet-400 text-white text-[11px] font-black transition">✓ 완료</button>
-                  </div>`).join('')}
-                </div>`;
-              })()}
+
             </div>
 
             <div class="pt-2.5 border-t border-slate-800/80 space-y-2">
@@ -2144,8 +2130,8 @@ function speakSchoolQuantity(school) {
       }
     }
 
-    const GPS_BTN_ON_CLASS = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-500 hover:bg-rose-400 text-white transition shadow-lg shadow-rose-500/20 flex items-center gap-1.5';
-    const GPS_BTN_OFF_CLASS = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5';
+    const GPS_BTN_ON_CLASS = 'flex-1 sm:flex-initial justify-center whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-500 hover:bg-rose-400 text-white transition shadow-lg shadow-rose-500/20 flex items-center gap-1.5';
+    const GPS_BTN_OFF_CLASS = 'flex-1 sm:flex-initial justify-center whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5';
 
     function setGpsUi(state, text) {
       const indicator = document.getElementById('gpsIndicator');
@@ -4676,8 +4662,12 @@ function speakSchoolQuantity(school) {
     }
     function renderDeliveryWorksSection() {
       const sec = document.getElementById('deliveryWorksSection');
-      if (!sec) return;
       if (typeof pkEnrichWorks === 'function') pkEnrichWorks();
+      if (sec) {
+        sec.classList.add('hidden');
+        sec.innerHTML = '';
+      }
+      return;
       const pendingAll = (PICKUPS || []).filter(p => p && !p.done);
       const unlinked = pendingAll.filter(p => !pkLinkedSchool(p));
       const extraPending = pendingAll.filter(p => pkGroupOf(p) === 'extra');
@@ -5494,6 +5484,7 @@ function speakSchoolQuantity(school) {
     // ---- 납품 도착 화면 안의 "이 원에서 회수할 것" ----
     function renderModalPickups(school) {
       const box = document.getElementById('modalPickups'); if (!box) return;
+      box.classList.add('hidden'); box.innerHTML = ''; return;
       const list = pendingPickupsForSchool(school);
       const doneList = PICKUPS.filter(p => p.done && p.schoolId === school.id && p.doneAt && Date.now() - p.doneAt < 12 * 3600 * 1000);
       if (!list.length && !doneList.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
@@ -6127,16 +6118,7 @@ function speakSchoolQuantity(school) {
           return;
         }
       }
-      if (activeNaviPickupId !== null && typeof PICKUPS !== 'undefined') {
-        const p = PICKUPS.find(x => x.id === activeNaviPickupId && !x.done);
-        if (p) {
-          const d = typeof pkDistance === 'function' ? pkDistance(p) : null;
-          const distTxt = d !== null ? ` · 현재 거리 ${formatDistance(d)}` : '';
-          textEl.innerHTML = `🧭 <strong class="text-rose-300">내비 회수·반품 고정 중 (거리 무관 PiP 표시):</strong> <span class="text-white font-extrabold">${escapeHtml(p.school)}</span> <span class="text-amber-200 font-bold">[${escapeHtml(p.type)}: ${escapeHtml(p.items || p.title)}]</span><span class="text-sky-300">${distTxt}</span>`;
-          clearBtn.classList.remove('hidden');
-          return;
-        }
-      }
+      // 납품 탭 배너에서는 납품 원 고정 정보만 표시 (회수·추가납품 정보는 표시하지 않음)
       textEl.innerHTML = `💡 각 원의 <strong class="text-[#03C75A]">[🟢 네이버 내비 출발]</strong> 또는 <strong class="text-amber-300">[📌 PiP고정]</strong>을 누르면 <strong>거리와 상관없이</strong> 해당 원이 내비 위 미니창(PiP)에 고정 표시됩니다.`;
       clearBtn.classList.add('hidden');
     }
@@ -6225,7 +6207,7 @@ function speakSchoolQuantity(school) {
             kind: 'delivery',
             school: { ...locked, dist: distanceToSchool(locked) },
             dist: distanceToSchool(locked),
-            pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(locked) : [],
+            pickups: [],
             isNaviLocked: true
           };
         } else {
@@ -6315,7 +6297,7 @@ function speakSchoolQuantity(school) {
           kind: 'delivery',
           school: nearestDelivery,
           dist: nearestDelivery.dist,
-          pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(nearestDelivery) : [],
+          pickups: [],
           isNaviLocked: false
         };
       }
@@ -6326,7 +6308,7 @@ function speakSchoolQuantity(school) {
           kind: 'delivery',
           school: nearestDelivery,
           dist: nearestDelivery.dist,
-          pickups: typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(nearestDelivery) : [],
+          pickups: [],
           isNaviLocked: false
         };
       }
@@ -7669,7 +7651,7 @@ ${school.address || ''}`;
       }
       const fingerprint=r=>JSON.stringify([r.label,r.qty,r.school]);
       function loadState(r){const v=r.owner.fieldLoad?.[day()]?.[r.key];return v&&v.fingerprint===fingerprint(r)?v.state:'준비 전';}
-      const css=document.createElement('style');css.textContent=`#opsPanel{position:fixed;inset:3vh 2vw;z-index:1000;background:#0f172a;color:#f8fafc;border:1px solid #64748b;border-radius:16px;padding:18px;overflow:auto}#opsPanel[hidden]{display:none}#opsPanel button{padding:10px;background:#334155;border-radius:8px;margin:4px}#opsPanel input,#opsPanel textarea,#opsPanel select{padding:9px;margin:5px 0;background:#1e293b;border:1px solid #64748b;border-radius:8px;color:white;max-width:100%;width:100%}#opsPanel h2{font-size:21px;margin:14px 0}#opsPanel h3{font-size:17px;margin:10px 0}#opsPanel article{padding:12px;margin:10px 0;border:1px solid #475569;border-radius:10px}#opsPanel label{display:block}#opsPanel small{color:#cbd5e1}#opsPanel .opsQty{width:110px}#opsSaveStatus{font-size:12px;white-space:normal}#opsPanel .opsWarn{color:#fbbf24}`;document.head.append(css);
+      const css=document.createElement('style');css.textContent=`#opsPanel{position:fixed;inset:3vh 2vw;z-index:1000;background:#0f172a;color:#f8fafc;border:1px solid #64748b;border-radius:16px;padding:18px;overflow:auto}#opsPanel[hidden]{display:none}#opsPanel button{padding:10px;background:#334155;border-radius:8px;margin:4px}#opsPanel input,#opsPanel textarea,#opsPanel select{padding:9px;margin:5px 0;background:#1e293b;border:1px solid #64748b;border-radius:8px;color:white;max-width:100%;width:100%}#opsPanel h2{font-size:21px;margin:14px 0}#opsPanel h3{font-size:17px;margin:10px 0}#opsPanel article{padding:12px;margin:10px 0;border:1px solid #475569;border-radius:10px}#opsPanel label{display:block}#opsPanel small{color:#cbd5e1}#opsPanel .opsQty{width:110px}#opsSaveStatus{width:100%;font-size:11px;line-height:1.45;color:#94a3b8;white-space:normal;word-break:keep-all;margin-top:2px}#opsPanel .opsWarn{color:#fbbf24}`;document.head.append(css);
       const panel=document.createElement('section');panel.id='opsPanel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','통합 현장 업무');document.body.append(panel);
       const badge=document.createElement('div');badge.id='opsSaveStatus';badge.setAttribute('role','status');document.getElementById('gpsStatusText')?.after(badge);
       let mode='visit',selected='',focusBack=null,localError='',localAt=null;
