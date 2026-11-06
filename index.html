@@ -6228,6 +6228,48 @@ ${school.address || ''}`;
 
    
 
-  </script>
+  
+    // Field operations panel: stored on school/pickup records for existing sync.
+    (() => {
+      const style=document.createElement('style');
+      style.textContent='#fieldPanel{position:fixed;inset:5vh 3vw;z-index:100;background:#0f172a;color:white;border:1px solid #64748b;border-radius:16px;padding:16px;overflow:auto}#fieldPanel input,#fieldPanel textarea,#fieldPanel select{background:#1e293b;color:white;border:1px solid #64748b;border-radius:8px;padding:9px;width:100%;margin:5px 0}#fieldPanel button{background:#334155;color:white;border-radius:8px;padding:10px;margin:5px}#fieldPanel label{display:block}#fieldPanel h2{font-size:20px}#fieldPanel small{color:#cbd5e1}#fieldStatus{font-size:11px;white-space:normal}';document.head.append(style);
+      const panel=document.createElement('section');panel.id='fieldPanel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','현장 업무');panel.setAttribute('aria-modal','true');document.body.append(panel);
+      const button=document.createElement('button');button.type='button';button.textContent='현장 업무';button.className='px-3 py-2 rounded-xl bg-slate-700 text-sm';document.getElementById('headerTools').append(button);
+      const status=document.createElement('div');status.id='fieldStatus';status.setAttribute('role','status');document.getElementById('gpsStatusText').after(status);
+      let selected=null,focusBack=null;
+      const esc=escapeHtml;
+      const match=(p,s)=>p.schoolId===s.id||(!p.schoolId&&nameScore(p.school,s.name)>=0.9);
+      function draw(){
+        const school=SCHOOLS.find(x=>String(x.id)===String(selected))||SCHOOLS[0];if(!school){panel.innerHTML='등록된 원이 없습니다. <button data-act="close">닫기</button>';return;}selected=school.id;
+        const f=school.fieldOps||{},items=deliveryItems(school),ps=PICKUPS.filter(p=>match(p,school));
+        panel.innerHTML='<button data-act="close">닫기</button><h2>원별 현장 업무</h2><label>원 선택<select id="fieldSchool">'+SCHOOLS.map(x=>'<option value="'+esc(String(x.id))+'" '+(x.id===school.id?'selected':'')+'>'+esc(x.name)+'</option>').join('')+'</select></label><p>'+esc(school.address||'주소 없음')+'</p><button data-act="copy">주소 복사</button><label>전화번호<input id="fieldPhone" type="tel" value="'+esc(f.phone||school.phone||'')+'"></label><button data-act="call">전화 걸기</button><label>현장 메모<textarea id="fieldMemo" placeholder="후문 진입, 주차 위치, 전달 장소">'+esc(f.memo||'')+'</textarea></label><h2>납품 처리</h2><small>품목별 누적 전달 수량을 입력하세요. 기존 주문 수량은 변경하지 않습니다.</small>'+items.map((it,i)=>'<label>'+esc(it.label)+' · 주문 '+it.qty+'<input type="number" min="0" max="'+it.qty+'" step="1" data-qty="'+i+'" value="'+Math.min(it.qty,Math.max(0,Number((f.delivered||{})[it.key]||(completedMap[school.id]?it.qty:0))))+'"></label>').join('')+'<label>납품 상태<select id="fieldDelivery">'+['대기','부분 완료','재방문','완료'].map(v=>'<option '+((completedMap[school.id]?'완료':f.deliveryStatus||'대기')===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label>미처리·재방문 사유<textarea id="fieldReason">'+esc(f.reason||'')+'</textarea></label><label>재방문 예정일<input id="fieldDate" type="date" value="'+esc(f.revisitDate||'')+'"></label><button data-act="save">메모·납품 저장</button><h2>회수·반품 (납품과 별도 처리)</h2>'+ps.map(p=>'<div><p>'+esc(p.type||'회수')+' · '+esc(p.items||p.memo||p.school||'')+' · '+(p.done?'완료':esc(p.fieldStatus||'대기'))+'</p><button data-pick="'+esc(String(p.id))+'" data-state="부분 완료">부분 완료</button><button data-pick="'+esc(String(p.id))+'" data-state="재방문">재방문</button><button data-pick="'+esc(String(p.id))+'" data-state="'+(p.done?'대기':'완료')+'">'+(p.done?'회수 완료 취소':'회수 완료')+'</button></div>').join('')+(ps.length?'':'<small>연결된 회수·반품 업무가 없습니다.</small>')+'<h2>최근 변경 이력</h2>'+((f.history||[]).slice(-10).reverse().map(h=>'<p>'+esc(new Date(h.at).toLocaleString())+' · '+esc(h.action)+'</p>').join('')||'<small>기록 없음</small>')+(f.undo?'<button data-act="undo">직전 현장 납품 저장 취소</button>':'');
+      }
+      function history(s,action){const f=s.fieldOps||(s.fieldOps={});f.history=[...(f.history||[]),{at:Date.now(),action}].slice(-50);}
+      function persist(){saveState();savePickups();renderList();renderPickups();if(activeModalSchoolId){const t=SCHOOLS.find(x=>x.id===activeModalSchoolId);if(t)renderModalPickups(t);}draw();}
+      button.onclick=()=>{focusBack=document.activeElement;selected=activeModalSchoolId||selected;panel.hidden=false;draw();panel.querySelector('button')?.focus();};
+      panel.onchange=e=>{if(e.target.id==='fieldSchool'){selected=e.target.value;draw();}};
+      panel.onkeydown=e=>{if(e.key==='Escape'){panel.hidden=true;focusBack?.focus();}if(e.key==='Tab'){const list=[...panel.querySelectorAll('button,input,select,textarea,a')].filter(x=>!x.disabled);const first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};
+      panel.onclick=async e=>{
+        const b=e.target.closest('button');if(!b)return;const a=b.dataset.act,s=SCHOOLS.find(x=>x.id===selected);if(a==='close'){panel.hidden=true;focusBack?.focus();return;}if(!s)return;
+        if(a==='copy'){try{await navigator.clipboard.writeText(s.address||'');showToast('주소를 복사했습니다.');}catch(_){window.prompt('주소를 복사하세요',s.address||'');}return;}
+        if(a==='call'){const tel=panel.querySelector('#fieldPhone').value.replace(/[^0-9+]/g,'');if(tel)location.href='tel:'+tel;else showToast('전화번호를 입력하세요.');return;}
+        if(a==='save'){
+          const old=s.fieldOps||{},delivered={};let valid=true;
+          deliveryItems(s).forEach((it,i)=>{const n=Number(panel.querySelector('[data-qty="'+i+'"]').value);if(!Number.isInteger(n)||n<0||n>it.qty)valid=false;delivered[it.key]=n;});
+          const state=panel.querySelector('#fieldDelivery').value,reason=panel.querySelector('#fieldReason').value.trim();
+          if(!valid){showToast('수량은 주문 수량 이내의 정수로 입력하세요.');return;}
+          if(state==='완료'&&deliveryItems(s).some(it=>delivered[it.key]!==Number(it.qty))){showToast('모든 수량을 전달한 경우에만 완료할 수 있습니다.');return;}
+          if(['부분 완료','재방문'].includes(state)&&!reason){showToast('미처리·재방문 사유를 입력하세요.');return;}
+          const previous={...old};delete previous.undo;
+          s.fieldOps={...old,phone:panel.querySelector('#fieldPhone').value,memo:panel.querySelector('#fieldMemo').value,delivered,deliveryStatus:state,reason,revisitDate:panel.querySelector('#fieldDate').value,undo:{previous,done:!!completedMap[s.id]}};
+          completedMap[s.id]=state==='완료';history(s,'납품 '+state+' / 메모 저장');persist();showToast('기기에 저장했습니다. 서버 반영은 상단 상태를 확인하세요.');return;
+        }
+        if(a==='undo'&&s.fieldOps?.undo){if(!confirm('직전 현장 저장을 되돌릴까요? 메모와 납품 상태가 함께 복원됩니다.'))return;const u=s.fieldOps.undo;s.fieldOps=u.previous;completedMap[s.id]=u.done;history(s,'직전 현장 저장 취소');persist();return;}
+        if(b.dataset.pick){const p=PICKUPS.find(x=>String(x.id)===b.dataset.pick);if(!p)return;const state=b.dataset.state;let reason='';if(['부분 완료','재방문'].includes(state)){reason=prompt('남은 품목·수량과 사유를 입력하세요.',p.fieldReason||'');if(!reason?.trim())return;}p.fieldStatus=state;p.fieldReason=reason;p.done=state==='완료';p.doneAt=p.done?Date.now():null;history(s,(p.type||'회수')+' '+state+(reason?' · '+reason:''));persist();}
+      };
+      function update(){try{const cur=syncLocalRecords();let pending=0;Object.keys(cur).forEach(k=>{if(stableStr(cur[k])!==syncSnap[k])pending++;});Object.keys(syncSnap).forEach(k=>{if(!(k in cur))pending++;});status.textContent=!syncUser?'서버 미연결 · 기기 저장만 사용':navigator.onLine===false?'오프라인 · 서버 미반영 '+pending+'건':syncPushing?'서버 전송 중':pending?'서버 반영 대기 '+pending+'건':syncState==='error'?'서버 연결 오류 · 재시도 대기':'서버와 변경 내역 일치';}catch(_){status.textContent='저장 상태 확인 중';}}
+      setInterval(update,1200);update();
+    })();
+</script>
 </body>
 </html>
