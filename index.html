@@ -29,7 +29,7 @@
     @media (min-width: 640px) { .hscroll { flex-wrap: wrap; overflow-x: visible; } }
     .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
     /* 회수·반품 / 추가 납품 화면에서 쓰는 추가 클래스 (미리 만든 CSS에 없는 것) */
-    .z-\[54\]{z-index:54}.w-16{width:4rem}.-mt-1{margin-top:-.25rem}.whitespace-pre-line{white-space:pre-line}
+    .z-\[54\]{z-index:54}.z-\[85\]{z-index:85}.z-\[90\]{z-index:90}.top-20{top:5rem}.w-\[305px\]{width:305px}.max-h-36{max-height:9rem}.pb-10{padding-bottom:2.5rem}.bg-neutral-900{background-color:#171717}.hover\:bg-neutral-800:hover{background-color:#262626}.w-16{width:4rem}.-mt-1{margin-top:-.25rem}.whitespace-pre-line{white-space:pre-line}
     .last\:border-0:last-child{border-width:0}
     .border-rose-500\/60{border-color:rgba(244,63,94,.6)}.border-violet-500\/60{border-color:rgba(139,92,246,.6)}
     .bg-teal-500\/20{background-color:rgba(20,184,166,.2)}.text-teal-200{color:rgb(153 246 228)}.border-teal-500\/40{border-color:rgba(20,184,166,.4)}
@@ -304,8 +304,9 @@
             <div class="text-2xl font-black text-rose-300"><span id="pkPendingCount">0</span><span class="text-xs text-slate-400 font-bold"> / <span id="pkTotalCount">0</span></span></div>
           </div>
         </div>
-        <div class="flex items-stretch gap-2">
-          <button id="pkWorksFetchBtn" type="button" class="flex-1 min-w-0 py-3 px-3 rounded-xl text-sm font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 disabled:opacity-60">🔄 웍스 할 일 불러오기</button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button id="pkWorksFetchBtn" type="button" class="w-full py-3 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 disabled:opacity-60">🔄 웍스 할 일 불러오기</button>
+          <button id="pkPipHudBtn" type="button" class="w-full py-3 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow">🪟 팝업모드(미니창) 띄우기</button>
         </div>
         <p id="pkWorksInfo" class="text-[11px] text-slate-400 -mt-1">웍스에 할 일이 생기거나 완료되면 1분 안에 자동으로 반영됩니다. 앱에서 완료하면 웍스 할 일도 완료됩니다.</p>
         <div class="grid grid-cols-3 gap-2">
@@ -946,11 +947,26 @@
   <div id="toastBanner" role="status" aria-live="polite" class="fixed top-2 left-3 right-3 sm:top-auto sm:left-auto sm:bottom-5 sm:right-5 z-[70] hidden bg-slate-800 border border-amber-500/50 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-semibold max-w-sm"></div>
 
 
+  <!-- Main App Screen-Off Backdrop when Popup Mode is Active -->
+  <div id="popupScreenOffBackdrop" class="hidden fixed inset-0 z-[85] bg-black flex flex-col items-center justify-end pb-10 px-4 select-none">
+    <div class="text-center space-y-2.5 opacity-60">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 text-xs text-emerald-400">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>팝업모드 실행 중 · 메인 앱 화면 꺼짐</span>
+      </div>
+      <p class="text-xs text-neutral-400">팝업창의 [📱 앱열기]를 누르면 팝업창이 꺼지고 메인 앱 화면이 다시 켜집니다</p>
+      <button id="popupScreenOffWakeBtn" type="button" class="px-4 py-2 rounded-xl text-xs font-extrabold bg-neutral-900 hover:bg-neutral-800 text-amber-300 border border-amber-500/40 transition">
+        📱 앱열기 (팝업창 끄고 메인 화면 켜기)
+      </button>
+    </div>
+  </div>
+
   <!-- Interactive Touch Floating Overlay (APK Native Overlay Preview & In-App Floating Widget without Media Controls) -->
   <div id="domFloatingOverlay" class="hidden fixed z-[90] top-20 right-3 w-[305px] bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 rounded-2xl shadow-2xl p-3 text-slate-100 select-none">
     <div id="domOverlayDragHeader" class="flex items-center justify-between gap-1 cursor-move pb-1.5 border-b border-slate-800">
       <span id="domOverlayBadge" class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-600 text-white">🧭 내비고정</span>
       <span id="domOverlayDist" class="flex-1 text-xs font-extrabold text-sky-400 truncate pl-1">거리 계산중</span>
+      <button id="domOverlayOpenAppBtn" type="button" class="px-2 py-0.5 rounded text-[11px] font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow" title="앱 본 화면을 열고 팝업창을 닫습니다">📱 앱열기</button>
       <button id="domOverlayHeaderNaviBtn" type="button" class="px-2 py-0.5 rounded text-[11px] font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 shadow" title="현재 미니창에 표시된 목적지로 네이버 내비게이션 길안내를 바로 시작합니다">🟢 내비</button>
       <button id="domOverlayWebPipBtn" type="button" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/30 hover:bg-indigo-500/50 text-indigo-200 border border-indigo-400/40" title="웹 브라우저에서 네이버 내비로 화면을 전환할 때 쓰는 비디오 PiP 창으로 전환">웹PiP</button>
       <button id="domOverlayCollapseBtn" type="button" class="px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600">접기 ➖</button>
@@ -963,7 +979,8 @@
       <button id="domOverlayMainNaviBtn" type="button" class="w-full py-2 px-3 rounded-xl text-xs font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 shadow-md transition flex items-center justify-center gap-1">
         🟢 네이버 내비 길안내 출발 (수량표시)
       </button>
-      <div class="grid grid-cols-2 gap-1.5">
+      <div class="grid grid-cols-3 gap-1.5">
+        <button id="domOverlayBodyOpenAppBtn" type="button" class="py-1.5 px-2 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow">📱 앱열기</button>
         <button id="domOverlayCompleteBtn" type="button" class="py-1.5 px-2 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow">✓ 완료처리</button>
         <button id="domOverlayNextBtn" type="button" class="py-1.5 px-2 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-500 text-white shadow">다음 원 ▶</button>
       </div>
@@ -1603,7 +1620,7 @@ function speakSchoolQuantity(school) {
         if (!htmlContent) {
           // Fallback: clean copy of the current page (close all popups, clear rendered list)
           const clone = document.documentElement.cloneNode(true);
-          ['arrivalModal', 'editModal', 'installModal', 'blackoutOverlay', 'toastBanner', 'nearestBanner', 'miniHudPanel']
+          ['arrivalModal', 'editModal', 'installModal', 'blackoutOverlay', 'toastBanner', 'nearestBanner', 'miniHudPanel', 'domFloatingOverlay', 'popupScreenOffBackdrop', 'pkDetailModal', 'pkAlertModal']
             .forEach(id => { const el = clone.querySelector('#' + id); if (el) el.classList.add('hidden'); });
           ['schoolList', 'editSchoolListContainer'].forEach(id => { const el = clone.querySelector('#' + id); if (el) el.innerHTML = ''; });
           htmlContent = '<!DOCTYPE html>\n' + clone.outerHTML;
@@ -2410,12 +2427,10 @@ function speakSchoolQuantity(school) {
         return;
       }
       if (action === 'lock-pip') {
-        if (typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === school.id) {
-          clearNaviLock(false);
-        } else {
-          setNaviLockedSchool(school.id);
-          speakSchoolQuantity(school);
-          showToast(`📌 [${school.name}] 미니창(PiP) 고정 완료! 거리와 상관없이 PiP에 이 원이 최우선 표시됩니다.`);
+        setNaviLockedSchool(school.id);
+        speakSchoolQuantity(school);
+        if (typeof openPopupModeWithScreenOff === 'function') {
+          openPopupModeWithScreenOff();
         }
         return;
       }
@@ -4223,6 +4238,11 @@ function speakSchoolQuantity(school) {
       const ex = pkMode === 'extra';
       const h = document.getElementById('pkHeading'); if (h) h.textContent = ex ? '➕ 추가 납품' : '↩️ 회수·반품';
       const st = document.getElementById('pkSubText'); if (st) st.textContent = ex ? '정규 납품(주문앱)과 별도로, 웍스 [추가]·[교구]·[A/S] 할 일이 자동으로 들어옵니다.' : '웍스 [회수]·[반품] 할 일이 자동으로 들어옵니다. 캡처·붙여넣기로도 추가할 수 있습니다.';
+      const pipBtn = document.getElementById('pkPipHudBtn');
+      if (pipBtn) {
+        const active = typeof isAnyOverlayActive === 'function' && isAnyOverlayActive();
+        pipBtn.textContent = active ? '🪟 팝업모드 닫기' : (ex ? '🪟 추가납품 팝업모드 띄우기' : '🪟 회수·반품 팝업모드 띄우기');
+      }
     }
     function renderPickups() {
       { const w = document.getElementById('pkKeyWarn'); if (w) { const bad = SETTINGS.kakaoKey && kakaoKeyProblem(SETTINGS.kakaoKey);
@@ -4275,13 +4295,16 @@ function speakSchoolQuantity(school) {
             ${p.worksContent ? `<p class="text-[11px] text-slate-400 mt-1">📄 웍스 요청 내용 있음 · 눌러서 상세보기</p>` : ''}
             <p class="text-[11px] mt-1 ${ok ? 'text-emerald-300' : 'text-rose-300'}">${s ? `📦 납품 목록의 원${delivered ? ' · 납품완료' : ' · 납품 시 함께 회수'}` : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${(s && s.address) || p.address ? ' · ' + escapeHtml((s && s.address) || p.address) : ''}</p>
           </div>
-          <div class="grid grid-cols-4 gap-1.5 text-[11px] font-bold">
-            ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pk-navi="${p.id}" class="col-span-2 py-2.5 rounded-xl bg-[#03C75A] text-slate-950 text-center font-black text-xs">🟢 네이버 내비(PiP고정)</a>`
-                 : `<button type="button" data-pk-geo="${p.id}" class="col-span-2 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs">📍 위치 찾기</button>`}
+          <div class="grid grid-cols-2 gap-1.5 text-xs font-extrabold">
+            ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pk-navi="${p.id}" class="py-2.5 px-2 rounded-xl bg-[#03C75A] hover:bg-emerald-400 text-slate-950 text-center font-black text-xs transition shadow">🟢 네이버 내비(PiP고정)</a>`
+                 : `<button type="button" data-pk-geo="${p.id}" class="py-2.5 px-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs">📍 위치 찾기</button>`}
+            <button type="button" data-pk-pip="${p.id}" class="py-2.5 px-2 rounded-xl font-black text-xs transition ${typeof activeNaviPickupId !== 'undefined' && activeNaviPickupId === p.id && !p.done ? 'bg-amber-500 text-slate-950 border border-amber-400 shadow' : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40'}">🪟 팝업모드 띄우기</button>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
             <button type="button" data-pk-detail="${p.id}" class="py-2.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">🔍 상세보기</button>
             <button type="button" data-pk-edit="${p.id}" class="py-2.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-700">✏️ 수정</button>
+            <button type="button" data-pk-done="${p.id}" class="py-2.5 rounded-xl font-extrabold ${p.done ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-rose-500 hover:bg-rose-400 text-white'}">${p.done ? '↺ 완료 취소' : `✓ ${pkDoneLabel(p.type)} 완료`}</button>
           </div>
-          <button type="button" data-pk-done="${p.id}" class="w-full py-3 rounded-xl text-sm font-extrabold ${p.done ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-rose-500 hover:bg-rose-400 text-white'}">${p.done ? '↺ 완료 취소' : `✓ ${pkDoneLabel(p.type)} 완료`}</button>
         </article>`;
       }).join('');
     }
@@ -4325,6 +4348,16 @@ function speakSchoolQuantity(school) {
           setNaviLockedPickup(p.id);
           if (typeof ensureBgKeepAliveOnNavi === 'function') { try { ensureBgKeepAliveOnNavi(pkPseudo(p)); } catch (err) {} }
           showToast(`🧭 [${p.school}] 내비 연동 고정 · 거리와 상관없이 미니창(PiP)에 이 회수·반품 장소가 고정 표시됩니다.`);
+        }
+        return;
+      }
+      const pipBtn = e.target.closest('[data-pk-pip]');
+      if (pipBtn) {
+        const pid = pipBtn.getAttribute('data-pk-pip');
+        const p = PICKUPS.find(x => x.id === pid);
+        if (p) {
+          if (typeof setNaviLockedPickup === 'function') setNaviLockedPickup(p.id);
+          if (typeof openPopupModeWithScreenOff === 'function') openPopupModeWithScreenOff();
         }
         return;
       }
@@ -4387,8 +4420,9 @@ function speakSchoolQuantity(school) {
           ${row('완료 시각', p.done ? pkFmtTime(p.doneAt) : '')}
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs font-bold">
-          ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pkd-navi="${p.id}" class="col-span-2 py-3 rounded-xl bg-[#03C75A] text-slate-950 text-center font-black text-sm">🟢 네이버 내비 출발 (PiP고정)</a>`
-               : `<button type="button" data-pk-geo="${p.id}" class="col-span-2 py-3 rounded-xl bg-amber-500 text-slate-950 font-black text-sm">📍 위치 찾기</button>`}
+          ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pkd-navi="${p.id}" class="py-3 rounded-xl bg-[#03C75A] text-slate-950 text-center font-black text-xs sm:text-sm">🟢 네이버 내비 출발</a>`
+               : `<button type="button" data-pk-geo="${p.id}" class="py-3 rounded-xl bg-amber-500 text-slate-950 font-black text-xs sm:text-sm">📍 위치 찾기</button>`}
+          <button type="button" data-pkd-pip="${p.id}" class="py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow">🪟 팝업모드 띄우기</button>
           <a ${naverMapAttrs(pkPseudo(p))} class="py-2.5 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-center">🗺️ 지도</a>
           <a href="https://map.kakao.com/link/search/${encodeURIComponent(addr || (s ? s.name : p.school) || '')}" target="_blank" rel="noopener" class="py-2.5 rounded-xl bg-amber-500/10 text-amber-200 border border-amber-500/30 text-center">🟡 카카오맵</a>
           <button type="button" data-pkd-speak class="py-2.5 rounded-xl bg-indigo-500/15 text-indigo-200 border border-indigo-500/30">🔊 읽어 주기</button>
@@ -4399,11 +4433,22 @@ function speakSchoolQuantity(school) {
     document.getElementById('pkDetailModal').addEventListener('click', (e) => {
       if (e.target.id === 'pkDetailModal' || e.target.closest('[data-pkd-close]')) { closePkDetail(); return; }
       const p = PICKUPS.find(x => x.id === pkDetailId); if (!p) return;
+      if (e.target.closest('[data-pkd-pip]')) {
+        if (typeof setNaviLockedPickup === 'function') setNaviLockedPickup(p.id);
+        closePkDetail();
+        if (typeof openPopupModeWithScreenOff === 'function') openPopupModeWithScreenOff();
+        return;
+      }
       if (e.target.closest('[data-pkd-navi]')) {
         if (typeof setNaviLockedPickup === 'function') {
           setNaviLockedPickup(p.id);
           if (typeof ensureBgKeepAliveOnNavi === 'function') { try { ensureBgKeepAliveOnNavi(pkPseudo(p)); } catch (err) {} }
         }
+        setTimeout(() => closePkDetail(), 80);
+        return;
+      }
+      if (e.target.closest('a[data-nmap], a[href*="map.kakao.com"]')) {
+        setTimeout(() => closePkDetail(), 80);
         return;
       }
       if (e.target.closest('[data-pkd-speak]')) {
@@ -5332,7 +5377,11 @@ function speakSchoolQuantity(school) {
         }
       }
       if (hasAndroidNativeOverlay() && window.AndroidOverlay.canDrawOverlays()) {
-        try { window.AndroidOverlay.showOverlay(JSON.stringify(buildOverlayPayload())); } catch (e) {}
+        try {
+          lastOverlayOpenedAt = Date.now();
+          appWentBackgroundSinceOverlay = false;
+          window.AndroidOverlay.showOverlay(JSON.stringify(buildOverlayPayload()));
+        } catch (e) {}
       }
       updateNaviLockBanner();
       updateBgMediaAndPip();
@@ -5361,21 +5410,23 @@ function speakSchoolQuantity(school) {
       }
     }
 
-    function getPendingPickupGroupsWithDist() {
+    function getPendingPickupGroupsWithDist(filterMode) {
       if (typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return [];
       const map = new Map();
       PICKUPS.forEach(p => {
         if (!p || p.done) return;
+        const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(p) : 'return';
+        if (filterMode && gMode !== filterMode) return;
         const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(p) : null;
-        // 아직 납품 완료되지 않은 원에 연결된 회수건은 납품 완료 전엔 납품 화면에 함께 표시되고, 납품 완료 후엔 단독 회수 그룹으로 표시
-        const key = s ? ('school_' + s.id) : ('name_' + normName(p.school || p.title));
+        const key = (s ? ('school_' + s.id) : ('name_' + normName(p.school || p.title))) + '_' + gMode;
         if (!map.has(key)) {
           const dist = typeof pkDistance === 'function' ? pkDistance(p) : null;
           map.set(key, {
             key,
-            name: s ? s.name : (typeof pkGuessFullName === 'function' ? pkGuessFullName(p.school) : (p.school || '회수처')),
+            groupMode: gMode,
+            name: s ? s.name : (typeof pkGuessFullName === 'function' ? pkGuessFullName(p.school) : (p.school || (gMode === 'extra' ? '추가납품처' : '회수처'))),
             subRegion: s ? (s.subRegion || '') : (regionFromAddress(p.address || '').sub || ''),
-            regionGroup: s ? (s.regionGroup || '') : (regionFromAddress(p.address || '').group || '회수'),
+            regionGroup: s ? (s.regionGroup || '') : (regionFromAddress(p.address || '').group || (gMode === 'extra' ? '추가납품' : '회수')),
             address: (s && s.address) || p.address || '',
             schoolId: s ? s.id : null,
             dist,
@@ -5429,18 +5480,20 @@ function speakSchoolQuantity(school) {
         }
       }
 
-      // 1b. 사용자가 회수·반품 탭에서 네이버 내비 출발을 누른 회수처(activeNaviPickupId)가 있으면 거리 상관없이 최우선 고정
+      // 1b. 사용자가 회수·반품 또는 추가 납품에서 선택한 항목(activeNaviPickupId)이 있으면 거리 상관없이 최우선 고정
       if (activeNaviPickupId !== null && typeof PICKUPS !== 'undefined') {
         const lockedP = PICKUPS.find(p => p.id === activeNaviPickupId && !p.done);
         if (lockedP) {
-          const groups = getPendingPickupGroupsWithDist();
+          const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(lockedP) : 'return';
+          const groups = getPendingPickupGroupsWithDist(gMode);
           const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(lockedP) : null;
-          const key = s ? ('school_' + s.id) : ('name_' + normName(lockedP.school || lockedP.title));
+          const key = (s ? ('school_' + s.id) : ('name_' + normName(lockedP.school || lockedP.title))) + '_' + gMode;
           const grp = groups.find(g => g.key === key) || {
             key,
+            groupMode: gMode,
             name: s ? s.name : (typeof pkGuessFullName === 'function' ? pkGuessFullName(lockedP.school) : lockedP.school),
             subRegion: s ? s.subRegion : '',
-            regionGroup: s ? s.regionGroup : '회수',
+            regionGroup: s ? s.regionGroup : (gMode === 'extra' ? '추가납품' : '회수'),
             address: (s && s.address) || lockedP.address || '',
             schoolId: s ? s.id : null,
             dist: typeof pkDistance === 'function' ? pkDistance(lockedP) : null,
@@ -5464,14 +5517,18 @@ function speakSchoolQuantity(school) {
       const pendingWithDist = pendingDeliveries.filter(s => s.dist !== null).sort((a, b) => a.dist - b.dist);
       const nearestDelivery = pendingWithDist[0] || pendingDeliveries.find(s => s.id === (SCHOOLS[currentCursorIndex] && SCHOOLS[currentCursorIndex].id)) || pendingDeliveries[0] || null;
 
-      // 미완료 회수·반품 그룹 (납품 완료된 원에 남아있는 회수건 + 단독 회수처)
+      // 2. 사용자가 '회수·반품' 또는 '추가 납품' 탭을 보고 있을 때 -> 해당 탭의 남은 할 일 우선 표시
+      if (currentView === 'pickup') {
+        const modeGroups = getPendingPickupGroupsWithDist(typeof pkMode !== 'undefined' ? pkMode : null);
+        const fallbackGroups = modeGroups.length ? modeGroups : getPendingPickupGroupsWithDist();
+        if (fallbackGroups[0]) {
+          return { kind: 'pickup', pickupGroup: fallbackGroups[0], dist: fallbackGroups[0].dist, isNaviLocked: false };
+        }
+      }
+
+      // 미완료 회수·반품·추가납품 그룹 (납품 완료된 원에 남아있는 건 + 단독 처)
       const pickupGroups = getPendingPickupGroupsWithDist().filter(g => !g.schoolId || completedMap[g.schoolId]);
       const nearestPickup = pickupGroups[0] || null;
-
-      // 2. 사용자가 '회수·반품' 탭을 보고 있고 남은 회수 건이 있을 때 -> 가까운 회수·반품 우선
-      if (currentView === 'pickup' && nearestPickup) {
-        return { kind: 'pickup', pickupGroup: nearestPickup, dist: nearestPickup.dist, isNaviLocked: false };
-      }
 
       // 3. 미완료 납품 원과 미완료 회수·반품이 둘 다 있을 때 -> GPS 거리가 더 가까운 쪽을 우선 표시
       if (nearestDelivery && nearestPickup) {
@@ -5615,6 +5672,7 @@ function speakSchoolQuantity(school) {
           showToast(`✓ 알림창에서 [${s.name}] 납품 완료 처리되었습니다.`);
         }
       } else if (data.type === 'SW_OPEN_ITEM' && data.schoolId) {
+        if (typeof closeAllPopupWindows === 'function') closeAllPopupWindows({ silent: true });
         openArrivalModal(Number(data.schoolId), false);
       }
     }
@@ -5901,6 +5959,39 @@ ${school.address || ''}`;
 
     let domOverlayActive = false;
     let domOverlayCollapsed = false;
+    let lastOverlayOpenedAt = 0;
+    let appWentBackgroundSinceOverlay = false;
+    let mainAppScreenOff = false;
+
+    function setMainAppScreenOff(off) {
+      mainAppScreenOff = !!off;
+      const backdrop = document.getElementById('popupScreenOffBackdrop');
+      const headerEl = document.querySelector('header');
+      const mainEl = document.querySelector('main');
+      const bottomBar = document.getElementById('mobileBottomBar');
+      if (mainAppScreenOff) {
+        ['arrivalModal', 'pkDetailModal', 'pkAlertModal', 'installModal', 'itemsModal', 'editModal', 'importModal', 'settingsModal', 'syncModal', 'geoModal'].forEach(id => {
+          document.getElementById(id)?.classList.add('hidden');
+        });
+        const fp = document.getElementById('fieldPanel');
+        if (fp) fp.hidden = true;
+        if (headerEl) headerEl.classList.add('hidden');
+        if (mainEl) mainEl.classList.add('hidden');
+        if (bottomBar) bottomBar.classList.add('hidden');
+        if (backdrop) backdrop.classList.remove('hidden');
+        // 안드로이드 APK 네이티브 백그라운드 전환/최소화 브리지 호출 (지원 시 홈/이전 앱 화면으로 내려감)
+        try { if (window.AndroidOverlay && typeof window.AndroidOverlay.minimizeApp === 'function') window.AndroidOverlay.minimizeApp(); } catch (e) {}
+        try { if (window.AndroidOverlay && typeof window.AndroidOverlay.moveTaskToBack === 'function') window.AndroidOverlay.moveTaskToBack(); } catch (e) {}
+        try { if (window.DeliveryNative && typeof window.DeliveryNative.minimizeApp === 'function') window.DeliveryNative.minimizeApp(); } catch (e) {}
+        try { if (window.DeliveryNative && typeof window.DeliveryNative.moveTaskToBack === 'function') window.DeliveryNative.moveTaskToBack(); } catch (e) {}
+        try { if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App && typeof window.Capacitor.Plugins.App.minimizeApp === 'function') window.Capacitor.Plugins.App.minimizeApp(); } catch (e) {}
+      } else {
+        if (backdrop) backdrop.classList.add('hidden');
+        if (headerEl) headerEl.classList.remove('hidden');
+        if (mainEl) mainEl.classList.remove('hidden');
+        if (bottomBar && currentView === 'delivery') bottomBar.classList.remove('hidden');
+      }
+    }
 
     function hasAndroidNativeOverlay() {
       return typeof window.AndroidOverlay !== 'undefined' && typeof window.AndroidOverlay.isSupported === 'function' && window.AndroidOverlay.isSupported();
@@ -5928,17 +6019,20 @@ ${school.address || ''}`;
       if (best.kind === 'pickup' && best.pickupGroup) {
         const grp = best.pickupGroup;
         const firstP = grp.items && grp.items[0];
+        const isExtra = (grp.groupMode === 'extra') || (firstP && typeof pkGroupOf === 'function' && pkGroupOf(firstP) === 'extra');
         const naviUrl = firstP && typeof pkNaviUrl === 'function' ? pkNaviUrl(firstP) : `nmap://search?query=${encodeURIComponent(grp.address || grp.name)}&appname=entercoding.delivery`;
         const webNaviUrl = `https://map.naver.com/p/search/${encodeURIComponent(grp.address || grp.name)}`;
-        const distLabel = best.dist !== null && best.dist !== undefined ? `거리 ${formatDistance(best.dist)}` : (grp.subRegion || '회수·반품');
+        const distLabel = best.dist !== null && best.dist !== undefined ? `거리 ${formatDistance(best.dist)}` : (grp.subRegion || (isExtra ? '추가 납품' : '회수·반품'));
         return {
-          modeBadge: best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품',
-          modeColor: best.isNaviLocked ? '#059669' : '#E11D48',
-          name: `↩️ ${grp.name}`,
+          modeBadge: isExtra ? (best.isNaviLocked ? '🧭 추가납품·고정' : '➕ 추가 납품') : (best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품'),
+          modeColor: isExtra ? '#7C3AED' : (best.isNaviLocked ? '#059669' : '#E11D48'),
+          name: `${isExtra ? '➕' : '↩️'} ${grp.name}`,
           distText: distLabel,
-          progressText: `회수·반품 ${grp.items.length}건 · 터치 시 완료 체크`,
+          progressText: `${isExtra ? '추가 납품' : '회수·반품'} ${grp.items.length}건 · 터치 시 완료 체크`,
           naviUrl,
           webNaviUrl,
+          closeOnOpenApp: true,
+          autoHideOnAppOpen: true,
           items: grp.items.map((p, idx) => ({
             index: idx,
             checked: !!p.done,
@@ -5971,6 +6065,8 @@ ${school.address || ''}`;
         progressText: `품목체크 ${pr.done}/${pr.total} · ${totalLabel(s)}${pickups.length ? ` · 회수${pickups.length}건` : ''}`,
         naviUrl: buildNaverNaviSchemeUrl(s),
         webNaviUrl: buildNaverWebUrl(s),
+        closeOnOpenApp: true,
+        autoHideOnAppOpen: true,
         items: mappedItems
       };
     }
@@ -6094,6 +6190,25 @@ ${school.address || ''}`;
     };
 
     window.onNativeOverlayNextTarget = function() {
+      const best = getBestPipTarget();
+      if (best && best.kind === 'pickup' && typeof PICKUPS !== 'undefined') {
+        const curFirst = best.pickupGroup && best.pickupGroup.items && best.pickupGroup.items[0];
+        const gMode = (best.pickupGroup && best.pickupGroup.groupMode) || (curFirst && typeof pkGroupOf === 'function' ? pkGroupOf(curFirst) : null);
+        let pool = PICKUPS.filter(p => !p.done && (!gMode || pkGroupOf(p) === gMode));
+        if (!pool.length) pool = PICKUPS.filter(p => !p.done);
+        if (!pool.length) {
+          showToast('남은 할 일이 없습니다!');
+          return;
+        }
+        const curIdx = curFirst ? pool.findIndex(p => p.id === curFirst.id) : -1;
+        const nextP = pool[(curIdx + 1) % pool.length];
+        if (nextP) {
+          setNaviLockedPickup(nextP.id);
+          syncNativeAndDomOverlays();
+          showToast(`다음 할 일: ${nextP.school} [${nextP.type}]`);
+        }
+        return;
+      }
       const nextBtn = document.getElementById('hudNextSchoolBtn');
       if (nextBtn) {
         nextBtn.click();
@@ -6142,7 +6257,87 @@ ${school.address || ''}`;
       }
     };
 
+    function closeAllPopupWindows(opts = {}) {
+      // 1. 안드로이드 APK 네이티브 오버레이(AndroidOverlay) 닫기
+      if (typeof window.AndroidOverlay !== 'undefined' && window.AndroidOverlay) {
+        try { if (typeof window.AndroidOverlay.hideOverlay === 'function') window.AndroidOverlay.hideOverlay(); } catch (e) {}
+        try { if (typeof window.AndroidOverlay.closeOverlay === 'function') window.AndroidOverlay.closeOverlay(); } catch (e) {}
+        try { if (typeof window.AndroidOverlay.hidePopup === 'function') window.AndroidOverlay.hidePopup(); } catch (e) {}
+        try { if (typeof window.AndroidOverlay.closePopup === 'function') window.AndroidOverlay.closePopup(); } catch (e) {}
+      }
+      // 2. DeliveryNative 브리지 팝업/오버레이 닫기
+      if (typeof window.DeliveryNative !== 'undefined' && window.DeliveryNative) {
+        try { if (typeof window.DeliveryNative.hideOverlay === 'function') window.DeliveryNative.hideOverlay(); } catch (e) {}
+        try { if (typeof window.DeliveryNative.closeOverlay === 'function') window.DeliveryNative.closeOverlay(); } catch (e) {}
+        try { if (typeof window.DeliveryNative.hidePopup === 'function') window.DeliveryNative.hidePopup(); } catch (e) {}
+        try { if (typeof window.DeliveryNative.closePopup === 'function') window.DeliveryNative.closePopup(); } catch (e) {}
+        try { if (typeof window.DeliveryNative.stopPopup === 'function') window.DeliveryNative.stopPopup(); } catch (e) {}
+      }
+      // 3. 인앱/웹 터치형 플로팅 미니창(#domFloatingOverlay) 닫기
+      domOverlayActive = false;
+      const domBox = document.getElementById('domFloatingOverlay');
+      if (domBox) domBox.classList.add('hidden');
+      // 4. 웹 비디오 PiP(Picture-in-Picture) 및 Document PiP 닫기
+      if (document.pictureInPictureElement) {
+        try { document.exitPictureInPicture().catch(() => {}); } catch (e) {}
+      }
+      if (window.documentPictureInPicture && window.documentPictureInPicture.window) {
+        try { window.documentPictureInPicture.window.close(); } catch (e) {}
+      }
+      pipActive = false;
+      if (pipAnimTimer) { clearInterval(pipAnimTimer); pipAnimTimer = null; }
+      if (opts.closeModals) {
+        try { closeArrivalModal(); } catch (e) {}
+        try { closePkDetail(); } catch (e) {}
+        try { document.getElementById('pkAlertModal')?.classList.add('hidden'); } catch (e) {}
+      }
+      setMainAppScreenOff(false);
+      updatePipButtons();
+    }
+
+    window.closeAllPopupWindows = closeAllPopupWindows;
+
+    // 팝업모드(오버레이/미니창)에서 [앱열기]를 눌렀을 때 팝업창을 끄고 본 앱 화면으로 이동
+    window.onNativeOverlayOpenApp = function(opts = {}) {
+      const best = getBestPipTarget();
+      closeAllPopupWindows({ closeModals: false });
+      try { window.focus(); } catch (e) {}
+      if (best) {
+        if (best.kind === 'pickup' && best.pickupGroup) {
+          const firstP = best.pickupGroup.items && best.pickupGroup.items[0];
+          if (firstP && typeof setView === 'function') {
+            setView(pkGroupOf(firstP) === 'extra' ? 'extra' : 'pickup');
+            setTimeout(() => {
+              const card = document.querySelector(`[data-pk-card="${firstP.id}"]`);
+              if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 80);
+          }
+        } else if (best.kind === 'delivery' && best.school) {
+          if (typeof setView === 'function' && currentView !== 'delivery') setView('delivery');
+          if (opts.openDetailModal) {
+            openArrivalModal(best.school.id, false);
+          } else {
+            setTimeout(() => {
+              const btn = document.querySelector(`[data-action="popup"][data-id="${best.school.id}"]`);
+              const card = btn ? btn.closest('article') : null;
+              if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 80);
+          }
+        }
+      }
+      if (!opts.silent) {
+        showToast('📱 앱이 열려 팝업창을 닫았습니다.');
+      }
+    };
+    window.onOverlayOpenApp = window.onNativeOverlayOpenApp;
+    window.onPopupOpenApp = window.onNativeOverlayOpenApp;
+    window.openAppFromOverlay = window.onNativeOverlayOpenApp;
+    window.openAppFromPopup = window.onNativeOverlayOpenApp;
+    window.onOpenApp = window.onNativeOverlayOpenApp;
+
     window.onNativeOverlayClosed = function() {
+      domOverlayActive = false;
+      document.getElementById('domFloatingOverlay')?.classList.add('hidden');
       updatePipButtons();
     };
 
@@ -6153,6 +6348,11 @@ ${school.address || ''}`;
         const el = document.getElementById(id);
         if (el) el.textContent = id === 'togglePipHudBtn' ? (active ? '🪟 미니창 켜짐' : '🪟 내비 위 미니창(PiP)') : label;
       });
+      const pkBtn = document.getElementById('pkPipHudBtn');
+      if (pkBtn) {
+        const ex = typeof pkMode !== 'undefined' && pkMode === 'extra';
+        pkBtn.textContent = active ? '🪟 팝업모드 닫기' : (ex ? '🪟 추가납품 팝업모드 띄우기' : '🪟 회수·반품 팝업모드 띄우기');
+      }
     }
 
     async function startWebVideoPipHud() {
@@ -6186,49 +6386,46 @@ ${school.address || ''}`;
       }
     }
 
-    async function togglePipHud() {
-      // 1. 안드로이드 APK 네이티브 오버레이('다른 앱 위에 표시')가 지원되는 환경이면 미디어 재생 없는 진짜 터치형 오버레이를 최우선 사용!
-      if (hasAndroidNativeOverlay()) {
-        if (window.AndroidOverlay.isOverlayShowing()) {
-          window.AndroidOverlay.hideOverlay();
-          updatePipButtons();
-          showToast('🪟 내비 위 네이티브 오버레이 미니창을 닫았습니다.');
-          return;
+    function openPopupModeWithScreenOff() {
+      // 현재 보고 있는 탭에 맞춰 기본 타겟 자동 정렬
+      if (typeof currentView !== 'undefined' && currentView === 'pickup') {
+        activeNaviSchoolId = null;
+        const curLocked = activeNaviPickupId && typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => p.id === activeNaviPickupId && !p.done) : null;
+        if (!curLocked || (typeof pkInMode === 'function' && !pkInMode(curLocked))) {
+          const firstInTab = typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => !p.done && (typeof pkInMode !== 'function' || pkInMode(p))) : null;
+          activeNaviPickupId = firstInTab ? firstInTab.id : null;
         }
+        saveNaviLockState();
+        updateNaviLockBanner();
+      }
+      lastOverlayOpenedAt = Date.now();
+      appWentBackgroundSinceOverlay = false;
+      if (hasAndroidNativeOverlay()) {
         if (!window.AndroidOverlay.canDrawOverlays()) {
-          showToast('⚙️ 네이버 내비 위에 터치형 미니창을 띄우려면 [다른 앱 위에 표시] 권한을 허용해 주세요!');
+          showToast('⚙️ 팝업모드(오버레이)를 띄우려면 [다른 앱 위에 표시] 권한을 허용해 주세요!');
           window.AndroidOverlay.requestOverlayPermission();
           return;
         }
-        window.AndroidOverlay.showOverlay(JSON.stringify(buildOverlayPayload()));
-        startBgKeepAlive(true);
-        if (!gpsActive && userLat === null) startGpsTracking();
-        updatePipButtons();
-        showToast('🪟 미디어 재생바 없는 안드로이드 터치형 오버레이 미니창이 켜졌습니다! 네이버 내비 위에서 품목을 직접 터치해 체크하세요.');
-        return;
+        try { window.AndroidOverlay.showOverlay(JSON.stringify(buildOverlayPayload())); } catch (e) {}
       }
-
-      // 2. 웹/캔버스 환경에서는 미디어 재생바 없는 터치형 플로팅 오버레이 위젯(#domFloatingOverlay) 토글 + 원할 때 웹PiP 전환 지원
       const domBox = document.getElementById('domFloatingOverlay');
-      if (domOverlayActive) {
-        domOverlayActive = false;
-        if (domBox) domBox.classList.add('hidden');
-        if (document.pictureInPictureElement) {
-          try { await document.exitPictureInPicture(); } catch (e) {}
-        }
-        pipActive = false;
-        updatePipButtons();
-        showToast('🪟 터치형 플로팅 미니창을 닫았습니다.');
-        return;
-      }
-
       domOverlayActive = true;
       if (domBox) domBox.classList.remove('hidden');
       renderDomFloatingOverlay();
-      updatePipButtons();
+      setMainAppScreenOff(true);
       startBgKeepAlive(true);
       if (!gpsActive && userLat === null) startGpsTracking();
-      showToast('🪟 미디어 재생바 없는 터치형 플로팅 미니창이 켜졌습니다! 품목을 직접 터치해 체크할 수 있습니다.');
+      updatePipButtons();
+      showToast('🪟 팝업모드가 켜지고 메인 앱 화면이 꺼졌습니다. [📱 앱열기]를 누르면 복귀합니다.');
+    }
+
+    async function togglePipHud() {
+      if (isAnyOverlayActive()) {
+        closeAllPopupWindows({ silent: false });
+        showToast('🪟 팝업모드를 닫고 메인 앱 화면을 켰습니다.');
+        return;
+      }
+      openPopupModeWithScreenOff();
       return;
       try {
         if (document.pictureInPictureElement) {
@@ -6351,8 +6548,20 @@ ${school.address || ''}`;
       else startBgKeepAlive(false);
     });
     document.getElementById('togglePipHudBtn').addEventListener('click', togglePipHud);
-    document.getElementById('bannerPipHudBtn').addEventListener('click', togglePipHud);
+    document.getElementById('bannerPipHudBtn').addEventListener('click', () => {
+      activeNaviPickupId = null;
+      saveNaviLockState();
+      togglePipHud();
+    });
+    document.getElementById('pkPipHudBtn')?.addEventListener('click', () => {
+      activeNaviSchoolId = null;
+      saveNaviLockState();
+      togglePipHud();
+    });
     document.getElementById('modalPipHudBtn').addEventListener('click', togglePipHud);
+    document.getElementById('popupScreenOffWakeBtn')?.addEventListener('click', () => {
+      window.onNativeOverlayOpenApp({ silent: false });
+    });
     document.getElementById('toggleSysNotifBtn').addEventListener('click', requestSystemNotificationPermission);
     document.getElementById('reqNotifPermBtn').addEventListener('click', requestSystemNotificationPermission);
     document.getElementById('testArrivalNotifBtn').addEventListener('click', async () => {
@@ -6408,6 +6617,13 @@ ${school.address || ''}`;
           showToast(`🧭 [${s.name}] 내비 연동 고정 · 거리와 상관없이 미니창(PiP)에 이 원이 고정 표시됩니다.`);
         }
       }
+      setTimeout(() => closeArrivalModal(), 80);
+    });
+    document.getElementById('modalNaverWebLink')?.addEventListener('click', () => {
+      setTimeout(() => closeArrivalModal(), 80);
+    });
+    document.getElementById('modalKakaoNavLink')?.addEventListener('click', () => {
+      setTimeout(() => closeArrivalModal(), 80);
     });
 
     // Bind interactive DOM Floating Overlay events & drag
@@ -6417,10 +6633,22 @@ ${school.address || ''}`;
       const idx = parseInt(btn.getAttribute('data-dom-overlay-item'), 10);
       if (!Number.isNaN(idx)) window.onNativeOverlayToggleItem(idx);
     });
+    document.getElementById('domOverlayOpenAppBtn')?.addEventListener('click', () => {
+      window.onNativeOverlayOpenApp({ silent: false });
+    });
+    document.getElementById('domOverlayBodyOpenAppBtn')?.addEventListener('click', () => {
+      window.onNativeOverlayOpenApp({ silent: false });
+    });
     document.getElementById('domOverlayHeaderNaviBtn')?.addEventListener('click', () => {
+      domOverlayActive = false;
+      document.getElementById('domFloatingOverlay')?.classList.add('hidden');
+      updatePipButtons();
       window.onNativeOverlayStartNavi(true);
     });
     document.getElementById('domOverlayMainNaviBtn')?.addEventListener('click', () => {
+      domOverlayActive = false;
+      document.getElementById('domFloatingOverlay')?.classList.add('hidden');
+      updatePipButtons();
       window.onNativeOverlayStartNavi(true);
     });
     document.getElementById('domOverlayCompleteBtn')?.addEventListener('click', () => {
@@ -6430,10 +6658,57 @@ ${school.address || ''}`;
       window.onNativeOverlayNextTarget();
     });
     document.getElementById('domOverlayCloseBtn')?.addEventListener('click', () => {
-      domOverlayActive = false;
-      document.getElementById('domFloatingOverlay')?.classList.add('hidden');
-      updatePipButtons();
+      closeAllPopupWindows({ silent: true });
     });
+
+    // 팝업모드(네이티브 오버레이 / 미니창 / PiP)에서 '앱열기'를 눌러 본 앱으로 돌아오면 팝업창 자동 종료
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        appWentBackgroundSinceOverlay = true;
+      } else {
+        if (isAnyOverlayActive() || (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.hideOverlay === 'function')) {
+          closeAllPopupWindows({ silent: true });
+        }
+      }
+    });
+    window.addEventListener('focus', () => {
+      if (Date.now() - lastOverlayOpenedAt < 1200) return;
+      if (appWentBackgroundSinceOverlay) {
+        appWentBackgroundSinceOverlay = false;
+        closeAllPopupWindows({ silent: true });
+      }
+    });
+    window.addEventListener('pageshow', () => {
+      if (Date.now() - lastOverlayOpenedAt < 1200) return;
+      if (appWentBackgroundSinceOverlay && (isAnyOverlayActive() || (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.hideOverlay === 'function'))) {
+        appWentBackgroundSinceOverlay = false;
+        closeAllPopupWindows({ silent: true });
+      }
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (Date.now() - lastOverlayOpenedAt < 1200) return;
+      if (mainAppScreenOff) return;
+      if (e.target.closest('#domFloatingOverlay, #popupScreenOffBackdrop, #togglePipHudBtn, #bannerPipHudBtn, #pkPipHudBtn, #modalPipHudBtn, #modalTestTouchOverlayBtn, [data-action="naver-speech"], [data-action="lock-pip"], #hudNaverNaviLink, #modalNaverAppLink, [data-pk-navi], [data-pk-pip], [data-pkd-navi], [data-pkd-pip]')) return;
+      if (hasAndroidNativeOverlay() && window.AndroidOverlay.isOverlayShowing()) {
+        closeAllPopupWindows({ silent: true });
+      }
+    }, { passive: true });
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      try {
+        window.Capacitor.Plugins.App.addListener('appStateChange', (state) => {
+          if (state && state.isActive && Date.now() - lastOverlayOpenedAt >= 1200) {
+            closeAllPopupWindows({ silent: true });
+          } else if (state && !state.isActive) {
+            appWentBackgroundSinceOverlay = true;
+          }
+        });
+        window.Capacitor.Plugins.App.addListener('resume', () => {
+          if (Date.now() - lastOverlayOpenedAt >= 1200) {
+            closeAllPopupWindows({ silent: true });
+          }
+        });
+      } catch (e) {}
+    }
     document.getElementById('domOverlayCollapseBtn')?.addEventListener('click', (e) => {
       domOverlayCollapsed = !domOverlayCollapsed;
       const body = document.getElementById('domOverlayBody');
@@ -6554,7 +6829,7 @@ ${school.address || ''}`;
       panel.onkeydown=e=>{if(e.key==='Escape'){panel.hidden=true;focusBack?.focus();}if(e.key==='Tab'){const list=[...panel.querySelectorAll('button,input,select,textarea,a')].filter(x=>!x.disabled);const first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};
       panel.onclick=async e=>{
         const b=e.target.closest('button');if(!b)return;const a=b.dataset.act,s=SCHOOLS.find(x=>x.id===selected);if(a==='close'){panel.hidden=true;focusBack?.focus();return;}if(!s)return;
-        if(a==='copy'){try{await navigator.clipboard.writeText(s.address||'');showToast('주소를 복사했습니다.');}catch(_){window.prompt('주소를 복사하세요',s.address||'');}return;}
+        if(a==='copy'){try{await navigator.clipboard.writeText(s.address||'');showToast('주소를 복사했습니다.');}catch(_){const ta=document.createElement('textarea');ta.value=s.address||'';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('주소를 복사했습니다.');}catch(e){}document.body.removeChild(ta);}return;}
         if(a==='call'){const tel=panel.querySelector('#fieldPhone').value.replace(/[^0-9+]/g,'');if(tel)location.href='tel:'+tel;else showToast('전화번호를 입력하세요.');return;}
         if(a==='save'){
           const old=s.fieldOps||{},delivered={};let valid=true;
@@ -6567,8 +6842,8 @@ ${school.address || ''}`;
           s.fieldOps={...old,phone:panel.querySelector('#fieldPhone').value,memo:panel.querySelector('#fieldMemo').value,delivered,deliveryStatus:state,reason,revisitDate:panel.querySelector('#fieldDate').value,undo:{previous,done:!!completedMap[s.id]}};
           completedMap[s.id]=state==='완료';history(s,'납품 '+state+' / 메모 저장');persist();showToast('기기에 저장했습니다. 서버 반영은 상단 상태를 확인하세요.');return;
         }
-        if(a==='undo'&&s.fieldOps?.undo){if(!confirm('직전 현장 저장을 되돌릴까요? 메모와 납품 상태가 함께 복원됩니다.'))return;const u=s.fieldOps.undo;s.fieldOps=u.previous;completedMap[s.id]=u.done;history(s,'직전 현장 저장 취소');persist();return;}
-        if(b.dataset.pick){const p=PICKUPS.find(x=>String(x.id)===b.dataset.pick);if(!p)return;const state=b.dataset.state;let reason='';if(['부분 완료','재방문'].includes(state)){reason=prompt('남은 품목·수량과 사유를 입력하세요.',p.fieldReason||'');if(!reason?.trim())return;}p.fieldStatus=state;p.fieldReason=reason;p.done=state==='완료';p.doneAt=p.done?Date.now():null;history(s,(p.type||'회수')+' '+state+(reason?' · '+reason:''));persist();}
+        if(a==='undo'&&s.fieldOps?.undo){if(b.dataset.confirm!=='1'){b.dataset.confirm='1';b.textContent='한 번 더 누르면 복원';showToast('직전 현장 저장을 되돌리려면 한 번 더 눌러주세요.');return;}const u=s.fieldOps.undo;s.fieldOps=u.previous;completedMap[s.id]=u.done;history(s,'직전 현장 저장 취소');persist();return;}
+        if(b.dataset.pick){const p=PICKUPS.find(x=>String(x.id)===b.dataset.pick);if(!p)return;const state=b.dataset.state;let reason=(panel.querySelector('#fieldReason')?.value||'').trim()||p.fieldReason||'';if(['부분 완료','재방문'].includes(state)&&!reason){showToast('미처리·재방문 사유 칸에 사유를 먼저 입력해 주세요.');panel.querySelector('#fieldReason')?.focus();return;}p.fieldStatus=state;p.fieldReason=reason;p.done=state==='완료';p.doneAt=p.done?Date.now():null;history(s,(p.type||'회수')+' '+state+(reason?' · '+reason:''));persist();}
       };
       function update(){try{const cur=syncLocalRecords();let pending=0;Object.keys(cur).forEach(k=>{if(stableStr(cur[k])!==syncSnap[k])pending++;});Object.keys(syncSnap).forEach(k=>{if(!(k in cur))pending++;});status.textContent=!syncUser?'서버 미연결 · 기기 저장만 사용':navigator.onLine===false?'오프라인 · 서버 미반영 '+pending+'건':syncPushing?'서버 전송 중':pending?'서버 반영 대기 '+pending+'건':syncState==='error'?'서버 연결 오류 · 재시도 대기':'서버와 변경 내역 일치';}catch(_){status.textContent='저장 상태 확인 중';}}
       setInterval(update,1200);update();
