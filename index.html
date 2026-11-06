@@ -6901,46 +6901,101 @@ ${school.address || ''}`;
    
 
   
-    // Field operations panel: stored on school/pickup records for existing sync.
+
+    // Field operations v2: source records remain authoritative.
     (() => {
-      const style=document.createElement('style');
-      style.textContent='#fieldPanel{position:fixed;inset:5vh 3vw;z-index:100;background:#0f172a;color:white;border:1px solid #64748b;border-radius:16px;padding:16px;overflow:auto}#fieldPanel input,#fieldPanel textarea,#fieldPanel select{background:#1e293b;color:white;border:1px solid #64748b;border-radius:8px;padding:9px;width:100%;margin:5px 0}#fieldPanel button{background:#334155;color:white;border-radius:8px;padding:10px;margin:5px}#fieldPanel label{display:block}#fieldPanel h2{font-size:20px}#fieldPanel small{color:#cbd5e1}#fieldStatus{font-size:11px;white-space:normal}';document.head.append(style);
-      const panel=document.createElement('section');panel.id='fieldPanel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','현장 업무');panel.setAttribute('aria-modal','true');document.body.append(panel);
-      const button=document.createElement('button');button.type='button';button.textContent='현장 업무';button.className='px-3 py-2 rounded-xl bg-slate-700 text-sm';document.getElementById('headerTools').append(button);
-      const status=document.createElement('div');status.id='fieldStatus';status.setAttribute('role','status');document.getElementById('gpsStatusText').after(status);
-      let selected=null,focusBack=null;
-      const esc=escapeHtml;
-      const match=(p,s)=>p.schoolId===s.id||(!p.schoolId&&nameScore(p.school,s.name)>=0.9);
-      function draw(){
-        const school=SCHOOLS.find(x=>String(x.id)===String(selected))||SCHOOLS[0];if(!school){panel.innerHTML='등록된 원이 없습니다. <button data-act="close">닫기</button>';return;}selected=school.id;
-        const f=school.fieldOps||{},items=deliveryItems(school),ps=PICKUPS.filter(p=>match(p,school));
-        panel.innerHTML='<button data-act="close">닫기</button><h2>원별 현장 업무</h2><label>원 선택<select id="fieldSchool">'+SCHOOLS.map(x=>'<option value="'+esc(String(x.id))+'" '+(x.id===school.id?'selected':'')+'>'+esc(x.name)+'</option>').join('')+'</select></label><p>'+esc(school.address||'주소 없음')+'</p><button data-act="copy">주소 복사</button><label>전화번호<input id="fieldPhone" type="tel" value="'+esc(f.phone||school.phone||'')+'"></label><button data-act="call">전화 걸기</button><label>현장 메모<textarea id="fieldMemo" placeholder="후문 진입, 주차 위치, 전달 장소">'+esc(f.memo||'')+'</textarea></label><h2>납품 처리</h2><small>품목별 누적 전달 수량을 입력하세요. 기존 주문 수량은 변경하지 않습니다.</small>'+items.map((it,i)=>'<label>'+esc(it.label)+' · 주문 '+it.qty+'<input type="number" min="0" max="'+it.qty+'" step="1" data-qty="'+i+'" value="'+Math.min(it.qty,Math.max(0,Number((f.delivered||{})[it.key]||(completedMap[school.id]?it.qty:0))))+'"></label>').join('')+'<label>납품 상태<select id="fieldDelivery">'+['대기','부분 완료','재방문','완료'].map(v=>'<option '+((completedMap[school.id]?'완료':f.deliveryStatus||'대기')===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label>미처리·재방문 사유<textarea id="fieldReason">'+esc(f.reason||'')+'</textarea></label><label>재방문 예정일<input id="fieldDate" type="date" value="'+esc(f.revisitDate||'')+'"></label><button data-act="save">메모·납품 저장</button><h2>회수·반품 (납품과 별도 처리)</h2>'+ps.map(p=>'<div><p>'+esc(p.type||'회수')+' · '+esc(p.items||p.memo||p.school||'')+' · '+(p.done?'완료':esc(p.fieldStatus||'대기'))+'</p><button data-pick="'+esc(String(p.id))+'" data-state="부분 완료">부분 완료</button><button data-pick="'+esc(String(p.id))+'" data-state="재방문">재방문</button><button data-pick="'+esc(String(p.id))+'" data-state="'+(p.done?'대기':'완료')+'">'+(p.done?'회수 완료 취소':'회수 완료')+'</button></div>').join('')+(ps.length?'':'<small>연결된 회수·반품 업무가 없습니다.</small>')+'<h2>최근 변경 이력</h2>'+((f.history||[]).slice(-10).reverse().map(h=>'<p>'+esc(new Date(h.at).toLocaleString())+' · '+esc(h.action)+'</p>').join('')||'<small>기록 없음</small>')+(f.undo?'<button data-act="undo">직전 현장 납품 저장 취소</button>':'');
+      const E = v => escapeHtml(String(v ?? ''));
+      const day = () => { const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); };
+      const extra = p => ['추가','교구','A/S','증정'].includes(p.type);
+      const norm = v => String(v||'').replace(/\s/g,'').toLowerCase();
+      function linked(p){
+        if(p.schoolId != null && p.schoolId !== '') return SCHOOLS.find(s=>String(s.id)===String(p.schoolId)) || null;
+        const a=SCHOOLS.filter(s=>norm(s.name) && norm(s.name)===norm(p.school));return a.length===1?a[0]:null;
       }
-      function history(s,action){const f=s.fieldOps||(s.fieldOps={});f.history=[...(f.history||[]),{at:Date.now(),action}].slice(-50);}
-      function persist(){saveState();savePickups();renderList();renderPickups();if(activeModalSchoolId){const t=SCHOOLS.find(x=>x.id===activeModalSchoolId);if(t)renderModalPickups(t);}draw();}
-      button.onclick=()=>{focusBack=document.activeElement;selected=activeModalSchoolId||selected;panel.hidden=false;draw();panel.querySelector('button')?.focus();};
-      panel.onchange=e=>{if(e.target.id==='fieldSchool'){selected=e.target.value;draw();}};
-      panel.onkeydown=e=>{if(e.key==='Escape'){panel.hidden=true;focusBack?.focus();}if(e.key==='Tab'){const list=[...panel.querySelectorAll('button,input,select,textarea,a')].filter(x=>!x.disabled);const first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};
+      function groups(){
+        const a=SCHOOLS.map(s=>({key:'s:'+s.id,name:s.name,s,ps:[]}));
+        PICKUPS.forEach(p=>{const s=linked(p);let g=s?a.find(g=>g.s===s):a.find(g=>!g.s&&g.key==='p:'+norm(p.school||p.id));if(!g){g={key:'p:'+norm(p.school||p.id),name:p.school||'미지정 원',s:null,ps:[]};a.push(g);}g.ps.push(p);});return a;
+      }
+      const remaining=(qty,done)=>Math.max(0,Number(qty)-Number(done||0));
+      function delivered(s,it){return completedMap[s.id]?Number(it.qty):Math.min(Number(it.qty),Math.max(0,Number(s.fieldOps?.delivered?.[it.key]||0)));}
+      function pickupRows(p){return Array.isArray(p.fieldQuantities)?p.fieldQuantities:[];}
+      function loads(){
+        const a=[];
+        SCHOOLS.filter(s=>!completedMap[s.id]).forEach(s=>deliveryItems(s).forEach(it=>{const q=remaining(it.qty,delivered(s,it));if(q)a.push({owner:s,key:'s:'+s.id+':'+it.key,label:it.label,school:s.name,qty:q});}));
+        PICKUPS.filter(p=>!p.done&&extra(p)).forEach(p=>{const rows=pickupRows(p);if(rows.length)rows.forEach((r,i)=>{const q=remaining(r.qty,r.done);if(q)a.push({owner:p,key:'p:'+p.id+':'+i,label:r.label,school:p.school,qty:q});});else a.push({owner:p,key:'p:'+p.id,label:p.items||p.title||p.type,school:p.school,qty:null});});return a;
+      }
+      const fingerprint=r=>JSON.stringify([r.label,r.qty,r.school]);
+      function loadState(r){const v=r.owner.fieldLoad?.[day()]?.[r.key];return v&&v.fingerprint===fingerprint(r)?v.state:'준비 전';}
+      const css=document.createElement('style');css.textContent=`#opsPanel{position:fixed;inset:3vh 2vw;z-index:1000;background:#0f172a;color:#f8fafc;border:1px solid #64748b;border-radius:16px;padding:18px;overflow:auto}#opsPanel[hidden]{display:none}#opsPanel button{padding:10px;background:#334155;border-radius:8px;margin:4px}#opsPanel input,#opsPanel textarea,#opsPanel select{padding:9px;margin:5px 0;background:#1e293b;border:1px solid #64748b;border-radius:8px;color:white;max-width:100%;width:100%}#opsPanel h2{font-size:21px;margin:14px 0}#opsPanel h3{font-size:17px;margin:10px 0}#opsPanel article{padding:12px;margin:10px 0;border:1px solid #475569;border-radius:10px}#opsPanel label{display:block}#opsPanel small{color:#cbd5e1}#opsPanel .opsQty{width:110px}#opsSaveStatus{font-size:12px;white-space:normal}#opsPanel .opsWarn{color:#fbbf24}`;document.head.append(css);
+      const panel=document.createElement('section');panel.id='opsPanel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','통합 현장 업무');document.body.append(panel);
+      const badge=document.createElement('div');badge.id='opsSaveStatus';badge.setAttribute('role','status');document.getElementById('gpsStatusText')?.after(badge);
+      let mode='visit',selected='',focusBack=null,localError='',localAt=null;
+      const btn=(a,t,attrs='')=>`<button type="button" data-ops="${a}" ${attrs}>${t}</button>`;
+      for(const [m,t] of [['visit','원별 통합 업무'],['load','상차 체크']]){const b=document.createElement('button');b.type='button';b.className='px-3 py-2 rounded-xl bg-slate-700 text-sm';b.textContent=t;b.onclick=()=>{focusBack=document.activeElement;mode=m;if(activeModalSchoolId)selected='s:'+activeModalSchoolId;panel.hidden=false;draw();panel.querySelector('button')?.focus();};document.getElementById('headerTools')?.append(b);}
+      function status(){
+        try{const cur=syncLocalRecords(),snap=syncSnap||{};const pending=new Set([...Object.keys(cur),...Object.keys(snap)]);let n=0;pending.forEach(k=>{if(stableStr(cur[k])!==snap[k])n++;});
+          const w=PICKUPS.filter(p=>p.worksTaskId&&p.worksSyncPending).length;
+          let text=localError?'기기 저장 실패: '+localError:localAt?'기기 저장 '+new Date(localAt).toLocaleTimeString('ko-KR'):'기기 저장: 이번 실행 중 신규 저장 없음';
+          text+=' | '+(!syncUser?'서버 미연결':navigator.onLine===false?'오프라인 · 서버 미반영 '+n+'건':syncState==='error'?'서버 오류 · '+(syncDetail||'재시도 대기'):syncPushing?'서버 전송 중':!syncHasSnap?'서버 초기 동기화 중':n?'서버 반영 대기 '+n+'건':'서버 기준과 변경 내역 일치');
+          if(syncLastAt)text+=' | 서버 확인 '+new Date(syncLastAt).toLocaleTimeString('ko-KR');text+=' | 웍스 반영 대기 '+w+'건';badge.textContent=text;const target=panel.querySelector('#opsInnerStatus');if(target)target.textContent=text;
+        }catch(e){badge.textContent='저장 상태 확인 실패: '+e.message;}
+      }
+      function commit(){
+        try{
+          const values=[[SCHOOLS_KEY,JSON.stringify(SCHOOLS)],['entercoding_completed_v1',JSON.stringify(completedMap)],[PICKUPS_KEY,JSON.stringify(PICKUPS)]];
+          values.forEach(([k,v])=>{localStorage.setItem(k,v);if(localStorage.getItem(k)!==v)throw Error('저장 검증 실패');});localError='';localAt=Date.now();scheduleSync();renderList();renderPickups();status();return true;
+        }catch(e){localError=e.message;status();showToast('기기 저장 실패. 창을 닫지 말고 저장을 다시 시도하세요.');return false;}
+      }
+      const stateOptions=(value)=>['대기','부분 완료','재방문','완료'].map(v=>`<option ${v===value?'selected':''}>${v}</option>`).join('');
+      function draw(){
+        panel.innerHTML=btn('close','닫기')+btn('visit','원별 업무')+btn('load','상차 체크')+btn('retry','서버·웍스 재시도')+'<p id="opsInnerStatus" role="status"></p><p class="opsWarn">입력 후 해당 저장 버튼을 눌러주세요. 다른 화면으로 이동하면 미저장 입력은 반영되지 않습니다.</p>';
+        if(mode==='load'){drawLoad();status();return;}
+        const gs=groups(),g=gs.find(x=>x.key===selected)||gs[0];if(!g){panel.innerHTML+='<p>등록된 업무가 없습니다.</p>';status();return;}selected=g.key;
+        panel.innerHTML+='<h2>원별 통합 업무</h2><label>원 선택<select id="opsGroup">'+gs.map(x=>`<option value="${E(x.key)}" ${x===g?'selected':''}>${E(x.name)} · 할 일 ${x.ps.filter(p=>!p.done).length}건</option>`).join('')+'</select></label>';
+        if(g.s){const s=g.s,f=s.fieldOps||{},items=deliveryItems(s);panel.innerHTML+=`<p>${E(s.address||'주소 없음')}</p><article><h3>정규 납품 · 주문앱 기준</h3><p>누적 전달 수량을 입력하세요. 원 주문 수량은 유지됩니다.</p>${items.map((it,i)=>`<label>${E(it.label)} · 주문 ${Number(it.qty)} / 잔여 ${remaining(it.qty,delivered(s,it))}<input class="opsQty" type="number" min="0" max="${Number(it.qty)}" step="1" data-delivery="${i}" value="${delivered(s,it)}"></label>`).join('')}<label>상태<select id="opsDeliveryState">${stateOptions(completedMap[s.id]?'완료':f.deliveryStatus||'대기')}</select></label><label>미처리 사유<textarea id="opsReason">${E(f.reason||'')}</textarea></label><label>재방문일<input id="opsDate" type="date" value="${E(f.revisitDate||'')}"></label><label>현장 메모<textarea id="opsMemo">${E(f.memo||'')}</textarea></label>${btn('saveDelivery','정규 납품 저장')}</article>`;}
+        else panel.innerHTML+='<p class="opsWarn">정규 납품 목록에 연결되지 않은 원입니다. 원 이름이 같아도 중복 후보가 있으면 자동 연결하지 않습니다.</p>';
+        for(const [isExtra,title] of [[true,'추가 납품·교구·A/S'],[false,'회수·반품·기타']]){const ps=g.ps.filter(p=>extra(p)===isExtra);panel.innerHTML+=`<h3>${title}</h3>`+(ps.length?ps.map(p=>{const rows=pickupRows(p);return `<article data-task="${E(p.id)}"><p>${E(p.type)} · ${E(p.items||p.title||'내용 없음')}</p><small>${E(p.worksContent||'')}<br>${p.worksTaskId?(p.worksSyncPending?'웍스 반영 대기':p.done?'웍스 완료 상태':'웍스 미완료 상태'):'직접 등록'}</small><label>품목별 수량 설정 (한 줄에 품목명 | 예정수량)<textarea data-rows placeholder="교구 | 5">${E(rows.map(r=>r.label+' | '+r.qty).join('\n'))}</textarea></label>${btn('setRows','품목·예정수량 설정',`data-id="${E(p.id)}"`)}${rows.map((r,i)=>`<label>${E(r.label)} · 예정 ${r.qty} / 잔여 ${p.done?0:remaining(r.qty,r.done)}<input class="opsQty" data-taskqty="${i}" type="number" min="0" max="${r.qty}" step="1" value="${p.done?r.qty:r.done||0}"></label>`).join('')}<label>상태<select data-taskstate>${stateOptions(p.done?'완료':p.fieldStatus||'대기')}</select></label><label>미처리 사유<textarea data-taskreason>${E(p.fieldReason||'')}</textarea></label><label>재방문일<input data-taskdate type="date" value="${E(p.fieldRevisitDate||'')}"></label>${btn('saveTask','업무 처리 저장',`data-id="${E(p.id)}"`)}</article>`;}).join(''):'<p>해당 업무 없음</p>');}
+        status();
+      }
+      function drawLoad(){
+        const rows=loads(),totals=new Map();rows.filter(r=>r.qty!==null).forEach(r=>{const t=totals.get(r.label)||{q:0,names:[]};t.q+=r.qty;t.names.push(r.school+' '+r.qty);totals.set(r.label,t);});
+        panel.innerHTML+=`<h2>출발 전 상차 체크 · ${day()}</h2><p>현재 미완료 전체 목록 기준입니다. 오늘 방문할 원은 아래 선택으로 정하세요. 회수·반품은 싣는 물건에 포함하지 않습니다. 수량·내용이 바뀌면 확인 상태가 초기화됩니다.</p><h3>품목별 전체 잔여 합계</h3>${[...totals].map(([k,v])=>`<p>${E(k)}: ${v.q} <small>(${E(v.names.join(' / '))})</small></p>`).join('')}<h3>원별 준비</h3>`;
+        rows.forEach((r,i)=>{panel.innerHTML+=`<article><p>${E(r.school)} · ${E(r.label)} · ${r.qty===null?'수량 미설정 (원문 확인)':r.qty}</p><label>이번 출발 대상 / 준비 상태<select data-load="${i}">${['이번 출발 제외','준비 전','포장 완료','상차 완료'].map(v=>`<option ${loadState(r)===v?'selected':''}>${v}</option>`).join('')}</select></label></article>`;});
+        panel.innerHTML+=btn('saveLoad','상차 체크 저장')+btn('departure','출발 전 점검')+'<h3>현장에서 가져올 것</h3>'+PICKUPS.filter(p=>!p.done&&!extra(p)).map(p=>`<p>${E(p.school)} · ${E(p.type)} · ${E(p.items||p.title||'')}</p>`).join('');
+      }
+      panel.onchange=e=>{if(e.target.id==='opsGroup'){selected=e.target.value;draw();}};
       panel.onclick=async e=>{
-        const b=e.target.closest('button');if(!b)return;const a=b.dataset.act,s=SCHOOLS.find(x=>x.id===selected);if(a==='close'){panel.hidden=true;focusBack?.focus();return;}if(!s)return;
-        if(a==='copy'){try{await navigator.clipboard.writeText(s.address||'');showToast('주소를 복사했습니다.');}catch(_){const ta=document.createElement('textarea');ta.value=s.address||'';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('주소를 복사했습니다.');}catch(e){}document.body.removeChild(ta);}return;}
-        if(a==='call'){const tel=panel.querySelector('#fieldPhone').value.replace(/[^0-9+]/g,'');if(tel)location.href='tel:'+tel;else showToast('전화번호를 입력하세요.');return;}
-        if(a==='save'){
-          const old=s.fieldOps||{},delivered={};let valid=true;
-          deliveryItems(s).forEach((it,i)=>{const n=Number(panel.querySelector('[data-qty="'+i+'"]').value);if(!Number.isInteger(n)||n<0||n>it.qty)valid=false;delivered[it.key]=n;});
-          const state=panel.querySelector('#fieldDelivery').value,reason=panel.querySelector('#fieldReason').value.trim();
-          if(!valid){showToast('수량은 주문 수량 이내의 정수로 입력하세요.');return;}
-          if(state==='완료'&&deliveryItems(s).some(it=>delivered[it.key]!==Number(it.qty))){showToast('모든 수량을 전달한 경우에만 완료할 수 있습니다.');return;}
-          if(['부분 완료','재방문'].includes(state)&&!reason){showToast('미처리·재방문 사유를 입력하세요.');return;}
-          const previous={...old};delete previous.undo;
-          s.fieldOps={...old,phone:panel.querySelector('#fieldPhone').value,memo:panel.querySelector('#fieldMemo').value,delivered,deliveryStatus:state,reason,revisitDate:panel.querySelector('#fieldDate').value,undo:{previous,done:!!completedMap[s.id]}};
-          completedMap[s.id]=state==='완료';history(s,'납품 '+state+' / 메모 저장');persist();showToast('기기에 저장했습니다. 서버 반영은 상단 상태를 확인하세요.');return;
+        const b=e.target.closest('[data-ops]');if(!b)return;const a=b.dataset.ops;
+        if(a==='close'){panel.hidden=true;focusBack?.focus();return;}if(['visit','load'].includes(a)){mode=a;draw();return;}
+        if(a==='retry'){if(navigator.onLine===false){showToast('오프라인입니다. 연결 후 다시 시도하세요.');return;}scheduleSync(0);await worksRetryPending();status();return;}
+        if(a==='saveLoad'||a==='departure'){
+          const rows=loads();rows.forEach((r,i)=>{const state=panel.querySelector(`[data-load="${i}"]`)?.value||'준비 전';r.owner.fieldLoad=r.owner.fieldLoad||{};const key=day();r.owner.fieldLoad[key]=r.owner.fieldLoad[key]||{};r.owner.fieldLoad[key][r.key]={state,fingerprint:fingerprint(r)};Object.keys(r.owner.fieldLoad).sort().slice(0,-7).forEach(k=>delete r.owner.fieldLoad[k]);});
+          if(!commit())return;const left=rows.filter(r=>!['상차 완료','이번 출발 제외'].includes(loadState(r)));showToast(a==='departure'?(left.length?'미상차 '+left.length+'건이 있습니다. 목록을 확인하세요.':'이번 출발 대상의 상차 확인을 마쳤습니다.'):'상차 체크를 기기에 저장했습니다.');return;
         }
-        if(a==='undo'&&s.fieldOps?.undo){if(b.dataset.confirm!=='1'){b.dataset.confirm='1';b.textContent='한 번 더 누르면 복원';showToast('직전 현장 저장을 되돌리려면 한 번 더 눌러주세요.');return;}const u=s.fieldOps.undo;s.fieldOps=u.previous;completedMap[s.id]=u.done;history(s,'직전 현장 저장 취소');persist();return;}
-        if(b.dataset.pick){const p=PICKUPS.find(x=>String(x.id)===b.dataset.pick);if(!p)return;const state=b.dataset.state;let reason=(panel.querySelector('#fieldReason')?.value||'').trim()||p.fieldReason||'';if(['부분 완료','재방문'].includes(state)&&!reason){showToast('미처리·재방문 사유 칸에 사유를 먼저 입력해 주세요.');panel.querySelector('#fieldReason')?.focus();return;}p.fieldStatus=state;p.fieldReason=reason;p.done=state==='완료';p.doneAt=p.done?Date.now():null;history(s,(p.type||'회수')+' '+state+(reason?' · '+reason:''));persist();}
+        const g=groups().find(x=>x.key===selected);if(!g)return;
+        if(a==='saveDelivery'&&g.s){const s=g.s,items=deliveryItems(s),done={};let valid=true;items.forEach((it,i)=>{const raw=panel.querySelector(`[data-delivery="${i}"]`).value,n=Number(raw);if(raw===''||!Number.isInteger(n)||n<0||n>Number(it.qty))valid=false;done[it.key]=n;});const state=panel.querySelector('#opsDeliveryState').value,reason=panel.querySelector('#opsReason').value.trim();
+          if(!valid){showToast('주문 수량 이내의 정수를 입력하세요.');return;}if(state==='완료'&&items.some(it=>done[it.key]!==Number(it.qty))){showToast('전체 수량을 전달해야 완료할 수 있습니다.');return;}if(['부분 완료','재방문'].includes(state)&&!reason){showToast('미처리 사유를 입력하세요.');return;}
+          s.fieldOps={...s.fieldOps,delivered:done,deliveryStatus:state,reason,revisitDate:panel.querySelector('#opsDate').value,memo:panel.querySelector('#opsMemo').value,updatedAt:Date.now()};completedMap[s.id]=state==='완료';if(commit()){draw();showToast('기기 저장 완료. 서버 반영은 상태 표시를 확인하세요.');}return;
+        }
+        const p=PICKUPS.find(p=>String(p.id)===b.dataset.id),box=b.closest('[data-task]');if(!p||!box)return;
+        if(a==='setRows'){
+          const lines=box.querySelector('[data-rows]').value.split('\n').map(v=>v.trim()).filter(Boolean),parsed=[];
+          for(const line of lines){const m=line.match(/^(.+?)\s*\|\s*(\d+)$/);if(!m||Number(m[2])<=0||!Number.isSafeInteger(Number(m[2]))){showToast('각 줄을 품목명 | 양의 정수 형식으로 입력하세요.');return;}const label=m[1].trim();if(parsed.some(r=>r.label===label)){showToast('품목명을 중복하지 마세요.');return;}const old=pickupRows(p).find(r=>r.label===label);if(old&&Number(old.done||0)>Number(m[2])){showToast('처리 수량보다 예정 수량을 줄일 수 없습니다.');return;}parsed.push({label,qty:Number(m[2]),done:p.done?Number(m[2]):Number(old?.done||0)});}
+          if(pickupRows(p).some(old=>old.done>0&&!parsed.some(r=>r.label===old.label))){showToast('처리 기록이 있는 품목은 삭제할 수 없습니다.');return;}p.fieldQuantities=parsed;if(commit())draw();return;
+        }
+        if(a==='saveTask'){
+          const rows=pickupRows(p).map((r,i)=>({...r,done:Number(box.querySelector(`[data-taskqty="${i}"]`).value)})),state=box.querySelector('[data-taskstate]').value,reason=box.querySelector('[data-taskreason]').value.trim();
+          if(rows.some((r,i)=>box.querySelector(`[data-taskqty="${i}"]`).value===''||!Number.isInteger(r.done)||r.done<0||r.done>r.qty)){showToast('예정 수량 이내의 정수를 입력하세요.');return;}
+          if(state==='부분 완료'&&!rows.length){showToast('부분 처리는 품목·예정수량을 먼저 설정하세요.');return;}
+          if(state==='완료'&&rows.some(r=>r.done!==r.qty)){showToast('모든 수량을 처리해야 완료할 수 있습니다.');return;}
+          if(['부분 완료','재방문'].includes(state)&&!reason){showToast('미처리 사유를 입력하세요.');return;}
+          const changed=!!p.done!==(state==='완료');p.fieldQuantities=rows;p.fieldStatus=state;p.fieldReason=reason;p.fieldRevisitDate=box.querySelector('[data-taskdate]').value;p.done=state==='완료';p.doneAt=p.done?Date.now():null;
+          if(p.worksTaskId&&changed){p.worksSyncPending=true;p.worksClosedRemote=false;}
+          if(!commit())return;if(p.worksTaskId&&p.worksSyncPending)await worksPushDone(p);draw();showToast('업무 처리 결과를 저장했습니다.');
+        }
       };
-      function update(){try{const cur=syncLocalRecords();let pending=0;Object.keys(cur).forEach(k=>{if(stableStr(cur[k])!==syncSnap[k])pending++;});Object.keys(syncSnap).forEach(k=>{if(!(k in cur))pending++;});status.textContent=!syncUser?'서버 미연결 · 기기 저장만 사용':navigator.onLine===false?'오프라인 · 서버 미반영 '+pending+'건':syncPushing?'서버 전송 중':pending?'서버 반영 대기 '+pending+'건':syncState==='error'?'서버 연결 오류 · 재시도 대기':'서버와 변경 내역 일치';}catch(_){status.textContent='저장 상태 확인 중';}}
-      setInterval(update,1200);update();
+      panel.onkeydown=e=>{if(e.key==='Escape'){panel.hidden=true;focusBack?.focus();}if(e.key==='Tab'){const list=[...panel.querySelectorAll('button,input,textarea,select')].filter(x=>!x.disabled),first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}};
+      window.addEventListener('online',()=>{status();scheduleSync(0);});window.addEventListener('offline',status);setInterval(status,1800);status();
     })();
 </script>
 </body>
