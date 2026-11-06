@@ -28,6 +28,11 @@
     .hscroll > * { flex-shrink: 0; white-space: nowrap; scroll-snap-align: start; }
     @media (min-width: 640px) { .hscroll { flex-wrap: wrap; overflow-x: visible; } }
     .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+    /* 회수·반품 / 추가 납품 화면에서 쓰는 추가 클래스 (미리 만든 CSS에 없는 것) */
+    .z-\[54\]{z-index:54}.w-16{width:4rem}.-mt-1{margin-top:-.25rem}.whitespace-pre-line{white-space:pre-line}
+    .last\:border-0:last-child{border-width:0}
+    .border-rose-500\/60{border-color:rgba(244,63,94,.6)}.border-violet-500\/60{border-color:rgba(139,92,246,.6)}
+    .bg-teal-500\/20{background-color:rgba(20,184,166,.2)}.text-teal-200{color:rgb(153 246 228)}.border-teal-500\/40{border-color:rgba(20,184,166,.4)}
     button, a, select, input { touch-action: manipulation; }
     .card-badge {
       background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
@@ -881,6 +886,11 @@
   </nav>
 
   <!-- 회수·반품 수정 모달 -->
+  <!-- 회수·반품 / 추가 납품 상세보기 -->
+  <div id="pkDetailModal" class="fixed inset-0 z-[54] hidden bg-slate-950/90 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-3" role="dialog" aria-modal="true" aria-labelledby="pkDtName">
+    <div id="pkDetailBox" class="bg-slate-900 border-2 border-rose-500/60 rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3 max-h-[94dvh] overflow-y-auto overscroll-contain pb-safe"></div>
+  </div>
+
   <div id="pkEditModal" class="fixed inset-0 z-[55] hidden bg-slate-950/90 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-3">
     <form id="pkEditForm" autocomplete="off" onsubmit="return false" class="bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-2.5 max-h-[94dvh] overflow-y-auto">
       <div class="flex items-center justify-between">
@@ -4221,6 +4231,7 @@ function speakSchoolQuantity(school) {
         else if (!SETTINGS.kakaoKey && noLoc) { w.innerHTML = `📍 위치 없는 할 일 ${noLoc}건 · 카카오 키가 없어 무료 지도로만 찾고 있어 유치원·어린이집이 잘 안 나옵니다. <button type="button" data-open-settings class="underline font-bold text-amber-300">⚙️ 카카오 키 넣기</button>`; w.classList.remove('hidden'); }
         else w.classList.add('hidden'); } }
       renderPickupFilters();
+      if (pkDetailId) renderPkDetail();
       const sort = document.getElementById('pkSortSelect').value;
       let list = PICKUPS.filter(p => {
         if (!pkInMode(p)) return false;
@@ -4256,18 +4267,18 @@ function speakSchoolQuantity(school) {
             ${p.worksTaskId ? (p.worksSyncPending ? `<span class="px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-200 border-amber-500/40">⚠️ 웍스 반영 대기</span>` : `<span class="px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-200 border-emerald-500/30">🔗 웍스${p.worksClosedRemote ? ' · 웍스에서 완료됨' : ''}</span>`) : ''}
             ${dist !== null ? `<span class="px-2 py-0.5 rounded-full border bg-indigo-500/15 text-indigo-200 border-indigo-500/30">${formatDistance(dist)}</span>` : ''}
           </div>
-          <div>
+          <div data-pk-detail="${p.id}" class="cursor-pointer">
             <h3 class="text-lg font-black text-white leading-tight ${p.done ? 'line-through' : ''}">${escapeHtml(s ? s.name : (p.school || '원 이름 없음'))}</h3>
             ${p.items ? `<p class="text-sm font-bold text-amber-200 mt-1 leading-snug">${escapeHtml(p.items)}</p>` : ''}
             ${p.title && normName(p.title) !== normName((p.school || '') + (p.items || '')) ? `<p class="text-[11px] text-slate-500 mt-1 leading-snug">웍스 원문: ${escapeHtml(p.title)}</p>` : ''}
             ${p.memo ? `<p class="text-xs text-sky-200 mt-1">📝 ${escapeHtml(p.memo)}</p>` : ''}
-            ${p.worksContent ? `<details class="mt-1"><summary class="text-[11px] text-slate-400 cursor-pointer">웍스 요청 내용 보기</summary><p class="text-[11px] text-slate-300 mt-1 leading-snug whitespace-pre-line break-keep">${escapeHtml(String(p.worksContent).slice(0, 600))}</p></details>` : ''}
+            ${p.worksContent ? `<p class="text-[11px] text-slate-400 mt-1">📄 웍스 요청 내용 있음 · 눌러서 상세보기</p>` : ''}
             <p class="text-[11px] mt-1 ${ok ? 'text-emerald-300' : 'text-rose-300'}">${s ? `📦 납품 목록의 원${delivered ? ' · 납품완료' : ' · 납품 시 함께 회수'}` : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${(s && s.address) || p.address ? ' · ' + escapeHtml((s && s.address) || p.address) : ''}</p>
           </div>
           <div class="grid grid-cols-4 gap-1.5 text-[11px] font-bold">
             ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pk-navi="${p.id}" class="col-span-2 py-2.5 rounded-xl bg-[#03C75A] text-slate-950 text-center font-black text-xs">🟢 네이버 내비(PiP고정)</a>`
                  : `<button type="button" data-pk-geo="${p.id}" class="col-span-2 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs">📍 위치 찾기</button>`}
-            <a ${naverMapAttrs(pkPseudo(p))} class="py-2.5 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-center">🗺️ 지도</a>
+            <button type="button" data-pk-detail="${p.id}" class="py-2.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">🔍 상세보기</button>
             <button type="button" data-pk-edit="${p.id}" class="py-2.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-700">✏️ 수정</button>
           </div>
           <button type="button" data-pk-done="${p.id}" class="w-full py-3 rounded-xl text-sm font-extrabold ${p.done ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-rose-500 hover:bg-rose-400 text-white'}">${p.done ? '↺ 완료 취소' : `✓ ${pkDoneLabel(p.type)} 완료`}</button>
@@ -4320,7 +4331,92 @@ function speakSchoolQuantity(school) {
       const d = e.target.closest('[data-pk-done]'); if (d) { pkToggleDone(d.getAttribute('data-pk-done')); return; }
       const ed = e.target.closest('[data-pk-edit]'); if (ed) { openPickupEdit(ed.getAttribute('data-pk-edit')); return; }
       const g = e.target.closest('[data-pk-geo]'); if (g) { pkOpenGeo(g.getAttribute('data-pk-geo')); return; }
+      const dt = e.target.closest('[data-pk-detail]'); if (dt && !e.target.closest('a,button:not([data-pk-detail])')) { openPkDetail(dt.getAttribute('data-pk-detail')); return; }
     });
+
+    // ---- 상세보기 (납품 '크게 보기'와 같은 역할) ----
+    let pkDetailId = null;
+    function pkFmtTime(ms) { if (!ms) return ''; const d = new Date(ms); return `${d.getMonth() + 1}.${d.getDate()} ${d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`; }
+    function openPkDetail(id) {
+      if (!PICKUPS.some(x => x.id === id)) return;
+      pkDetailId = id; renderPkDetail();
+      document.getElementById('pkDetailModal').classList.remove('hidden');
+    }
+    function closePkDetail() { document.getElementById('pkDetailModal').classList.add('hidden'); pkDetailId = null; }
+    function renderPkDetail() {
+      if (!pkDetailId) return;
+      const p = PICKUPS.find(x => x.id === pkDetailId); if (!p) { closePkDetail(); return; }
+      const s = pkLinkedSchool(p); const c = pkCoords(p); const ok = hasCoords(c);
+      const ds = pkDueState(p); const dist = pkDistance(p); const extra = pkGroupOf(p) === 'extra';
+      const addr = (s && s.address) || p.address || '';
+      const delivered = s && completedMap[s.id];
+      const row = (k, v) => v ? `<div class="flex gap-2 py-1.5 border-b border-slate-800 last:border-0"><span class="shrink-0 w-16 text-slate-400">${k}</span><span class="flex-1 min-w-0 text-slate-100 break-keep">${v}</span></div>` : '';
+      document.getElementById('pkDetailBox').className = `bg-slate-900 border-2 ${extra ? 'border-violet-500/60' : 'border-rose-500/60'} rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3 max-h-[94dvh] overflow-y-auto overscroll-contain pb-safe`;
+      document.getElementById('pkDetailBox').innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+              <span class="px-2 py-0.5 rounded-full border ${PK_TYPE_CLASS[p.type] || PK_TYPE_CLASS['기타']}">${pkIcon(p.type)} ${escapeHtml(p.type)}</span>
+              <span class="px-2 py-0.5 rounded-full border ${ds === 'over' ? 'bg-rose-500 text-white border-rose-400' : ds === 'soon' ? 'bg-amber-500/20 text-amber-200 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'}">기한 ${escapeHtml(pkDueLabel(p.due))}${ds === 'over' ? ' 지남' : ''}</span>
+              ${p.done ? '<span class="px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-200 border-emerald-500/40">✓ 완료</span>' : ''}
+            </div>
+            <h2 id="pkDtName" class="text-2xl font-black text-white mt-2 leading-tight break-keep ${p.done ? 'line-through' : ''}">${escapeHtml(s ? s.name : (p.school || '원 이름 없음'))}</h2>
+            <p class="text-xs mt-1 ${ok ? 'text-slate-400' : 'text-rose-300'}">${addr ? escapeHtml(addr) : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${dist !== null ? ' · ' + formatDistance(dist) : ''}</p>
+          </div>
+          <button type="button" data-pkd-close class="shrink-0 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg" aria-label="닫기">✕</button>
+        </div>
+        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5">
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <span class="text-xs font-bold ${extra ? 'text-violet-300' : 'text-rose-300'}">${extra ? '➕ 추가 납품 품목' : '↩️ 회수·반품 품목'}</span>
+            ${p.qty ? `<span class="shrink-0 text-sm font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${p.qty}개</span>` : ''}
+          </div>
+          <p class="text-xl font-black text-amber-200 leading-snug break-keep">${escapeHtml(p.items || p.title || '품목 정보 없음')}</p>
+          ${p.memo ? `<p class="text-sm text-sky-200 mt-2">📝 ${escapeHtml(p.memo)}</p>` : ''}
+        </div>
+        ${p.worksContent || (p.title && normName(p.title) !== normName((p.school || '') + (p.items || ''))) ? `
+        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 space-y-1.5">
+          <div class="text-xs font-bold text-emerald-300">🔗 웍스 할 일</div>
+          ${p.title ? `<p class="text-sm font-bold text-slate-100 break-keep">${escapeHtml(p.title)}</p>` : ''}
+          ${p.worksContent ? `<p class="text-[13px] text-slate-300 leading-relaxed whitespace-pre-line break-keep">${escapeHtml(String(p.worksContent).slice(0, 3000))}</p>` : ''}
+        </div>` : ''}
+        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-1.5 text-[13px]">
+          ${row('담당자', p.assignee ? escapeHtml(p.assignee) : '')}
+          ${row('납품 목록', s ? `${escapeHtml(s.name)}${delivered ? ' · <span class="text-emerald-300">납품완료</span>' : ' · 납품 갈 때 함께 처리'}` : '연결 안 됨 (수정에서 원 이름을 맞추면 연결됩니다)')}
+          ${row('웍스', p.worksTaskId ? (p.worksSyncPending ? '<span class="text-amber-300">⚠️ 반영 대기</span>' : p.worksClosedRemote ? '웍스에서 완료됨' : (p.done ? '완료 반영됨' : '연동 중')) : '')}
+          ${row('등록', p.source === 'works-api' || p.source === 'works' ? '웍스에서 자동' : '직접 추가')}
+          ${row('완료 시각', p.done ? pkFmtTime(p.doneAt) : '')}
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+          ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pkd-navi="${p.id}" class="col-span-2 py-3 rounded-xl bg-[#03C75A] text-slate-950 text-center font-black text-sm">🟢 네이버 내비 출발 (PiP고정)</a>`
+               : `<button type="button" data-pk-geo="${p.id}" class="col-span-2 py-3 rounded-xl bg-amber-500 text-slate-950 font-black text-sm">📍 위치 찾기</button>`}
+          <a ${naverMapAttrs(pkPseudo(p))} class="py-2.5 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-center">🗺️ 지도</a>
+          <a href="https://map.kakao.com/link/search/${encodeURIComponent(addr || (s ? s.name : p.school) || '')}" target="_blank" rel="noopener" class="py-2.5 rounded-xl bg-amber-500/10 text-amber-200 border border-amber-500/30 text-center">🟡 카카오맵</a>
+          <button type="button" data-pkd-speak class="py-2.5 rounded-xl bg-indigo-500/15 text-indigo-200 border border-indigo-500/30">🔊 읽어 주기</button>
+          <button type="button" data-pk-edit="${p.id}" class="py-2.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-700">✏️ 수정</button>
+        </div>
+        <button type="button" data-pk-done="${p.id}" class="w-full py-3.5 rounded-xl text-base font-extrabold ${p.done ? 'bg-slate-800 text-slate-300 border border-slate-700' : extra ? 'bg-violet-500 hover:bg-violet-400 text-white' : 'bg-rose-500 hover:bg-rose-400 text-white'}">${p.done ? '↺ 완료 취소' : `✓ ${pkDoneLabel(p.type)} 완료`}</button>`;
+    }
+    document.getElementById('pkDetailModal').addEventListener('click', (e) => {
+      if (e.target.id === 'pkDetailModal' || e.target.closest('[data-pkd-close]')) { closePkDetail(); return; }
+      const p = PICKUPS.find(x => x.id === pkDetailId); if (!p) return;
+      if (e.target.closest('[data-pkd-navi]')) {
+        if (typeof setNaviLockedPickup === 'function') {
+          setNaviLockedPickup(p.id);
+          if (typeof ensureBgKeepAliveOnNavi === 'function') { try { ensureBgKeepAliveOnNavi(pkPseudo(p)); } catch (err) {} }
+        }
+        return;
+      }
+      if (e.target.closest('[data-pkd-speak]')) {
+        const s = pkLinkedSchool(p);
+        const t = `${s ? s.name : p.school}. ${p.type === '추가' ? '추가 납품' : p.type}입니다. ${p.items || p.title || ''}${p.qty && !/\d+\s*(개|권|부|세트|박스)/.test(p.items || '') ? ', ' + p.qty + '개' : ''}.${p.memo ? ' 메모, ' + p.memo : ''}`;
+        if (typeof speakDeliveryText === 'function') speakDeliveryText(t); else showToast('음성 안내를 쓸 수 없는 기기입니다.');
+        return;
+      }
+      const d = e.target.closest('[data-pk-done]'); if (d) { pkToggleDone(p.id); renderPkDetail(); return; }
+      if (e.target.closest('[data-pk-edit]')) { closePkDetail(); openPickupEdit(p.id); return; }
+      if (e.target.closest('[data-pk-geo]')) { closePkDetail(); pkOpenGeo(p.id); return; }
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pkDetailId) closePkDetail(); });
 
 
     // ---- 네이버웍스 [회수] 할 일 연동 (뉴키즈봇 서버 경유) ----
