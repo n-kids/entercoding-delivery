@@ -2088,54 +2088,93 @@ function speakSchoolQuantity(school) {
       if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
     }
 
+    function applyGpsPosition(pos) {
+      if (!gpsActive || !pos || !pos.coords) return;
+      const acc = Math.round(pos.coords.accuracy || 0);
+      // 이미 정밀 GPS 좌표를 받은 직후에 부정확한 기지국/Wi-Fi 좌표가 늦게 도착해 덮어쓰는 현상 방지
+      if (gpsHadFix && userAccuracy !== null && userAccuracy <= 80 && acc > 300) return;
+      gpsErrCount = 0;
+      gpsHadFix = true;
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      userAccuracy = acc;
+      const radius = parseInt(document.getElementById('radiusSelect').value, 10) || 300;
+      const rough = userAccuracy > Math.max(150, radius);
+      setGpsUi(rough ? 'weak' : 'live', rough
+        ? `GPS 수신 중이나 정확도 낮음 (±${userAccuracy}m) · 정밀 위성 신호를 계속 탐색 중입니다`
+        : `실시간 GPS 수신 중 (정확도 ±${userAccuracy}m) · 반경 진입 시 납품수량이 자동 팝업됩니다`);
+      renderList();
+      if (typeof currentView !== 'undefined' && currentView === 'pickup' && typeof renderPickups === 'function') {
+        renderPickups();
+      }
+    }
+
+    function explainGpsPermissionOrEnvIssue(err) {
+      const proto = window.location.protocol;
+      const inIframe = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+      if (proto === 'file:' || proto === 'content:') {
+        return '다운로드한 파일(file://)을 직접 열면 브라우저 보안상 GPS가 차단됩니다 · 배포된 https:// 주소나 APK 앱으로 열어주세요';
+      }
+      if (window.isSecureContext === false) {
+        return '보안 연결(https://)이 아니어서 브라우저가 GPS를 차단했습니다 · https:// 주소로 접속해 주세요';
+      }
+      if (inIframe && err && /permissions policy|feature policy|disabled in this document/i.test(String(err.message || ''))) {
+        return '미리보기 창(iframe)에서는 브라우저 보안 정책상 GPS가 차단됩니다 · 실제 배포 주소나 앱에서 실행해 주세요';
+      }
+      return '위치 권한이 거부되었습니다 · 브라우저 주소창 왼쪽 자물쇠(또는 앱 설정) → 위치 [허용] 후 다시 켜주세요';
+    }
+
     function startWatchPosition() {
       clearCurrentWatch();
       const gen = watchGen;
       const highAccuracy = !gpsUseLowAccuracy;
+      // 첫 위치를 아직 못 잡았을 때는 Wi-Fi/기지국 기반 빠른 위치(getCurrentPosition)도 동시에 요청해 1~2초 내 초기 위치를 먼저 확보
+      if (!gpsHadFix) {
+        try {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              if (!gpsActive || gen !== watchGen) return;
+              applyGpsPosition(pos);
+            },
+            () => {},
+            { enableHighAccuracy: false, maximumAge: 60000, timeout: 4500 }
+          );
+        } catch (e) {}
+      }
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           if (!gpsActive || gen !== watchGen) return;
-          gpsErrCount = 0;
-          gpsHadFix = true;
-          userLat = pos.coords.latitude;
-          userLng = pos.coords.longitude;
-          userAccuracy = Math.round(pos.coords.accuracy || 0);
-          const radius = parseInt(document.getElementById('radiusSelect').value, 10) || 300;
-          const rough = userAccuracy > Math.max(150, radius);
-          setGpsUi(rough ? 'weak' : 'live', rough
-            ? `GPS 수신 중이나 정확도 낮음 (±${userAccuracy}m) · 정확도가 좋아지면 자동 팝업됩니다`
-            : `실시간 GPS 수신 중 (정확도 ±${userAccuracy}m) · 반경 진입 시 납품수량이 자동 팝업됩니다`);
-          renderList();
+          applyGpsPosition(pos);
         },
         (err) => {
           if (!gpsActive || gen !== watchGen) return;
           if (err && err.code === 1) {
-            // PERMISSION_DENIED: stop for real, never fake a location
             stopGpsTracking(true);
-            setGpsUi('denied', '위치 권한이 거부되었습니다 · 브라우저 주소창 왼쪽 자물쇠 → 위치 [허용] 후 다시 켜주세요 (또는 아래 동네 버튼 사용)');
-            showToast('위치 권한이 꺼져 있습니다. 브라우저 설정에서 이 사이트의 위치 권한을 [허용]으로 바꿔주세요.');
+            const reasonMsg = explainGpsPermissionOrEnvIssue(err);
+            setGpsUi('denied', reasonMsg);
+            showToast(reasonMsg);
             return;
           }
-          // TIMEOUT / POSITION_UNAVAILABLE (tunnel, underground parking, weak signal): keep tracking and retry
+          // TIMEOUT / POSITION_UNAVAILABLE: 첫 타임아웃 발생 시 즉시 저전력/네트워크 위치 모드로 전환해 실내·차량에서도 바로 잡히도록 개선
           gpsErrCount++;
-          if (!gpsHadFix && !gpsUseLowAccuracy && gpsErrCount >= 2) {
-            gpsUseLowAccuracy = true; // GPS chip can't get a first fix -> also allow network positioning
-          } else if (gpsUseLowAccuracy && gpsErrCount >= 4) {
-            gpsUseLowAccuracy = false; gpsErrCount = 0; // periodically go back to high accuracy
+          if (!gpsHadFix && !gpsUseLowAccuracy && gpsErrCount >= 1) {
+            gpsUseLowAccuracy = true;
+          } else if (gpsUseLowAccuracy && gpsErrCount >= 3) {
+            gpsUseLowAccuracy = false; gpsErrCount = 0;
           }
           setGpsUi('weak', gpsHadFix
-            ? 'GPS 신호 약함 (터널·지하 등) · 자동으로 계속 재검색 중입니다. 마지막 위치 기준으로 표시합니다'
-            : 'GPS 위치 신호 검색 중... 실외에서 잠시만 기다려 주세요');
+            ? 'GPS 신호 약함 (터널·실내 등) · 자동으로 계속 재검색 중입니다. 마지막 위치 기준으로 표시합니다'
+            : '위성·네트워크 위치 신호 검색 중... 잠시만 기다려 주세요');
           clearCurrentWatch();
           const retryGen = watchGen;
           gpsRetryTimer = setTimeout(() => {
             if (gpsActive && retryGen === watchGen) startWatchPosition();
-          }, 2000);
+          }, 1200);
         },
         {
           enableHighAccuracy: highAccuracy,
-          maximumAge: 5000,
-          timeout: highAccuracy ? 20000 : 15000
+          maximumAge: highAccuracy ? 5000 : 30000,
+          timeout: highAccuracy ? 8000 : 10000
         }
       );
     }
@@ -2154,7 +2193,10 @@ function speakSchoolQuantity(school) {
         showToast('이 브라우저에서는 GPS를 사용할 수 없습니다. 크롬이나 사파리로 열어주세요.');
         return;
       }
-      if (window.isSecureContext === false) {
+      const proto = window.location.protocol;
+      if (proto === 'file:' || proto === 'content:') {
+        showToast('⚠️ 다운로드한 파일을 직접 열면(file://) 브라우저가 GPS를 차단합니다. 서버(https://)나 APK에 반영해 실행해 주세요.');
+      } else if (window.isSecureContext === false) {
         showToast('위치 기능은 https:// 주소에서만 작동합니다. 배포된 인터넷 주소로 열어주세요.');
       }
       gpsActive = true;
@@ -2163,7 +2205,7 @@ function speakSchoolQuantity(school) {
       gpsUseLowAccuracy = false;
       document.querySelectorAll('.quick-loc-btn').forEach(b => { b.className = QUICK_BTN_CLASS; });
       activeQuickLabel = null;
-      setGpsUi('searching', 'GPS 위치 신호 검색 중...');
+      setGpsUi('searching', 'GPS 위치 신호 검색 중... (위성 + Wi-Fi/기지국 동시 탐색)');
       startWatchPosition();
     }
 
