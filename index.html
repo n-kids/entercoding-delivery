@@ -4368,7 +4368,7 @@ function speakSchoolQuantity(school) {
     });
 
     // ---- 상세보기 (납품 '크게 보기'와 같은 역할) ----
-    let pkDetailId = null;
+    var pkDetailId = null;
     function pkFmtTime(ms) { if (!ms) return ''; const d = new Date(ms); return `${d.getMonth() + 1}.${d.getDate()} ${d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`; }
     function openPkDetail(id) {
       if (!PICKUPS.some(x => x.id === id)) return;
@@ -4466,7 +4466,7 @@ function speakSchoolQuantity(school) {
 
     // ---- 네이버웍스 [회수] 할 일 연동 (뉴키즈봇 서버 경유) ----
     var WORKS_BOT_URL = (function () { try { return (localStorage.getItem('entercoding_works_bot_url') || 'https://newkids-bot.onrender.com').replace(/\/+$/, ''); } catch (e) { return 'https://newkids-bot.onrender.com'; } })();
-    let worksFetching = false, worksLastFetchAt = 0;
+    var worksFetching = false, worksLastFetchAt = 0;
     function worksInfo(kind, text) {
       const el = document.getElementById('pkWorksInfo'); if (!el) return;
       el.className = 'text-[11px] -mt-1 ' + ({ ok: 'text-emerald-300', warn: 'text-amber-300', err: 'text-rose-300' }[kind] || 'text-slate-400');
@@ -4545,7 +4545,7 @@ function speakSchoolQuantity(school) {
       savePickups();
       if (geo.length) setTimeout(() => { try { pkAutoGeocode(geo); } catch (e) {} }, 500);
     }
-    let worksServerSync = null; // null=모름, true=봇 서버 실시간 동기화 켜짐, false=꺼짐(앱이 직접 맞춤)
+    var worksServerSync = null; // null=모름, true=봇 서버 실시간 동기화 켜짐, false=꺼짐(앱이 직접 맞춤)
     function worksSummary(r) {
       const tm = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
       const by = r.byType || {};
@@ -4650,7 +4650,7 @@ function speakSchoolQuantity(school) {
     }
 
     // ---- edit modal ----
-    let pkEditingId = null;
+    var pkEditingId = null;
     function openPickupEdit(id) {
       pkEditingId = id;
       const p = id ? PICKUPS.find(x => x.id === id) : null;
@@ -4741,7 +4741,7 @@ function speakSchoolQuantity(school) {
     document.getElementById('modalPickups').addEventListener('click', (e) => { const d = e.target.closest('[data-pk-done]'); if (d) pkToggleDone(d.getAttribute('data-pk-done')); });
 
     // ---- GPS: 회수 장소 근처 도착 알림 (납품 목록에 없는 곳) ----
-    let pkAlertIds = [];
+    var pkAlertIds = [];
     function renderPkAlert() {
       const list = pkAlertIds.map(id => PICKUPS.find(p => p.id === id)).filter(Boolean);
       if (!list.length) { document.getElementById('pkAlertModal').classList.add('hidden'); return; }
@@ -4913,7 +4913,7 @@ function speakSchoolQuantity(school) {
       }, 120);
     }
 
-    const SYNC_BADGE = {
+    var SYNC_BADGE = {
       off: ['☁️ 공유 꺼짐', 'bg-slate-800 text-slate-300 border-slate-700'],
       login: ['☁️ 공유 로그인', 'bg-sky-500/15 text-sky-300 border-sky-500/40'],
       loading: ['☁️ 연결 중', 'bg-slate-800 text-slate-300 border-slate-700'],
@@ -5183,16 +5183,16 @@ function speakSchoolQuantity(school) {
     //     내비 위 미니창(PiP HUD) · 꺼진 화면/타 앱 위 시스템 도착 알림 ·
     //     Capacitor 안드로이드 네이티브(APK) 백그라운드 GPS 브릿지
     // ====================================================================
-    let swRegistration = null;
-    let deferredInstallPrompt = null;
-    let bgKeepAliveEnabled = true;
-    let bgAudioEl = null;
-    let bgSilentOsc = null;
-    let pipVideoEl = null;
-    let pipCanvasEl = null;
-    let pipActive = false;
-    let pipAnimTimer = null;
-    let capBgWatcherId = null;
+    var swRegistration = null;
+    var deferredInstallPrompt = null;
+    var bgKeepAliveEnabled = true;
+    var bgAudioEl = null;
+    var bgSilentOsc = null;
+    var pipVideoEl = null;
+    var pipCanvasEl = null;
+    var pipActive = Boolean(pipActive);
+    var pipAnimTimer = null;
+    var capBgWatcherId = null;
 
     // 1) 무음 WAV 오디오 데이터 생성 (백그라운드에서 브라우저 프로세스와 GPS가 잠들지 않게 유지)
     function createSilentWavDataUri(durationSec = 2) {
@@ -5316,9 +5316,9 @@ function speakSchoolQuantity(school) {
     //    - 납품 완료된 원은 제외 (단, 해당 원에 미완료 회수·반품이 남아 있으면 회수 모드로 표시)
     //    - 미완료 납품 원과 미완료 회수·반품 장소 중 가까운 곳을 우선 표시
     //    - 납품할 목록이 없으면 미완료 회수·반품 목록을 자동으로 표시
-    const NAVI_LOCK_KEY = 'entercoding_active_navi_v1';
-    let activeNaviSchoolId = null;
-    let activeNaviPickupId = null;
+    var NAVI_LOCK_KEY = 'entercoding_active_navi_v1';
+    var activeNaviSchoolId = null;
+    var activeNaviPickupId = null;
     try {
       const savedLock = JSON.parse(localStorage.getItem(NAVI_LOCK_KEY) || 'null');
       if (savedLock && typeof savedLock === 'object') {
@@ -5376,7 +5376,7 @@ function speakSchoolQuantity(school) {
           updateHudPanel(SCHOOLS[idx]);
         }
       }
-      if (hasAndroidNativeOverlay() && window.AndroidOverlay.canDrawOverlays()) {
+      if (activeNaviSchoolId !== null && hasAndroidNativeOverlay() && window.AndroidOverlay.canDrawOverlays()) {
         try {
           lastOverlayOpenedAt = Date.now();
           appWentBackgroundSinceOverlay = false;
@@ -5957,11 +5957,11 @@ ${school.address || ''}`;
       ctx.fillText(footerStr.slice(0, 34), 18, 216);
     }
 
-    let domOverlayActive = false;
-    let domOverlayCollapsed = false;
-    let lastOverlayOpenedAt = 0;
-    let appWentBackgroundSinceOverlay = false;
-    let mainAppScreenOff = false;
+    var domOverlayActive = Boolean(domOverlayActive);
+    var domOverlayCollapsed = Boolean(domOverlayCollapsed);
+    var lastOverlayOpenedAt = lastOverlayOpenedAt || 0;
+    var appWentBackgroundSinceOverlay = Boolean(appWentBackgroundSinceOverlay);
+    var mainAppScreenOff = Boolean(mainAppScreenOff);
 
     function setMainAppScreenOff(off) {
       mainAppScreenOff = !!off;
@@ -6338,6 +6338,7 @@ ${school.address || ''}`;
     window.onNativeOverlayClosed = function() {
       domOverlayActive = false;
       document.getElementById('domFloatingOverlay')?.classList.add('hidden');
+      setMainAppScreenOff(false);
       updatePipButtons();
     };
 
@@ -6400,18 +6401,27 @@ ${school.address || ''}`;
       }
       lastOverlayOpenedAt = Date.now();
       appWentBackgroundSinceOverlay = false;
+      let usedNativeOverlay = false;
       if (hasAndroidNativeOverlay()) {
         if (!window.AndroidOverlay.canDrawOverlays()) {
           showToast('⚙️ 팝업모드(오버레이)를 띄우려면 [다른 앱 위에 표시] 권한을 허용해 주세요!');
           window.AndroidOverlay.requestOverlayPermission();
           return;
         }
-        try { window.AndroidOverlay.showOverlay(JSON.stringify(buildOverlayPayload())); } catch (e) {}
+        try {
+          window.AndroidOverlay.showOverlay(JSON.stringify(buildOverlayPayload()));
+          usedNativeOverlay = true;
+        } catch (e) {}
       }
       const domBox = document.getElementById('domFloatingOverlay');
-      domOverlayActive = true;
-      if (domBox) domBox.classList.remove('hidden');
-      renderDomFloatingOverlay();
+      if (!usedNativeOverlay) {
+        domOverlayActive = true;
+        if (domBox) domBox.classList.remove('hidden');
+        renderDomFloatingOverlay();
+      } else {
+        domOverlayActive = false;
+        if (domBox) domBox.classList.add('hidden');
+      }
       setMainAppScreenOff(true);
       startBgKeepAlive(true);
       if (!gpsActive && userLat === null) startGpsTracking();
@@ -6640,15 +6650,9 @@ ${school.address || ''}`;
       window.onNativeOverlayOpenApp({ silent: false });
     });
     document.getElementById('domOverlayHeaderNaviBtn')?.addEventListener('click', () => {
-      domOverlayActive = false;
-      document.getElementById('domFloatingOverlay')?.classList.add('hidden');
-      updatePipButtons();
       window.onNativeOverlayStartNavi(true);
     });
     document.getElementById('domOverlayMainNaviBtn')?.addEventListener('click', () => {
-      domOverlayActive = false;
-      document.getElementById('domFloatingOverlay')?.classList.add('hidden');
-      updatePipButtons();
       window.onNativeOverlayStartNavi(true);
     });
     document.getElementById('domOverlayCompleteBtn')?.addEventListener('click', () => {
