@@ -81,6 +81,27 @@
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style id="delivery-tools-direct-css">
+#schoolList{gap:16px;align-items:stretch;min-width:0}#schoolList .dc-card{display:flex;flex-direction:column;min-width:0;padding:20px;border:1px solid #2d3e56;border-radius:20px;background:#111e31;box-shadow:0 5px 18px #02061725;backdrop-filter:none;opacity:1}#schoolList .dc-card:hover{border-color:#526b91;box-shadow:0 5px 18px #02061725}#schoolList .dc-card[data-delivery-state=done]{background:#122729;border-color:#315b50}#schoolList .dc-near{border-color:#b99a56}
+.dc-state-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:13px;border-bottom:1px solid #2c3b50}.dc-state{display:inline-flex;padding:6px 9px;border-radius:8px;background:#27364b;color:#cbd6e6;font-size:12px;font-weight:700}.dc-state-ready{background:#283958;color:#c0d1ff}.dc-state-checking{background:#3c3422;color:#f1d391}.dc-state-done{background:#1b4036;color:#9be1bd}.dc-state-empty{background:#3e2b36;color:#f0bacd}.dc-progress{font-size:11px;color:#9eafc7;white-space:nowrap}
+.dc-identity{padding:14px 0}.dc-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;color:#9cacc3;font-size:11px}.dc-order,.dc-tag{padding:4px 7px;border-radius:6px;background:#26364c;color:#d3dded}.dc-name-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:9px}#schoolList .dc-name{min-width:0;padding:0;background:transparent;color:#f1f5fb;text-align:left}#schoolList .dc-name h3{font-size:21px;font-weight:800;line-height:1.45;overflow-wrap:anywhere}.dc-distance{font-size:11px;color:#aebed5;white-space:nowrap;flex-shrink:0}.dc-address{margin:5px 0 0;font-size:12px;color:#9fadc1;line-height:1.7;overflow-wrap:anywhere}.dc-product{margin:8px 0 0;font-size:12px;color:#c5d0e5;overflow-wrap:anywhere}
+.dc-quantities{padding:13px 0 15px;border-top:1px solid #2c3b50}.dc-quantity-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}.dc-quantity-heading>div{min-width:0}.dc-quantity-heading span{display:block;color:#9eadc4;font-size:11px}.dc-quantity-heading strong{display:block;font-size:17px;color:#edf3fd}.dc-quantity-heading small{display:block;font-size:11px;color:#a9bddb}.dc-step-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.dc-step{display:flex;flex-direction:column;align-items:center;padding:10px 4px;border:1px solid #3b4d6c;border-radius:11px;background:#1b2b45;min-width:0}.dc-step span{font-size:11px;color:#b4c3db}.dc-step strong{margin-top:4px;font-size:25px;color:#eff4ff;line-height:1.25}.dc-step small{margin-top:6px;font-size:10px;color:#9fbbdf}.dc-step-empty{background:#142238;border-color:#293b54}.dc-step-empty strong{color:#70829e}.dc-product-table{max-width:100%;overflow-x:auto;border-radius:10px;background:#15243a;padding:8px}.dc-product-table table{min-width:320px}.dc-extras{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}.dc-extras span{font-size:11px;padding:4px 7px;background:#263148;border-radius:6px;color:#c8c8e4}.dc-unchecked{color:#e7c38d;font-size:11px}
+.dc-actions{margin-top:auto;padding-top:13px;border-top:1px solid #2c3b50}.dc-primary-actions{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px}.dc-secondary-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}#schoolList .dc-button{display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:44px;padding:10px 8px;border-radius:10px;border:1px solid transparent;font-size:12px;font-weight:700;line-height:1.45;text-align:center;text-decoration:none;box-shadow:none;cursor:pointer}#schoolList .dc-navigate{background:#5276df;color:white;min-height:46px}#schoolList .dc-complete{background:#24463b;color:#b1ead1;border-color:#3e6b58;min-height:46px}#schoolList .dc-secondary{background:#19293d;border-color:#34475f;color:#bccce1;font-size:11px}#schoolList .dc-edit{flex-shrink:0;background:#2b3b5c;border-color:#51668e;color:#dce7ff;padding:9px 12px}
+#deliveryActionToolbar{padding:16px;border:1px solid #31435d;border-radius:17px;background:#122137;margin:12px 0 16px}#deliveryActionToolbar h2{font-size:15px;font-weight:800;color:#edf3ff}#deliveryActionToolbar p{font-size:11px;color:#a2b1c7;margin-top:3px}.da-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.da-actions button{min-height:46px;min-width:0;padding:10px 7px;border-radius:10px;background:#263955;border:1px solid #465d80;font-size:12px;font-weight:700;color:#dce7fb}.da-actions button:first-child{background:#323455;border-color:#555980}.da-note{margin-top:9px!important}
+#openItemsModalBtn,#openImportModalBtn,#openEditModalBtn{min-height:44px;border-radius:10px;box-shadow:none;font-weight:700}
+#itemsModal>div,#importModal>div,#editModal>div{background:#142238;border:1px solid #3b5070;border-radius:20px;box-shadow:0 24px 80px #0006;min-height:0}
+#itemsModal h3,#importModal h3,#editModal h3{font-size:18px;line-height:1.45;overflow-wrap:anywhere}
+#itemsModal button,#importModal button,#editModal button{min-height:44px;border-radius:10px}
+#itemsModal input:not([type=checkbox]),#itemsModal select,#importModal input:not([type=file]):not([type=checkbox]),#importModal select,#importModal textarea,#editModal input:not([type=checkbox]),#editModal textarea{background:#0e1b2e;border:1px solid #3b4f70;border-radius:9px;min-height:42px;font-size:16px;max-width:100%}
+#closeItemsModalBtn,#closeImportModalBtn,#closeEditModalBtn{min-width:44px;min-height:44px}
+.items-search{padding:12px;background:#0e1b2e;border:1px solid #314661;border-radius:12px;flex-shrink:0}.items-search label{display:block;font-size:12px;color:#bdccea;margin-bottom:7px}.items-search>div{display:flex;gap:7px}.items-search input{flex:1;min-width:0;padding:9px 11px;color:#edf3ff}.items-search select{width:100%;margin-top:8px;padding:8px;color:#e4ecf9}.items-search p{font-size:11px;color:#99acc8;margin-top:7px}.items-search button{padding:8px 11px;background:#2a3e5b;color:#dbe7fb;flex-shrink:0}
+#itemsModal .overflow-y-auto,#importModal .overflow-y-auto,#editScrollBody{min-height:0;overscroll-behavior:contain}
+#importModal label:has(input[type=file]){min-height:60px;justify-content:center;border-radius:12px;box-shadow:none}
+#editSchoolListContainer>div{background:#101e33;border:1px solid #354b6a;border-radius:14px;padding:14px}
+#dcSavedDialog{width:min(420px,calc(100% - 28px));padding:24px;border:1px solid #465d80;border-radius:20px;background:#15243b;color:#edf3ff}#dcSavedDialog::backdrop{background:#020617b8;backdrop-filter:blur(3px)}#dcSavedDialog h2{font-size:21px;font-weight:800;margin-bottom:12px}#dcSavedDialog p{font-size:14px;line-height:1.7}#dcSavedDialog button{width:100%;min-height:44px;margin-top:20px;border-radius:10px;background:#5276df;color:#fff;font-weight:700}
+#schoolList button:focus-visible,#schoolList a:focus-visible,#deliveryActionToolbar button:focus-visible,#itemsModal :focus-visible,#importModal :focus-visible,#editModal :focus-visible{outline:2px solid #b8caff;outline-offset:2px}
+@media(max-width:639px){#schoolList{gap:12px;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}#schoolList .dc-card{padding:14px;border-radius:17px}.dc-state-row{padding-bottom:11px}.dc-identity{padding:12px 0}#schoolList .dc-name h3{font-size:20px}.dc-step-grid{gap:6px}.dc-step{padding:9px 3px}.dc-step strong{font-size:23px}#schoolList .dc-navigate,#schoolList .dc-complete{min-height:48px}.dc-secondary-actions{gap:6px}#deliveryActionToolbar{padding:12px}.da-actions{gap:6px}.da-actions button{font-size:11px;padding:9px 4px}#itemsModal,#importModal,#editModal{padding:8px!important}#itemsModal>div,#importModal>div,#editModal>div{width:100%;max-height:calc(100dvh - 16px);border-radius:17px;padding:12px}#itemsModal>div,#importModal>div{height:calc(100dvh - 16px)}#editModal>div{height:calc(100dvh - 16px)}#editSchoolListContainer>div{padding:11px}.items-search{padding:10px}}
+</style>
 </head>
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
 
@@ -109,15 +130,9 @@
 
         <!-- Desktop Quick Action Buttons: 품목, 불러오기, 수량관리 -->
         <div class="hidden sm:flex items-center gap-1.5">
-          <button id="openItemsModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-violet-500/15 hover:bg-violet-500/25 text-violet-200 border border-violet-500/40 transition flex items-center gap-1 whitespace-nowrap" title="차량 상차 전 품목별 적재 수량 확인">
-            <span>📦</span><span>품목 확인</span>
-          </button>
-          <button id="openImportModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-sky-500/15 hover:bg-sky-500/25 text-sky-200 border border-sky-500/40 transition flex items-center gap-1 whitespace-nowrap" title="엑셀·사진·텍스트 납품 정보 불러오기">
-            <span>📥</span><span>불러오기</span>
-          </button>
-          <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 whitespace-nowrap" title="원별 수량 수정 및 새 납품처 추가">
-            <span>✏️</span><span>수량 수정</span>
-          </button>
+          <button id="openItemsModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-violet-500/15 hover:bg-violet-500/25 text-violet-200 border border-violet-500/40 transition flex items-center gap-1 whitespace-nowrap" title="차량 상차 전 품목별 적재 수량 확인">품목 확인</button>
+          <button id="openImportModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-sky-500/15 hover:bg-sky-500/25 text-sky-200 border border-sky-500/40 transition flex items-center gap-1 whitespace-nowrap" title="엑셀·사진·텍스트 납품 정보 불러오기">불러오기</button>
+          <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 whitespace-nowrap" title="원별 수량 수정 및 새 납품처 추가">원 관리</button>
         </div>
 
         <!-- Menu / All Tools Button -->
@@ -136,9 +151,7 @@
           <button type="button" data-proxy="openImportModalBtn" class="py-2.5 px-2 rounded-xl text-xs font-extrabold bg-sky-500/20 text-sky-200 border border-sky-500/40 text-center flex flex-col items-center gap-1">
             <span class="text-base">📥</span><span>불러오기</span>
           </button>
-          <button type="button" data-proxy="openEditModalBtn" class="py-2.5 px-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 border border-slate-700 text-center flex flex-col items-center gap-1">
-            <span class="text-base">✏️</span><span>수량 수정</span>
-          </button>
+          <button type="button" data-proxy="openEditModalBtn" class="py-2.5 px-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 border border-slate-700 text-center flex flex-col items-center gap-1">원 관리</button>
         </div>
 
         <!-- Section 1: 운행 보조 설정 -->
@@ -365,6 +378,7 @@
     <!-- Works Auto-Synced Extra Delivery / Pickup Tasks Section (Visible on Delivery Tab) -->
     <section id="deliveryWorksSection" class="hidden bg-gradient-to-r from-violet-950/80 via-slate-900 to-slate-900 border-2 border-violet-500/40 rounded-2xl p-3 sm:p-4 shadow-xl space-y-2.5"></section>
 
+    <section id="deliveryActionToolbar" aria-label="납품 관리"><div><h2>납품 관리</h2><p>품목 확인·데이터 불러오기·원 관리</p></div><div class="da-actions"><button type="button" data-delivery-open="openItemsModalBtn">품목 확인</button><button type="button" data-delivery-open="openImportModalBtn">불러오기</button><button type="button" data-delivery-open="openEditModalBtn">원 추가·전체 관리</button></div><p class="da-note">원별 수량은 아래 카드의 ‘수량 수정’에서 변경하세요.</p></section>
     <!-- School Cards List -->
     <section id="schoolList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></section>
 
@@ -834,6 +848,7 @@
         </div>
         <button id="closeItemsModalBtn" type="button" aria-label="닫기" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold shrink-0">✕</button>
       </div>
+      <div class="items-search"><label for="itemsSearchInput">교재·품목 검색</label><div><input id="itemsSearchInput" type="search" placeholder="교재명 또는 단계 입력"><button id="itemsSearchClear" type="button">초기화</button></div><select id="itemsProductFilter" aria-label="품목 선택"><option value="">전체 품목</option></select><p id="itemsSearchSummary" role="status"></p></div>
       <div class="flex flex-wrap gap-1.5" id="itemsScopeTabs">
         <button type="button" data-items-scope="pending" class="px-3 py-1.5 rounded-lg text-xs font-bold">미완료 원만</button>
         <button type="button" data-items-scope="all" class="px-3 py-1.5 rounded-lg text-xs font-bold">전체 원</button>
@@ -961,7 +976,7 @@
       <button type="button" data-proxy="prevStopBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">◀</span><span class="text-[11px] font-bold">이전 원</span></button>
       <button type="button" data-proxy="nextStopBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl bg-indigo-500 text-white active:bg-indigo-400"><span class="text-lg leading-none">▶</span><span class="text-[11px] font-black">다음 미완료</span></button>
       <button type="button" data-proxy="openItemsModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-violet-200 active:bg-slate-800"><span class="text-lg leading-none">📦</span><span class="text-[11px] font-bold">품목 확인</span></button>
-      <button type="button" data-proxy="openEditModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">✏️</span><span class="text-[11px] font-bold">수량 수정</span></button>
+      <button type="button" data-proxy="openEditModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800">원 관리</button>
     </div>
   </nav>
 
@@ -1066,7 +1081,8 @@
     </div>
   </div>
 
-  <script>
+  <dialog id="dcSavedDialog" aria-labelledby="dcSavedTitle"><h2 id="dcSavedTitle">저장 완료</h2><p id="dcSavedText"></p><form method="dialog"><button type="submit" autofocus>확인</button></form></dialog>
+<script>
     const DEFAULT_SCHOOLS = [
       {
         id: 1,
@@ -1950,9 +1966,17 @@ function speakSchoolQuantity(school) {
         <thead><tr class="text-[11px] text-slate-400"><th class="text-left font-bold pb-1">교재</th>${cols.map(n => `<th class="font-bold pb-1">${n}단계</th>`).join('')}<th class="text-right font-bold pb-1">합계</th></tr></thead>
         <tbody>${rowsHtml}</tbody></table>`;
     }
+    let editOnlySchoolId=null;
+    function openSchoolQuantityEditor(id=null){
+      editOnlySchoolId=id;
+      const school=SCHOOLS.find(x=>x.id===id);
+      document.querySelector('#editModal h3').textContent=school?school.name+' · 수량 수정':'원 추가·전체 관리';
+      document.getElementById('newSchoolDetails').hidden=id!==null;
+      renderEditModalList();document.getElementById('editModal').classList.remove('hidden');document.getElementById('editScrollBody').scrollTop=0;
+    }
     function renderEditModalList() {
       const container = document.getElementById('editSchoolListContainer');
-      container.innerHTML = SCHOOLS.map(s => `
+      container.innerHTML = SCHOOLS.filter(s=>editOnlySchoolId===null||s.id===editOnlySchoolId).map(s => `
         <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
           <div class="min-w-[180px]">
             <div class="text-xs font-bold text-amber-300">[${escapeHtml(s.regionGroup)} · ${escapeHtml(s.subRegion)}]</div>
@@ -2049,90 +2073,15 @@ function speakSchoolQuantity(school) {
         const isNear = s.dist !== null && s.dist <= radiusMeters;
         const kakaoNavUrl = `https://map.kakao.com/link/search/${encodeURIComponent(s.address || s.name)}`;
 
-        const renderStepPill = (stepNum) => {
-          const val = stepQty(s, stepNum), t = teacherQty(s, stepNum);
-          const teacherLine = t > 0
-            ? `<div class="mt-1 rounded-md bg-white text-slate-950 text-[11px] font-black py-0.5">교사 ${t}</div>`
-            : `<div class="mt-1 rounded-md text-[10px] py-0.5 ${val > 0 ? 'text-white/85' : 'text-slate-600'}">교사 -</div>`;
-          if (val > 0 || t > 0) {
-            return `
-              <div class="rounded-xl p-2 text-center card-badge">
-                <div class="text-[11px] font-bold opacity-90">${stepNum}단계</div>
-                <div class="text-2xl font-black leading-tight mt-0.5">${val > 0 ? val : '-'}</div>
-                ${teacherLine}
-              </div>
-            `;
-          }
-          return `
-            <div class="rounded-xl p-2 text-center bg-slate-800/50 border border-slate-800 text-slate-600">
-              <div class="text-[11px] font-medium">${stepNum}단계</div>
-              <div class="text-xl font-bold leading-tight mt-0.5">-</div>
-              ${teacherLine}
-            </div>
-          `;
-        };
-
+        const renderStepPill=n=>{const q=stepQty(s,n),t=teacherQty(s,n);return `<div class="dc-step ${q||t?'':'dc-step-empty'}"><span>${n}단계</span><strong>${q||'—'}</strong><small>교사 ${t||'—'}</small></div>`;};
+        const dcProgress=itemProgress(s),dcState=isDone?'done':!dcProgress.total?'empty':dcProgress.done===dcProgress.total?'ready':dcProgress.done?'checking':'pending';
+        const dcLabel={done:'납품 완료',empty:'수량 미등록',ready:'품목 확인 완료',checking:'품목 확인 중',pending:'납품 대기'}[dcState];
         return `
-          <article class="delivery-card rounded-2xl p-4 shadow-lg flex flex-col justify-between gap-3 ${isNear && !isDone ? 'delivery-card-arrived ring-2 ring-amber-400/50' : isDone ? 'delivery-card-done' : ''}" data-school-card="${s.id}">
-            <div>
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-300 text-xs font-black flex items-center justify-center border border-slate-700 shadow-sm">${s.order}</span>
-                  <span class="text-xs font-bold px-2 py-0.5 rounded-md ${s.regionGroup === '김포' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' : s.regionGroup === '고양' ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30' : 'bg-teal-500/15 text-teal-300 border border-teal-500/30'}">${escapeHtml(s.regionGroup)} · ${escapeHtml(s.subRegion)}</span>
-                  <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-200 border border-amber-500/30">📘 ${escapeHtml(productLabel(s))}</span>
-                  ${typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === s.id && !isDone ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-[#03C75A] text-slate-950 shadow">🧭 내비고정중</span>` : ''}
-                  ${isNear && !isDone ? `<span class="text-xs font-black px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 animate-pulse">📍 근처도착</span>` : ''}
-                  ${isDone ? `<span class="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✓ 납품완료</span>` : ''}
-                  ${isDone ? (() => { const pr = itemProgress(s); const left = pr.total - pr.done; return left > 0 ? `<span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">⚠️ 품목 미확인 ${left}건</span>` : ''; })() : ''}
-                </div>
-                <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 border border-slate-700 shadow-sm whitespace-nowrap shrink-0">합계 ${total}개${teacherTotal(s) ? `<span class="text-sky-300 font-bold"> (교사${teacherTotal(s)})</span>` : ''}</span>
-              </div>
-
-              <div class="mt-2.5 flex items-baseline justify-between gap-2 cursor-pointer group" data-action="popup" data-id="${s.id}" title="클릭하여 상세 수량 및 품목 확인">
-                <h3 class="text-lg sm:text-xl font-black text-white group-hover:text-amber-300 transition-colors">${escapeHtml(s.name)}</h3>
-                <span class="text-xs font-bold ${isNear ? 'text-amber-400' : 'text-slate-400'} shrink-0">${s.dist !== null ? `거리 ${formatDistance(s.dist)}` : ''}</span>
-              </div>
-              <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">${escapeHtml(s.address)}${s.noCoords ? ' <span class="text-rose-300 font-bold">· 위치 미등록 (도착 시 [📌 현위치 저장])</span>' : ''}</p>
-
-              <!-- 1~4단계 (학생용) + 교사용 Quantity Grid -->
-              ${isMulti(s) ? `<div class="mt-3 overflow-x-auto">${productTableHtml(s, false)}</div>` : `<div class="grid grid-cols-4 gap-1.5 mt-3">
-                ${STEPS.map(n => renderStepPill(n)).join('')}
-              </div>`}
-              ${(() => {
-                const ex = normalizeExtras(s.extras);
-                const pr = itemProgress(s);
-                if (!pr.total) return '';
-                const allOk = pr.done === pr.total;
-                return `<div class="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <button type="button" data-action="popup" data-id="${s.id}" class="px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${allOk ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25' : 'bg-violet-500/15 text-violet-200 border-violet-500/40 hover:bg-violet-500/25'}">📦 품목 ${pr.done}/${pr.total} 확인${allOk ? ' ✓' : ''}</button>
-                  ${ex.map(x => `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-800 text-violet-200 border border-slate-700">${escapeHtml(x.name)}${x.qty ? ' ' + x.qty : ''}</span>`).join('')}
-                </div>`;
-              })()}
-
-            </div>
-
-            <div class="pt-2.5 border-t border-slate-800/80 space-y-2">
-              <div class="grid grid-cols-[1fr_auto] gap-2">
-                <a href="${buildNaverNaviSchemeUrl(s)}" target="_top" data-action="naver-speech" data-id="${s.id}" class="naver-btn-glow flex items-center justify-center gap-1.5 px-3 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 text-center transition shadow">
-                  <span class="text-sm">🟢</span><span>네이버 내비 길안내 (수량표시)</span>
-                </a>
-                <button type="button" data-action="lock-pip" data-id="${s.id}" class="hidden">📌 PiP고정</button>
-                <button type="button" data-action="toggle-done" data-id="${s.id}" class="px-3.5 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition shadow-sm ${isDone ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-emerald-500/20'}">
-                  ${isDone ? '완료 해제' : '✓ 납품완료'}
-                </button>
-              </div>
-              <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
-                <button type="button" data-action="popup" data-id="${s.id}" class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 border border-slate-700 transition flex items-center justify-center gap-1">
-                  <span>🔍</span><span>상세·수량확인</span>
-                </button>
-                <a ${naverMapAttrs(s)} class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition flex items-center justify-center gap-1 text-center">
-                  <span>🗺️</span><span>네이버지도</span>
-                </a>
-                <button type="button" data-action="calibrate" data-id="${s.id}" class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 ${s.noCoords ? 'text-rose-300 border-rose-500/40 bg-rose-500/10' : 'text-slate-400 hover:text-slate-200 border-slate-700'} transition flex items-center justify-center gap-1" title="현재 서 있는 GPS 위치를 이 원의 도착 좌표로 저장">
-                  <span>📌</span><span>현위치저장</span>
-                </button>
-              </div>
-            </div>
+          <article class="delivery-card dc-card ${isNear&&!isDone?'dc-near':''}" data-school-card="${s.id}" data-delivery-state="${dcState}">
+            <div class="dc-state-row"><span class="dc-state dc-state-${dcState}">${dcLabel}</span><span class="dc-progress">품목 확인 <strong>${dcProgress.done}/${dcProgress.total}</strong></span></div>
+            <div class="dc-identity"><div class="dc-meta"><span class="dc-order">${s.order}</span><span>${escapeHtml(s.regionGroup||'')} · ${escapeHtml(s.subRegion||'')}</span>${isNear&&!isDone?'<span class="dc-tag">근처 도착</span>':''}${typeof activeNaviSchoolId!=='undefined'&&activeNaviSchoolId===s.id&&!isDone?'<span class="dc-tag">길안내 중</span>':''}</div><div class="dc-name-row"><button type="button" class="dc-name" data-action="popup" data-id="${s.id}"><h3>${escapeHtml(s.name)}</h3></button>${s.dist!==null?`<span class="dc-distance">${formatDistance(s.dist)}</span>`:''}</div><p class="dc-address">${escapeHtml(s.address||'주소 미등록')}${s.noCoords?' · 위치 미등록':''}</p><p class="dc-product">${escapeHtml(productLabel(s))}</p></div>
+            <div class="dc-quantities"><div class="dc-quantity-heading"><div><span>납품 수량</span><strong>합계 ${total}개</strong>${teacherTotal(s)?`<small>교사 ${teacherTotal(s)}개 포함</small>`:''}</div><button type="button" class="dc-button dc-edit" data-action="edit-quantity" data-id="${s.id}">수량 수정</button></div>${isMulti(s)?`<div class="dc-product-table">${productTableHtml(s,false)}</div>`:`<div class="dc-step-grid">${STEPS.map(renderStepPill).join('')}</div>`}<div class="dc-extras">${normalizeExtras(s.extras).map(x=>`<span>${escapeHtml(x.name)}${x.qty?' · '+x.qty:''}</span>`).join('')}</div>${isDone&&dcProgress.done<dcProgress.total?`<p class="dc-unchecked">미확인 품목 ${dcProgress.total-dcProgress.done}건</p>`:''}</div>
+            <div class="dc-actions"><div class="dc-primary-actions"><a href="${buildNaverNaviSchemeUrl(s)}" target="_top" class="dc-button dc-navigate" data-action="naver-speech" data-id="${s.id}">길안내 시작</a><button type="button" class="dc-button dc-complete" data-action="toggle-done" data-id="${s.id}">${isDone?'완료 취소':'납품 완료'}</button></div><div class="dc-secondary-actions"><button type="button" class="dc-button dc-secondary" data-action="popup" data-id="${s.id}">상세·품목 확인</button><a ${naverMapAttrs(s)} class="dc-button dc-secondary">지도 보기</a><button type="button" class="dc-button dc-secondary" data-action="calibrate" data-id="${s.id}" title="현재 GPS 위치를 이 원의 도착 좌표로 저장">위치 저장</button></div></div>
           </article>
         `;
       }).join('');
@@ -2433,10 +2382,7 @@ function speakSchoolQuantity(school) {
       document.getElementById('installModal').classList.add('hidden');
     });
 
-    document.getElementById('openEditModalBtn').addEventListener('click', () => {
-      renderEditModalList();
-      document.getElementById('editModal').classList.remove('hidden');
-    });
+    document.getElementById('openEditModalBtn').addEventListener('click',()=>openSchoolQuantityEditor());
 
     document.getElementById('closeEditModalBtn').addEventListener('click', () => {
       document.getElementById('editModal').classList.add('hidden');
@@ -2447,7 +2393,7 @@ function speakSchoolQuantity(school) {
       if(!saveState())return;
       renderList();
       document.getElementById('editModal').classList.add('hidden');
-      showToast('납품 수량을 이 기기에 저장했습니다. 서버 동기화는 별도로 확인하세요.');
+      document.getElementById('dcSavedText').textContent='납품 수량을 이 기기에 저장했습니다. 서버 동기화는 별도로 확인하세요.';document.getElementById('dcSavedDialog').showModal();
     });
 
     document.getElementById('addNewSchoolBtn').addEventListener('click', () => {
@@ -2546,24 +2492,7 @@ function speakSchoolQuantity(school) {
     });
 
     document.getElementById('schoolList').addEventListener('click', (e) => {
-      const mapLink = e.target.closest('a[data-nmap], a[href*="map.kakao.com"]');
-      if (mapLink && !mapLink.hasAttribute('data-action')) {
-        const card = mapLink.closest('article');
-        const actBtn = card ? card.querySelector('[data-id]') : null;
-        const sid = actBtn ? parseInt(actBtn.getAttribute('data-id'), 10) : null;
-        const sObj = sid ? SCHOOLS.find(x => x.id === sid) : null;
-        if (sObj) {
-          if (typeof setNaviLockedSchool === 'function') setNaviLockedSchool(sObj.id);
-          updateHudPanel(sObj);
-          if (typeof ensureBgKeepAliveOnNavi === 'function') {
-            try { ensureBgKeepAliveOnNavi(sObj); } catch (err) {}
-          }
-          if (typeof openPopupModeWithScreenOff === 'function') {
-            openPopupModeWithScreenOff();
-          }
-        }
-        return;
-      }
+      if(e.target.closest('a[data-nmap],a[href*="map.kakao.com"]')&&!e.target.closest('[data-action]'))return;
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
       const action = btn.getAttribute('data-action');
@@ -2571,6 +2500,7 @@ function speakSchoolQuantity(school) {
       const school = SCHOOLS.find(s => s.id === id);
       if (!school) return;
 
+      if(action==='edit-quantity'){openSchoolQuantityEditor(id);return;}
       if (action === 'naver-speech') {
         e.preventDefault();
         if (typeof setNaviLockedSchool === 'function') setNaviLockedSchool(school.id);
@@ -3961,28 +3891,35 @@ function speakSchoolQuantity(school) {
 
     // ---------- 납품 품목 확인 (총괄표 + 원별 체크) ----------
     let itemsScope = 'pending';
+    function normalizeItemSearch(v){return String(v||'').normalize('NFKC').toLocaleLowerCase('ko').replace(/\s+/g,'');}
+    function matchesItemSearch(it){const q=normalizeItemSearch(document.getElementById('itemsSearchInput').value),p=document.getElementById('itemsProductFilter').value;return(!q||normalizeItemSearch(it.label).includes(q))&&(!p||it.label===p);}
+    function refreshItemOptions(){const el=document.getElementById('itemsProductFilter'),previous=el.value;const labels=[...new Set(SCHOOLS.flatMap(s=>deliveryItems(s).map(it=>it.label)))].sort((a,b)=>a.localeCompare(b,'ko'));el.innerHTML='<option value="">전체 품목</option>'+labels.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');el.value=labels.includes(previous)?previous:'';}
+    document.getElementById('itemsSearchInput').addEventListener('input',renderItemsModal);
+    document.getElementById('itemsProductFilter').addEventListener('change',renderItemsModal);
+    document.getElementById('itemsSearchClear').addEventListener('click',()=>{document.getElementById('itemsSearchInput').value='';document.getElementById('itemsProductFilter').value='';renderItemsModal();});
     function renderItemsModal() {
       document.querySelectorAll('[data-items-scope]').forEach(b => {
         const on = b.getAttribute('data-items-scope') === itemsScope;
         b.className = `px-3 py-1.5 rounded-lg text-xs font-bold ${on ? 'bg-violet-500 text-slate-950' : 'bg-slate-800 text-slate-300 border border-slate-700'}`;
       });
-      const list = [...SCHOOLS].sort((a, b) => a.order - b.order).filter(s => itemsScope === 'all' || !completedMap[s.id]);
+      const list = [...SCHOOLS].sort((a, b) => a.order - b.order).filter(s => itemsScope === 'all' || !completedMap[s.id]).filter(s=>deliveryItems(s).some(matchesItemSearch));
       const totals = new Map();
-      list.forEach(s => deliveryItems(s).forEach(it => {
+      list.forEach(s => deliveryItems(s).filter(matchesItemSearch).forEach(it => {
         const t = totals.get(it.label) || { label: it.label, kind: it.kind, qty: 0, schools: 0 };
         t.qty += it.qty; t.schools += 1; totals.set(it.label, t);
       }));
       const rank = { student: 0, teacher: 1, extra: 2 };
       const tot = [...totals.values()].sort((a, b) => (rank[a.kind] - rank[b.kind]) || a.label.localeCompare(b.label, 'ko'));
       const color = k => k === 'teacher' ? 'border-sky-500/40 bg-sky-500/10 text-sky-200' : k === 'extra' ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'border-amber-500/40 bg-amber-500/10 text-amber-200';
+      document.getElementById('itemsSearchSummary').textContent=`검색 결과 ${list.length}곳 · ${tot.length}품목`;
       const grand = tot.filter(t => t.kind !== 'extra').reduce((a, t) => a + t.qty, 0);
       document.getElementById('itemsTotals').innerHTML = tot.length
         ? tot.map(t => `<div class="rounded-xl border px-2.5 py-2 ${color(t.kind)}"><div class="text-[11px] font-bold leading-tight">${escapeHtml(t.label)}</div><div class="text-lg font-black text-white">${t.qty ? t.qty + '개' : '-'}</div><div class="text-[10px] opacity-75">${t.schools}곳</div></div>`).join('')
-          + `<div class="rounded-xl border px-2.5 py-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-200"><div class="text-[11px] font-bold">교재 합계 (단계별)</div><div class="text-lg font-black text-white">${grand}개</div><div class="text-[10px] opacity-75">${list.length}곳</div></div>`
+          + `<div class="rounded-xl border px-2.5 py-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-200"><div class="text-[11px] font-bold">선택 품목 교재 합계</div><div class="text-lg font-black text-white">${grand}개</div><div class="text-[10px] opacity-75">${list.length}곳</div></div>`
         : '<div class="col-span-full text-xs text-slate-500">표시할 품목이 없습니다.</div>';
       document.getElementById('itemsBySchool').innerHTML = list.map(s => {
-        const items = deliveryItems(s);
-        const pr = itemProgress(s);
+        const items = deliveryItems(s).filter(matchesItemSearch);
+        const pr = {total:items.length,done:items.filter(it=>isItemChecked(s.id,it.key)).length};
         const done = !!completedMap[s.id];
         return `<div class="bg-slate-950 border ${pr.total && pr.done === pr.total ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-3">
           <div class="flex items-center justify-between gap-2 mb-2">
@@ -3993,9 +3930,9 @@ function speakSchoolQuantity(school) {
             ${items.length ? items.map(it => { const on = isItemChecked(s.id, it.key); return `<label class="flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer border ${on ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'}"><input type="checkbox" data-ic-id="${Number(s.id)}" data-ic-key="${escapeHtml(it.key)}" ${on ? 'checked' : ''} class="w-4 h-4 accent-emerald-500 shrink-0"><span class="flex-1 text-xs font-bold ${on ? 'text-slate-500 line-through' : it.kind === 'teacher' ? 'text-sky-200' : it.kind === 'extra' ? 'text-violet-200' : 'text-amber-200'}">${escapeHtml(it.label)}</span><span class="text-sm font-black ${on ? 'text-slate-500' : 'text-white'}">${it.qty ? it.qty : '-'}</span></label>`; }).join('') : '<div class="text-xs text-slate-500">품목 없음</div>'}
           </div>
         </div>`;
-      }).join('') || '<div class="text-xs text-slate-500">미완료 원이 없습니다.</div>';
+      }).join('') || '<div class="text-xs text-slate-500">조건에 맞는 원이 없습니다.</div>';
     }
-    function openItemsModal() { renderItemsModal(); document.getElementById('itemsModal').classList.remove('hidden'); }
+    function openItemsModal() { refreshItemOptions(); renderItemsModal(); document.getElementById('itemsModal').classList.remove('hidden'); }
     function closeItemsModal() { document.getElementById('itemsModal').classList.add('hidden'); renderList(); }
     document.getElementById('openItemsModalBtn').addEventListener('click', openItemsModal);
     document.getElementById('closeItemsModalBtn').addEventListener('click', closeItemsModal);
@@ -4027,7 +3964,7 @@ function speakSchoolQuantity(school) {
         menuBtn.textContent = open ? '✕ 닫기' : '☰ 메뉴';
       };
       menuBtn.addEventListener('click', () => setMenu(tools.classList.contains('hidden')));
-      tools.addEventListener('click', (e) => { if (e.target.closest('button') && window.innerWidth < 640) setMenu(false); });
+      tools.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!tools.contains(b))return;const target=document.getElementById(b.getAttribute('data-proxy'));if(target&&target!==b&&!target.disabled)target.click();if(window.innerWidth<640)setMenu(false);});
       document.getElementById('mobileBottomBar').addEventListener('click', (e) => {
         const b = e.target.closest('[data-proxy]'); if (!b) return;
         const t = document.getElementById(b.getAttribute('data-proxy')); if (t) t.click();
@@ -7775,6 +7712,17 @@ setTimeout(()=>{
  navigator.serviceWorker.getRegistration().then(inspect);
  window.addEventListener('load',()=>navigator.serviceWorker.getRegistration().then(inspect));
 })();
+
+(function setupDeliveryTools(){
+ const ids=['itemsModal','importModal','editModal'];let focusBack=null;
+ document.getElementById('deliveryActionToolbar').addEventListener('click',e=>{const b=e.target.closest('[data-delivery-open]');if(!b)return;focusBack=b;ids.forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById(b.dataset.deliveryOpen)?.click();});
+ ids.forEach(id=>{const modal=document.getElementById(id);modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');const title=modal.querySelector('h3');if(title){title.id=id+'Title';modal.setAttribute('aria-labelledby',title.id);}});
+ document.addEventListener('keydown',e=>{if(document.querySelector('dialog[open]'))return;const modal=ids.map(id=>document.getElementById(id)).find(el=>!el.classList.contains('hidden'));if(!modal)return;
+ if(e.key==='Escape'){modal.classList.add('hidden');focusBack?.focus();}
+ if(e.key==='Tab'){const fields=[...modal.querySelectorAll('button,input,select,textarea,a[href]')].filter(el=>!el.disabled&&el.getClientRects().length);if(!fields.length)return;const first=fields[0],last=fields[fields.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+ });
+})();
+
 </script>
   <script src="save-sync-status.js"></script>
   <script src="pickup-extra-ui.js"></script>
