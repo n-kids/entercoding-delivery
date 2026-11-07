@@ -81,48 +81,6 @@
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<style>
-#schoolList{gap:18px;align-items:stretch;min-width:0}
-#schoolList .delivery-card{background:#111d30!important;border:1px solid #2b3a50!important;border-radius:20px;padding:20px;box-shadow:0 5px 18px #02061725;gap:16px;min-width:0;overflow:hidden;justify-content:flex-start}
-#schoolList .delivery-card>div:last-child{margin-top:auto}
-#schoolList .delivery-card-done{background:#102327!important;border-color:#2b574e!important}
-#schoolList .delivery-card-arrived{border-color:#c7a04b!important}
-#schoolList h3{font-size:21px;line-height:1.4;letter-spacing:-.025em;overflow-wrap:anywhere}
-#schoolList article>div:nth-child(2)>p{color:#a8b6c9;line-height:1.65;margin-top:6px}
-#schoolList article>div:nth-child(2)>div:first-child span{box-shadow:none;border-radius:7px;font-weight:600}
-.card-status-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid #29374c}
-.card-status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;background:#263348;color:#cbd5e1}
-.status-dot{width:6px;height:6px;flex-shrink:0;border-radius:50%;background:currentColor}
-.card-status-checking{background:#382e19;color:#f4ce79}.card-status-ready{background:#253358;color:#bccbff}.card-status-delivered{background:#163d35;color:#86dfbf}.card-status-empty{background:#3a2631;color:#f1b2c3}
-.card-status-count{font-size:11px;color:#9babc2;font-variant-numeric:tabular-nums;white-space:nowrap}
-.card-quantity-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding-top:12px;border-top:1px solid #29374c;color:#b6c3d6;font-size:12px;font-weight:700}
-#schoolList button,#schoolList a{transition:background .15s,border-color .15s;box-shadow:none!important;animation:none;min-width:0}
-#schoolList .card-edit-button{border:1px solid #52628b;background:#283650;color:#e0e7ff;padding:8px 13px;border-radius:10px;font-size:12px;min-height:40px;font-weight:700}
-.card-primary-actions{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px}
-.card-secondary-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
-#schoolList .card-primary-actions>a,#schoolList .card-primary-actions>button:not(.hidden){display:flex;align-items:center;justify-content:center;min-height:46px;padding:10px 12px;border-radius:11px;font-size:13px;font-weight:700;text-align:center}
-#schoolList .naver-btn-glow{background:#5276df!important;color:#fff!important;box-shadow:none!important;animation:none!important}
-#schoolList .card-primary-actions>[data-action="toggle-done"]{background:#243d39!important;color:#a5ead1!important;border:1px solid #386555}
-#schoolList .card-secondary-actions>a,#schoolList .card-secondary-actions>button{display:flex;align-items:center;justify-content:center;min-height:42px;padding:8px 6px;border-radius:10px;background:#18263a;color:#b9c6da;border:1px solid #314158;font-size:12px;font-weight:600;line-height:1.4;text-align:center}
-#schoolList button:hover,#schoolList a:hover{filter:brightness(1.12)}
-#schoolList button:focus-visible,#schoolList a:focus-visible{outline:2px solid #b4c4ff;outline-offset:3px}
-#quantitySaveDialog{width:min(420px,calc(100% - 32px));padding:26px;background:#152136;color:#eef2ff;border:1px solid #42526e;border-radius:22px;box-shadow:0 24px 80px #0008}
-#quantitySaveDialog::backdrop{background:#020617b8;backdrop-filter:blur(4px)}
-#quantitySaveDialog h2{font-size:22px;font-weight:800;margin-bottom:12px}#quantitySaveDialog p{font-size:14px;line-height:1.7;overflow-wrap:anywhere}#quantitySaveNote{font-size:12px!important;color:#a4b1c7;margin-top:12px}
-#quantitySaveDialog button{width:100%;padding:12px;margin-top:22px;border-radius:12px;background:#6684f2;color:white;font-weight:700}
-@media(max-width:639px){
- main{padding-left:12px!important;padding-right:12px!important}
- #schoolList{gap:12px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
- #schoolList .delivery-card{padding:14px;border-radius:17px;gap:12px}
- #schoolList h3{font-size:20px} .card-status-row{padding-bottom:10px}
- .card-quantity-heading{margin-top:12px;padding-top:10px}
- #schoolList .card-primary-actions{gap:8px}#schoolList .card-secondary-actions{gap:6px}
- #schoolList .card-secondary-actions>a,#schoolList .card-secondary-actions>button{min-height:44px;font-size:11px;padding:8px 4px}
- #schoolList .card-edit-button{min-height:44px;padding:9px 12px}
- #schoolList .card-primary-actions>a,#schoolList .card-primary-actions>button:not(.hidden){min-height:48px;font-size:12px;padding:10px 7px}
-}
-@media(prefers-reduced-motion:reduce){#schoolList *{animation:none!important;transition:none!important}}
-</style>
 </head>
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
 
@@ -158,7 +116,7 @@
             <span>📥</span><span>불러오기</span>
           </button>
           <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 whitespace-nowrap" title="원별 수량 수정 및 새 납품처 추가">
-            <span>✏️</span><span>원 추가·전체 관리</span>
+            <span>✏️</span><span>수량 수정</span>
           </button>
         </div>
 
@@ -179,7 +137,7 @@
             <span class="text-base">📥</span><span>불러오기</span>
           </button>
           <button type="button" data-proxy="openEditModalBtn" class="py-2.5 px-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 border border-slate-700 text-center flex flex-col items-center gap-1">
-            <span class="text-base">✏️</span><span>원 추가·전체 관리</span>
+            <span class="text-base">✏️</span><span>수량 수정</span>
           </button>
         </div>
 
@@ -876,10 +834,6 @@
         </div>
         <button id="closeItemsModalBtn" type="button" aria-label="닫기" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold shrink-0">✕</button>
       </div>
-      <div class="space-y-2"><label for="itemsSearchInput" class="text-xs text-violet-300">교재·품목 검색</label>
-        <div class="flex gap-2"><input id="itemsSearchInput" type="search" placeholder="교재명 또는 단계 입력" class="flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-base text-white"><button id="itemsSearchClear" type="button" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs">초기화</button></div>
-        <select id="itemsProductFilter" aria-label="품목 선택" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm"><option value="">전체 품목</option></select>
-        <p id="itemsSearchSummary" role="status" class="text-xs text-slate-400"></p></div>
       <div class="flex flex-wrap gap-1.5" id="itemsScopeTabs">
         <button type="button" data-items-scope="pending" class="px-3 py-1.5 rounded-lg text-xs font-bold">미완료 원만</button>
         <button type="button" data-items-scope="all" class="px-3 py-1.5 rounded-lg text-xs font-bold">전체 원</button>
@@ -1007,7 +961,7 @@
       <button type="button" data-proxy="prevStopBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">◀</span><span class="text-[11px] font-bold">이전 원</span></button>
       <button type="button" data-proxy="nextStopBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl bg-indigo-500 text-white active:bg-indigo-400"><span class="text-lg leading-none">▶</span><span class="text-[11px] font-black">다음 미완료</span></button>
       <button type="button" data-proxy="openItemsModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-violet-200 active:bg-slate-800"><span class="text-lg leading-none">📦</span><span class="text-[11px] font-bold">품목 확인</span></button>
-      <button type="button" data-proxy="openEditModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">✏️</span><span class="text-[11px] font-bold">원 관리</span></button>
+      <button type="button" data-proxy="openEditModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">✏️</span><span class="text-[11px] font-bold">수량 수정</span></button>
     </div>
   </nav>
 
@@ -1112,8 +1066,7 @@
     </div>
   </div>
 
-  <dialog id="quantitySaveDialog" aria-labelledby="quantitySaveTitle" aria-describedby="quantitySaveMessage"><h2 id="quantitySaveTitle"></h2><p id="quantitySaveMessage"></p><p id="quantitySaveNote"></p><form method="dialog"><button type="submit" autofocus>확인</button></form></dialog>
-<script>
+  <script>
     const DEFAULT_SCHOOLS = [
       {
         id: 1,
@@ -1404,7 +1357,7 @@
     }
     let itemChecks = {};
     try { itemChecks = JSON.parse(localStorage.getItem('entercoding_itemchecks_v1') || '{}') || {}; } catch (e) { itemChecks = {}; }
-    function saveItemChecks() { try { localStorage.setItem('entercoding_itemchecks_v1', JSON.stringify(itemChecks)); } catch (e) {} scheduleSync(); }
+    function saveItemChecks() {const saved=persistEntries([['entercoding_itemchecks_v1',itemChecks]],'품목 체크');if(saved)scheduleSync();return saved;}
     function isItemChecked(id, key) { return !!(itemChecks[id] && itemChecks[id][key]); }
     function setItemChecked(id, key, on) {
       if (!itemChecks[id]) itemChecks[id] = {};
@@ -1465,15 +1418,24 @@
       if (savedCoords) customCoords = JSON.parse(savedCoords);
     } catch (e) {}
 
-    function saveState() {
-      let persisted = true;
+    var persistenceErrors = {};
+    var persistenceSavedAt = null;
+    function persistEntries(entries, group) {
       try {
-        localStorage.setItem(SCHOOLS_KEY, JSON.stringify(SCHOOLS));
-        localStorage.setItem('entercoding_completed_v1', JSON.stringify(completedMap));
-        localStorage.setItem('entercoding_coords_v1', JSON.stringify(customCoords));
-      } catch (e) { persisted = false; }
-      scheduleSync();
-      return persisted;
+        for (const [key,value] of entries) {
+          const raw=JSON.stringify(value);localStorage.setItem(key,raw);
+          if(localStorage.getItem(key)!==raw)throw new Error('저장 검증 실패');
+        }
+        delete persistenceErrors[group];persistenceSavedAt=new Date();return true;
+      } catch(error) {
+        persistenceErrors[group]=String(error.message||error);
+        if(typeof showToast==='function')showToast('기기에 저장하지 못했습니다. 저장 공간·권한을 확인하세요.');
+        return false;
+      }
+    }
+    function saveState() {
+      const saved=persistEntries([[SCHOOLS_KEY,SCHOOLS],['entercoding_completed_v1',completedMap],['entercoding_coords_v1',customCoords]],'원 정보');
+      if(saved)scheduleSync();return saved;
     }
 
     function buildQuantityLabel(school) {
@@ -1988,19 +1950,9 @@ function speakSchoolQuantity(school) {
         <thead><tr class="text-[11px] text-slate-400"><th class="text-left font-bold pb-1">교재</th>${cols.map(n => `<th class="font-bold pb-1">${n}단계</th>`).join('')}<th class="text-right font-bold pb-1">합계</th></tr></thead>
         <tbody>${rowsHtml}</tbody></table>`;
     }
-    let editOnlySchoolId = null;
-    function openSchoolQuantityEditor(id = null) {
-      editOnlySchoolId = id;
-      const school = SCHOOLS.find(s => s.id === id);
-      document.querySelector('#editModal h3').textContent = school ? school.name + ' · 납품 수량 수정' : '원 추가·전체 관리';
-      document.getElementById('newSchoolDetails').hidden = id !== null;
-      renderEditModalList();
-      document.getElementById('editModal').classList.remove('hidden');
-      document.getElementById('editScrollBody').scrollTop = 0;
-    }
     function renderEditModalList() {
       const container = document.getElementById('editSchoolListContainer');
-      container.innerHTML = SCHOOLS.filter(s => editOnlySchoolId === null || s.id === editOnlySchoolId).map(s => `
+      container.innerHTML = SCHOOLS.map(s => `
         <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
           <div class="min-w-[180px]">
             <div class="text-xs font-bold text-amber-300">[${escapeHtml(s.regionGroup)} · ${escapeHtml(s.subRegion)}]</div>
@@ -2093,9 +2045,6 @@ function speakSchoolQuantity(school) {
       }
       container.innerHTML = filtered.map(s => {
         const isDone = !!completedMap[s.id];
-        const checkProgress = itemProgress(s);
-        const statusKey = isDone ? 'delivered' : !checkProgress.total ? 'empty' : checkProgress.done === checkProgress.total ? 'ready' : checkProgress.done > 0 ? 'checking' : 'pending';
-        const statusText = {delivered:'납품 완료',empty:'수량 미등록',ready:'품목 확인 완료',checking:'품목 확인 중',pending:'납품 대기'}[statusKey];
         const total = grandTotal(s);
         const isNear = s.dist !== null && s.dist <= radiusMeters;
         const kakaoNavUrl = `https://map.kakao.com/link/search/${encodeURIComponent(s.address || s.name)}`;
@@ -2125,7 +2074,6 @@ function speakSchoolQuantity(school) {
 
         return `
           <article class="delivery-card rounded-2xl p-4 shadow-lg flex flex-col justify-between gap-3 ${isNear && !isDone ? 'delivery-card-arrived ring-2 ring-amber-400/50' : isDone ? 'delivery-card-done' : ''}" data-school-card="${s.id}">
-            <div class="card-status-row"><span class="card-status card-status-${statusKey}"><span class="status-dot" aria-hidden="true"></span>${statusText}</span><span class="card-status-count">품목 확인 ${checkProgress.done}/${checkProgress.total}</span></div>
             <div>
               <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -2146,7 +2094,6 @@ function speakSchoolQuantity(school) {
               </div>
               <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">${escapeHtml(s.address)}${s.noCoords ? ' <span class="text-rose-300 font-bold">· 위치 미등록 (도착 시 [📌 현위치 저장])</span>' : ''}</p>
 
-              <div class="card-quantity-heading"><span>납품 수량</span><button type="button" data-action="edit-quantity" data-id="${s.id}" class="card-edit-button">수량 수정</button></div>
               <!-- 1~4단계 (학생용) + 교사용 Quantity Grid -->
               ${isMulti(s) ? `<div class="mt-3 overflow-x-auto">${productTableHtml(s, false)}</div>` : `<div class="grid grid-cols-4 gap-1.5 mt-3">
                 ${STEPS.map(n => renderStepPill(n)).join('')}
@@ -2157,7 +2104,7 @@ function speakSchoolQuantity(school) {
                 if (!pr.total) return '';
                 const allOk = pr.done === pr.total;
                 return `<div class="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <button type="button" data-action="popup" data-id="${s.id}" class="px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${allOk ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25' : 'bg-violet-500/15 text-violet-200 border-violet-500/40 hover:bg-violet-500/25'}">품목 ${pr.done}/${pr.total} 확인${allOk ? ' ✓' : ''}</button>
+                  <button type="button" data-action="popup" data-id="${s.id}" class="px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${allOk ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25' : 'bg-violet-500/15 text-violet-200 border-violet-500/40 hover:bg-violet-500/25'}">📦 품목 ${pr.done}/${pr.total} 확인${allOk ? ' ✓' : ''}</button>
                   ${ex.map(x => `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-800 text-violet-200 border border-slate-700">${escapeHtml(x.name)}${x.qty ? ' ' + x.qty : ''}</span>`).join('')}
                 </div>`;
               })()}
@@ -2165,24 +2112,24 @@ function speakSchoolQuantity(school) {
             </div>
 
             <div class="pt-2.5 border-t border-slate-800/80 space-y-2">
-              <div class="card-primary-actions">
+              <div class="grid grid-cols-[1fr_auto] gap-2">
                 <a href="${buildNaverNaviSchemeUrl(s)}" target="_top" data-action="naver-speech" data-id="${s.id}" class="naver-btn-glow flex items-center justify-center gap-1.5 px-3 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 text-center transition shadow">
-                  <span>길안내 시작</span>
+                  <span class="text-sm">🟢</span><span>네이버 내비 길안내 (수량표시)</span>
                 </a>
                 <button type="button" data-action="lock-pip" data-id="${s.id}" class="hidden">📌 PiP고정</button>
                 <button type="button" data-action="toggle-done" data-id="${s.id}" class="px-3.5 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition shadow-sm ${isDone ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-emerald-500/20'}">
-                  ${isDone ? '완료 해제' : '납품 완료'}
+                  ${isDone ? '완료 해제' : '✓ 납품완료'}
                 </button>
               </div>
-              <div class="card-secondary-actions">
+              <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
                 <button type="button" data-action="popup" data-id="${s.id}" class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 border border-slate-700 transition flex items-center justify-center gap-1">
-                  <span>상세 보기</span>
+                  <span>🔍</span><span>상세·수량확인</span>
                 </button>
                 <a ${naverMapAttrs(s)} class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition flex items-center justify-center gap-1 text-center">
-                  <span>지도 보기</span>
+                  <span>🗺️</span><span>네이버지도</span>
                 </a>
                 <button type="button" data-action="calibrate" data-id="${s.id}" class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 ${s.noCoords ? 'text-rose-300 border-rose-500/40 bg-rose-500/10' : 'text-slate-400 hover:text-slate-200 border-slate-700'} transition flex items-center justify-center gap-1" title="현재 서 있는 GPS 위치를 이 원의 도착 좌표로 저장">
-                  <span>현위치 저장</span>
+                  <span>📌</span><span>현위치저장</span>
                 </button>
               </div>
             </div>
@@ -2486,7 +2433,10 @@ function speakSchoolQuantity(school) {
       document.getElementById('installModal').classList.add('hidden');
     });
 
-    document.getElementById('openEditModalBtn').addEventListener('click', () => openSchoolQuantityEditor());
+    document.getElementById('openEditModalBtn').addEventListener('click', () => {
+      renderEditModalList();
+      document.getElementById('editModal').classList.remove('hidden');
+    });
 
     document.getElementById('closeEditModalBtn').addEventListener('click', () => {
       document.getElementById('editModal').classList.add('hidden');
@@ -2494,13 +2444,10 @@ function speakSchoolQuantity(school) {
 
     document.getElementById('saveAndCloseEditBtn').addEventListener('click', () => {
       collectEditModalInputs();
-      const saved = saveState(); renderList();
-      if (saved) document.getElementById('editModal').classList.add('hidden');
-      const school = SCHOOLS.find(s => s.id === editOnlySchoolId);
-      document.getElementById('quantitySaveTitle').textContent = saved ? '저장 완료' : '저장하지 못했습니다';
-      document.getElementById('quantitySaveMessage').textContent = saved ? (school ? school.name + '의 납품 수량을 이 기기에 저장했습니다.' : '납품 수량 변경사항을 이 기기에 저장했습니다.') : '저장 공간·권한을 확인하고 다시 저장해 주세요. 수정 창은 유지됩니다.';
-      document.getElementById('quantitySaveNote').textContent = saved ? '서버 동기화 완료 여부와는 별개입니다.' : '';
-      document.getElementById('quantitySaveDialog').showModal();
+      if(!saveState())return;
+      renderList();
+      document.getElementById('editModal').classList.add('hidden');
+      showToast('납품 수량을 이 기기에 저장했습니다. 서버 동기화는 별도로 확인하세요.');
     });
 
     document.getElementById('addNewSchoolBtn').addEventListener('click', () => {
@@ -2624,7 +2571,6 @@ function speakSchoolQuantity(school) {
       const school = SCHOOLS.find(s => s.id === id);
       if (!school) return;
 
-      if (action === 'edit-quantity') { openSchoolQuantityEditor(id); return; }
       if (action === 'naver-speech') {
         e.preventDefault();
         if (typeof setNaviLockedSchool === 'function') setNaviLockedSchool(school.id);
@@ -4015,47 +3961,28 @@ function speakSchoolQuantity(school) {
 
     // ---------- 납품 품목 확인 (총괄표 + 원별 체크) ----------
     let itemsScope = 'pending';
-    function normalizeItemSearch(v) { return String(v || '').normalize('NFKC').toLocaleLowerCase('ko').replace(/\s+/g, ''); }
-    function matchesItemSearch(it) {
-      const q = normalizeItemSearch(document.getElementById('itemsSearchInput').value);
-      const p = document.getElementById('itemsProductFilter').value;
-      return (!q || normalizeItemSearch(it.label).includes(q)) && (!p || it.label === p);
-    }
-    function refreshItemProductOptions() {
-      const el = document.getElementById('itemsProductFilter'), prev = el.value;
-      const labels = [...new Set(SCHOOLS.flatMap(s => deliveryItems(s).map(it => it.label)))].sort((a,b) => a.localeCompare(b,'ko'));
-      el.innerHTML = '<option value="">전체 품목</option>' + labels.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
-      el.value = labels.includes(prev) ? prev : '';
-    }
-    document.getElementById('itemsSearchInput').addEventListener('input', renderItemsModal);
-    document.getElementById('itemsProductFilter').addEventListener('change', renderItemsModal);
-    document.getElementById('itemsSearchClear').addEventListener('click', () => {
-      document.getElementById('itemsSearchInput').value = '';
-      document.getElementById('itemsProductFilter').value = ''; renderItemsModal();
-    });
     function renderItemsModal() {
       document.querySelectorAll('[data-items-scope]').forEach(b => {
         const on = b.getAttribute('data-items-scope') === itemsScope;
         b.className = `px-3 py-1.5 rounded-lg text-xs font-bold ${on ? 'bg-violet-500 text-slate-950' : 'bg-slate-800 text-slate-300 border border-slate-700'}`;
       });
-      const list = [...SCHOOLS].sort((a, b) => a.order - b.order).filter(s => itemsScope === 'all' || !completedMap[s.id]).filter(s => deliveryItems(s).some(matchesItemSearch));
+      const list = [...SCHOOLS].sort((a, b) => a.order - b.order).filter(s => itemsScope === 'all' || !completedMap[s.id]);
       const totals = new Map();
-      list.forEach(s => deliveryItems(s).filter(matchesItemSearch).forEach(it => {
+      list.forEach(s => deliveryItems(s).forEach(it => {
         const t = totals.get(it.label) || { label: it.label, kind: it.kind, qty: 0, schools: 0 };
         t.qty += it.qty; t.schools += 1; totals.set(it.label, t);
       }));
       const rank = { student: 0, teacher: 1, extra: 2 };
       const tot = [...totals.values()].sort((a, b) => (rank[a.kind] - rank[b.kind]) || a.label.localeCompare(b.label, 'ko'));
       const color = k => k === 'teacher' ? 'border-sky-500/40 bg-sky-500/10 text-sky-200' : k === 'extra' ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'border-amber-500/40 bg-amber-500/10 text-amber-200';
-      document.getElementById('itemsSearchSummary').textContent = `표시 중: ${list.length}곳 · ${tot.length}품목`;
       const grand = tot.filter(t => t.kind !== 'extra').reduce((a, t) => a + t.qty, 0);
       document.getElementById('itemsTotals').innerHTML = tot.length
         ? tot.map(t => `<div class="rounded-xl border px-2.5 py-2 ${color(t.kind)}"><div class="text-[11px] font-bold leading-tight">${escapeHtml(t.label)}</div><div class="text-lg font-black text-white">${t.qty ? t.qty + '개' : '-'}</div><div class="text-[10px] opacity-75">${t.schools}곳</div></div>`).join('')
-          + `<div class="rounded-xl border px-2.5 py-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-200"><div class="text-[11px] font-bold">검색 결과 교재 합계</div><div class="text-lg font-black text-white">${grand}개</div><div class="text-[10px] opacity-75">${list.length}곳</div></div>`
+          + `<div class="rounded-xl border px-2.5 py-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-200"><div class="text-[11px] font-bold">교재 합계 (단계별)</div><div class="text-lg font-black text-white">${grand}개</div><div class="text-[10px] opacity-75">${list.length}곳</div></div>`
         : '<div class="col-span-full text-xs text-slate-500">표시할 품목이 없습니다.</div>';
       document.getElementById('itemsBySchool').innerHTML = list.map(s => {
-        const items = deliveryItems(s).filter(matchesItemSearch);
-        const pr = { total: items.length, done: items.filter(it => isItemChecked(s.id, it.key)).length };
+        const items = deliveryItems(s);
+        const pr = itemProgress(s);
         const done = !!completedMap[s.id];
         return `<div class="bg-slate-950 border ${pr.total && pr.done === pr.total ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-3">
           <div class="flex items-center justify-between gap-2 mb-2">
@@ -4066,9 +3993,9 @@ function speakSchoolQuantity(school) {
             ${items.length ? items.map(it => { const on = isItemChecked(s.id, it.key); return `<label class="flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer border ${on ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'}"><input type="checkbox" data-ic-id="${Number(s.id)}" data-ic-key="${escapeHtml(it.key)}" ${on ? 'checked' : ''} class="w-4 h-4 accent-emerald-500 shrink-0"><span class="flex-1 text-xs font-bold ${on ? 'text-slate-500 line-through' : it.kind === 'teacher' ? 'text-sky-200' : it.kind === 'extra' ? 'text-violet-200' : 'text-amber-200'}">${escapeHtml(it.label)}</span><span class="text-sm font-black ${on ? 'text-slate-500' : 'text-white'}">${it.qty ? it.qty : '-'}</span></label>`; }).join('') : '<div class="text-xs text-slate-500">품목 없음</div>'}
           </div>
         </div>`;
-      }).join('') || '<div class="text-xs text-slate-500">조건에 맞는 납품처가 없습니다.</div>';
+      }).join('') || '<div class="text-xs text-slate-500">미완료 원이 없습니다.</div>';
     }
-    function openItemsModal() { refreshItemProductOptions(); renderItemsModal(); document.getElementById('itemsModal').classList.remove('hidden'); }
+    function openItemsModal() { renderItemsModal(); document.getElementById('itemsModal').classList.remove('hidden'); }
     function closeItemsModal() { document.getElementById('itemsModal').classList.add('hidden'); renderList(); }
     document.getElementById('openItemsModalBtn').addEventListener('click', openItemsModal);
     document.getElementById('closeItemsModalBtn').addEventListener('click', closeItemsModal);
@@ -4100,12 +4027,7 @@ function speakSchoolQuantity(school) {
         menuBtn.textContent = open ? '✕ 닫기' : '☰ 메뉴';
       };
       menuBtn.addEventListener('click', () => setMenu(tools.classList.contains('hidden')));
-      tools.addEventListener('click', (e) => {
-        const b = e.target.closest('button'); if (!b || !tools.contains(b)) return;
-        const id = b.getAttribute('data-proxy'); const t = id && document.getElementById(id);
-        if (t && t !== b && !t.disabled) t.click();
-        if (window.innerWidth < 640) setMenu(false);
-      });
+      tools.addEventListener('click', (e) => { if (e.target.closest('button') && window.innerWidth < 640) setMenu(false); });
       document.getElementById('mobileBottomBar').addEventListener('click', (e) => {
         const b = e.target.closest('[data-proxy]'); if (!b) return;
         const t = document.getElementById(b.getAttribute('data-proxy')); if (t) t.click();
@@ -4139,8 +4061,8 @@ function speakSchoolQuantity(school) {
     };
 
     function savePickups() {
-      try { localStorage.setItem(PICKUPS_KEY, JSON.stringify(PICKUPS)); } catch (e) {}
-      if (typeof scheduleSync === 'function') scheduleSync();
+      const saved=persistEntries([[PICKUPS_KEY,PICKUPS]],'회수·추가 납품');
+      if(saved&&typeof scheduleSync==='function')scheduleSync();return saved;
     }
     function newPickupId() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
@@ -6499,40 +6421,52 @@ function speakSchoolQuantity(school) {
       if (!('serviceWorker' in navigator)) return null;
       if (!/^https?:/.test(location.protocol)) return null;
       try {
-        swRegistration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+        swRegistration = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
         return swRegistration;
       } catch (e) {
         return null;
       }
     }
 
-    function handleSwIncomingMessage(data) {
-      if (!data || !data.type) return;
-      if (data.type === 'SW_COMPLETE_ITEM' && data.schoolId) {
-        const id = Number(data.schoolId);
-        const s = SCHOOLS.find(x => x.id === id);
-        if (s) {
-          completedMap[id] = true;
-          if (activeNaviSchoolId === id) setNaviLockedSchool(null, { skipRender: true });
-          saveState();
-          renderList();
-          showToast(`✓ 알림창에서 [${s.name}] 납품 완료 처리되었습니다.`);
+    async function handleSwIncomingMessage(data) {
+      if(!data||!data.type)return {ok:false,error:'잘못된 요청입니다.'};
+      const school=data.schoolId?SCHOOLS.find(x=>x.id===Number(data.schoolId)):null;
+      const ids=new Set(Array.isArray(data.pickupIds)?data.pickupIds.map(String):[]);
+      const pickups=PICKUPS.filter(p=>ids.has(String(p.id)));
+      if(data.type==='SW_OPEN_ITEM'){
+        if(typeof closeAllPopupWindows==='function')closeAllPopupWindows({silent:true});
+        if(school)openArrivalModal(school.id,false);else if(pickups.length)openPkDetail(pickups[0].id);
+        return {ok:!!school||!!pickups.length};
+      }
+      if(data.type!=='SW_COMPLETE_ITEM')return {ok:false,error:'지원하지 않는 요청입니다.'};
+      if(!school&&!pickups.length)return {ok:false,error:'완료할 항목을 찾지 못했습니다.'};
+      if(school){
+        const old=completedMap[school.id];completedMap[school.id]=true;
+        if(!saveState()){if(old===undefined)delete completedMap[school.id];else completedMap[school.id]=old;return {ok:false,error:'원 정보 기기 저장 실패'};}
+      }
+      if(pickups.length){
+        const before=JSON.parse(JSON.stringify(pickups));
+        pickups.forEach(p=>{
+          if(p.done)return;
+          p.beforeCompleteQuantities=(p.fieldQuantities||[]).map(q=>({label:q.label,done:q.done||0}));
+          p.done=true;p.doneAt=Date.now();(p.fieldQuantities||[]).forEach(q=>q.done=q.qty);
+          if(p.worksTaskId){p.worksSyncPending=true;p.worksClosedRemote=false;}
+        });
+        if(!savePickups()){
+          pickups.forEach((p,i)=>{Object.keys(p).forEach(k=>delete p[k]);Object.assign(p,before[i]);});
+          return {ok:false,error:'회수·추가 납품 기기 저장 실패'};
         }
-      } else if (data.type === 'SW_OPEN_ITEM' && data.schoolId) {
-        if (typeof closeAllPopupWindows === 'function') closeAllPopupWindows({ silent: true });
-        openArrivalModal(Number(data.schoolId), false);
+        pickups.filter(p=>p.worksTaskId&&p.worksSyncPending).forEach(p=>Promise.resolve(worksPushDone(p)).catch(console.warn));
       }
+      renderList();renderPickups();return {ok:true,localOnly:true};
     }
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (e) => handleSwIncomingMessage(e.data));
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.addEventListener('message',async event=>{
+        if(!event.data||!['SW_COMPLETE_ITEM','SW_OPEN_ITEM'].includes(event.data.type))return;
+        try{const result=await handleSwIncomingMessage(event.data);event.ports?.[0]?.postMessage(result);}
+        catch(error){event.ports?.[0]?.postMessage({ok:false,error:String(error.message||error)});}
+      });
     }
-    try {
-      if ('BroadcastChannel' in window) {
-        const swBc = new BroadcastChannel('entercoding_sw_channel');
-        swBc.addEventListener('message', (e) => handleSwIncomingMessage(e.data));
-      }
-    } catch (e) {}
 
     function updateSysNotifButtons() {
       const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
@@ -7811,6 +7745,36 @@ ${school.address || ''}`;
       panel.onkeydown=e=>{if(e.key==='Escape'){panel.hidden=true;focusBack?.focus();}if(e.key==='Tab'){const list=[...panel.querySelectorAll('button,input,textarea,select')].filter(x=>!x.disabled),first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}};
       window.addEventListener('online',()=>{status();scheduleSync(0);});window.addEventListener('offline',status);setInterval(status,1800);status();
     })();
+
+// Notification deep-link review; never claim completion with no save acknowledgement.
+setTimeout(()=>{
+ const url=new URL(location.href),mode=url.searchParams.get('sw_mode');
+ if(!['review','open'].includes(mode))return;
+ const sid=url.searchParams.get('schoolId'),pid=url.searchParams.get('pickupId');
+ const school=sid?SCHOOLS.find(x=>x.id===Number(sid)):null;
+ const pickup=pid?PICKUPS.find(x=>String(x.id)===pid):null;
+ if(school)openArrivalModal(school.id,false);else if(pickup)openPkDetail(pickup.id);
+ if(mode==='review')showToast('알림에서 완료 요청을 받았습니다. 대상과 수량을 확인한 뒤 완료 버튼을 눌러 주세요.');
+ ['sw_mode','schoolId','pickupId'].forEach(k=>url.searchParams.delete(k));
+ history.replaceState(null,'',url.pathname+url.search+url.hash);
+},700);
+(function setupServiceWorkerUpdate(){
+ if(!('serviceWorker' in navigator))return;
+ let reloadRequested=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloadRequested)location.reload();});
+ function inspect(registration){
+  if(!registration)return;
+  function offer(){
+   if(!registration.waiting)return;
+   let b=document.getElementById('applyWorkerUpdate');
+   if(!b){b=document.createElement('button');b.id='applyWorkerUpdate';b.type='button';b.textContent='새 버전 적용';Object.assign(b.style,{position:'fixed',right:'16px',bottom:'100px',zIndex:'100',padding:'12px 16px',borderRadius:'12px',background:'#4c68c6',color:'#ffffff',border:'1px solid #8299ec'});document.body.append(b);}
+   b.onclick=()=>{if(!confirm('입력 중인 내용이 있다면 먼저 저장하세요. 새 버전을 적용하고 앱을 새로고침할까요?'))return;reloadRequested=true;registration.waiting?.postMessage({type:'SKIP_WAITING'});};
+  }
+  offer();registration.addEventListener('updatefound',()=>registration.installing?.addEventListener('statechange',offer));
+ }
+ navigator.serviceWorker.getRegistration().then(inspect);
+ window.addEventListener('load',()=>navigator.serviceWorker.getRegistration().then(inspect));
+})();
 </script>
   <script src="save-sync-status.js"></script>
   <script src="pickup-extra-ui.js"></script>
