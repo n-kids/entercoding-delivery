@@ -4016,7 +4016,16 @@ function speakSchoolQuantity(school) {
         menuBtn.textContent = open ? '✕ 닫기' : '☰ 메뉴';
       };
       menuBtn.addEventListener('click', () => setMenu(tools.classList.contains('hidden')));
-      tools.addEventListener('click', (e) => { if (e.target.closest('button') && window.innerWidth < 640) setMenu(false); });
+      tools.addEventListener('click', (e) => {
+        const button = e.target.closest('button');
+        if (!button || !tools.contains(button)) return;
+        const proxyId = button.getAttribute('data-proxy');
+        if (proxyId) {
+          const target = document.getElementById(proxyId);
+          if (target && target !== button && !target.disabled) target.click();
+        }
+        if (window.innerWidth < 640) setMenu(false);
+      });
       document.getElementById('mobileBottomBar').addEventListener('click', (e) => {
         const b = e.target.closest('[data-proxy]'); if (!b) return;
         const t = document.getElementById(b.getAttribute('data-proxy')); if (t) t.click();
