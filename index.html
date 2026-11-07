@@ -81,31 +81,47 @@
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-
 <style>
-#schoolList {gap:18px;align-items:stretch}
-#schoolList .delivery-card {background:#111c2e!important;border:1px solid #2a374b!important;border-radius:22px;padding:20px;box-shadow:0 5px 18px #02061725;gap:18px;overflow:hidden}
-#schoolList .delivery-card:hover {border-color:#536580!important}
-#schoolList .delivery-card-done {background:#101f25!important;border-color:#285348!important}
-#schoolList .delivery-card-arrived {border-color:#d4a94e!important}
-#schoolList h3 {font-size:21px;line-height:1.4;letter-spacing:-.025em}
-#schoolList article>div:first-child>div:first-child span {box-shadow:none;border-radius:7px;font-weight:600}
-#schoolList article>div:first-child>p {color:#a2b0c4;line-height:1.65;margin-top:6px}
-#schoolList .card-quantity-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding-top:14px;border-top:1px solid #28354a;color:#b6c3d6;font-size:12px;font-weight:700}
-#schoolList .card-edit-button {border:1px solid #52618b;background:#273451;color:#e0e7ff;padding:8px 13px;border-radius:10px;font-size:12px;min-height:36px;font-weight:700}
-#schoolList .card-edit-button:hover {background:#35466c}
-#schoolList .naver-btn-glow {box-shadow:none!important;animation:none!important;background:#4c79ec!important;color:white!important}
-#schoolList [data-action="toggle-done"] {box-shadow:none!important}
-#schoolList button,#schoolList a {transition:background .15s,border-color .15s}
-#schoolList button:focus-visible,#schoolList a:focus-visible {outline:2px solid #a5b4fc;outline-offset:3px}
-.quantity-save-dialog {width:min(420px,calc(100% - 32px));padding:26px;background:#152136;color:#eef2ff;border:1px solid #42526e;border-radius:22px;box-shadow:0 24px 80px #0008}
-.quantity-save-dialog::backdrop {background:#020617b8;backdrop-filter:blur(4px)}
-.quantity-save-dialog .save-dialog-label {color:#a5b4fc;font-size:12px;font-weight:700;margin-bottom:10px}
-.quantity-save-dialog h2 {font-size:22px;font-weight:800;margin-bottom:12px}
-.quantity-save-dialog p {font-size:14px;line-height:1.7;overflow-wrap:anywhere}
-.quantity-save-dialog .save-note {font-size:12px;color:#a4b1c7;margin-top:12px}
-.quantity-save-dialog button {width:100%;padding:12px;margin-top:22px;border-radius:12px;background:#6684f2;color:#fff;font-weight:700}
-@media(max-width:639px){#schoolList .delivery-card{padding:16px;border-radius:18px}#schoolList h3{font-size:20px}}
+#schoolList{gap:18px;align-items:stretch;min-width:0}
+#schoolList .delivery-card{background:#111d30!important;border:1px solid #2b3a50!important;border-radius:20px;padding:20px;box-shadow:0 5px 18px #02061725;gap:16px;min-width:0;overflow:hidden;justify-content:flex-start}
+#schoolList .delivery-card>div:last-child{margin-top:auto}
+#schoolList .delivery-card-done{background:#102327!important;border-color:#2b574e!important}
+#schoolList .delivery-card-arrived{border-color:#c7a04b!important}
+#schoolList h3{font-size:21px;line-height:1.4;letter-spacing:-.025em;overflow-wrap:anywhere}
+#schoolList article>div:nth-child(2)>p{color:#a8b6c9;line-height:1.65;margin-top:6px}
+#schoolList article>div:nth-child(2)>div:first-child span{box-shadow:none;border-radius:7px;font-weight:600}
+.card-status-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid #29374c}
+.card-status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;background:#263348;color:#cbd5e1}
+.status-dot{width:6px;height:6px;flex-shrink:0;border-radius:50%;background:currentColor}
+.card-status-checking{background:#382e19;color:#f4ce79}.card-status-ready{background:#253358;color:#bccbff}.card-status-delivered{background:#163d35;color:#86dfbf}.card-status-empty{background:#3a2631;color:#f1b2c3}
+.card-status-count{font-size:11px;color:#9babc2;font-variant-numeric:tabular-nums;white-space:nowrap}
+.card-quantity-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding-top:12px;border-top:1px solid #29374c;color:#b6c3d6;font-size:12px;font-weight:700}
+#schoolList button,#schoolList a{transition:background .15s,border-color .15s;box-shadow:none!important;animation:none;min-width:0}
+#schoolList .card-edit-button{border:1px solid #52628b;background:#283650;color:#e0e7ff;padding:8px 13px;border-radius:10px;font-size:12px;min-height:40px;font-weight:700}
+.card-primary-actions{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px}
+.card-secondary-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+#schoolList .card-primary-actions>a,#schoolList .card-primary-actions>button:not(.hidden){display:flex;align-items:center;justify-content:center;min-height:46px;padding:10px 12px;border-radius:11px;font-size:13px;font-weight:700;text-align:center}
+#schoolList .naver-btn-glow{background:#5276df!important;color:#fff!important;box-shadow:none!important;animation:none!important}
+#schoolList .card-primary-actions>[data-action="toggle-done"]{background:#243d39!important;color:#a5ead1!important;border:1px solid #386555}
+#schoolList .card-secondary-actions>a,#schoolList .card-secondary-actions>button{display:flex;align-items:center;justify-content:center;min-height:42px;padding:8px 6px;border-radius:10px;background:#18263a;color:#b9c6da;border:1px solid #314158;font-size:12px;font-weight:600;line-height:1.4;text-align:center}
+#schoolList button:hover,#schoolList a:hover{filter:brightness(1.12)}
+#schoolList button:focus-visible,#schoolList a:focus-visible{outline:2px solid #b4c4ff;outline-offset:3px}
+#quantitySaveDialog{width:min(420px,calc(100% - 32px));padding:26px;background:#152136;color:#eef2ff;border:1px solid #42526e;border-radius:22px;box-shadow:0 24px 80px #0008}
+#quantitySaveDialog::backdrop{background:#020617b8;backdrop-filter:blur(4px)}
+#quantitySaveDialog h2{font-size:22px;font-weight:800;margin-bottom:12px}#quantitySaveDialog p{font-size:14px;line-height:1.7;overflow-wrap:anywhere}#quantitySaveNote{font-size:12px!important;color:#a4b1c7;margin-top:12px}
+#quantitySaveDialog button{width:100%;padding:12px;margin-top:22px;border-radius:12px;background:#6684f2;color:white;font-weight:700}
+@media(max-width:639px){
+ main{padding-left:12px!important;padding-right:12px!important}
+ #schoolList{gap:12px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+ #schoolList .delivery-card{padding:14px;border-radius:17px;gap:12px}
+ #schoolList h3{font-size:20px} .card-status-row{padding-bottom:10px}
+ .card-quantity-heading{margin-top:12px;padding-top:10px}
+ #schoolList .card-primary-actions{gap:8px}#schoolList .card-secondary-actions{gap:6px}
+ #schoolList .card-secondary-actions>a,#schoolList .card-secondary-actions>button{min-height:44px;font-size:11px;padding:8px 4px}
+ #schoolList .card-edit-button{min-height:44px;padding:9px 12px}
+ #schoolList .card-primary-actions>a,#schoolList .card-primary-actions>button:not(.hidden){min-height:48px;font-size:12px;padding:10px 7px}
+}
+@media(prefers-reduced-motion:reduce){#schoolList *{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
@@ -860,12 +876,10 @@
         </div>
         <button id="closeItemsModalBtn" type="button" aria-label="닫기" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold shrink-0">✕</button>
       </div>
-      <div class="space-y-2">
-        <label for="itemsSearchInput" class="text-xs text-violet-300">교재·품목 검색</label>
+      <div class="space-y-2"><label for="itemsSearchInput" class="text-xs text-violet-300">교재·품목 검색</label>
         <div class="flex gap-2"><input id="itemsSearchInput" type="search" placeholder="교재명 또는 단계 입력" class="flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-base text-white"><button id="itemsSearchClear" type="button" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs">초기화</button></div>
         <select id="itemsProductFilter" aria-label="품목 선택" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm"><option value="">전체 품목</option></select>
-        <p id="itemsSearchSummary" role="status" class="text-xs text-slate-400"></p>
-      </div>
+        <p id="itemsSearchSummary" role="status" class="text-xs text-slate-400"></p></div>
       <div class="flex flex-wrap gap-1.5" id="itemsScopeTabs">
         <button type="button" data-items-scope="pending" class="px-3 py-1.5 rounded-lg text-xs font-bold">미완료 원만</button>
         <button type="button" data-items-scope="all" class="px-3 py-1.5 rounded-lg text-xs font-bold">전체 원</button>
@@ -1098,15 +1112,8 @@
     </div>
   </div>
 
-
-  <dialog id="quantitySaveDialog" aria-labelledby="quantitySaveTitle" aria-describedby="quantitySaveMessage" class="quantity-save-dialog">
-    <div class="save-dialog-label">납품 수량</div>
-    <h2 id="quantitySaveTitle">저장 완료</h2>
-    <p id="quantitySaveMessage"></p>
-    <p id="quantitySaveNote" class="save-note"></p>
-    <form method="dialog"><button autofocus type="submit">확인</button></form>
-  </dialog>
-  <script>
+  <dialog id="quantitySaveDialog" aria-labelledby="quantitySaveTitle" aria-describedby="quantitySaveMessage"><h2 id="quantitySaveTitle"></h2><p id="quantitySaveMessage"></p><p id="quantitySaveNote"></p><form method="dialog"><button type="submit" autofocus>확인</button></form></dialog>
+<script>
     const DEFAULT_SCHOOLS = [
       {
         id: 1,
@@ -2086,6 +2093,9 @@ function speakSchoolQuantity(school) {
       }
       container.innerHTML = filtered.map(s => {
         const isDone = !!completedMap[s.id];
+        const checkProgress = itemProgress(s);
+        const statusKey = isDone ? 'delivered' : !checkProgress.total ? 'empty' : checkProgress.done === checkProgress.total ? 'ready' : checkProgress.done > 0 ? 'checking' : 'pending';
+        const statusText = {delivered:'납품 완료',empty:'수량 미등록',ready:'품목 확인 완료',checking:'품목 확인 중',pending:'납품 대기'}[statusKey];
         const total = grandTotal(s);
         const isNear = s.dist !== null && s.dist <= radiusMeters;
         const kakaoNavUrl = `https://map.kakao.com/link/search/${encodeURIComponent(s.address || s.name)}`;
@@ -2115,6 +2125,7 @@ function speakSchoolQuantity(school) {
 
         return `
           <article class="delivery-card rounded-2xl p-4 shadow-lg flex flex-col justify-between gap-3 ${isNear && !isDone ? 'delivery-card-arrived ring-2 ring-amber-400/50' : isDone ? 'delivery-card-done' : ''}" data-school-card="${s.id}">
+            <div class="card-status-row"><span class="card-status card-status-${statusKey}"><span class="status-dot" aria-hidden="true"></span>${statusText}</span><span class="card-status-count">품목 확인 ${checkProgress.done}/${checkProgress.total}</span></div>
             <div>
               <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -2146,7 +2157,7 @@ function speakSchoolQuantity(school) {
                 if (!pr.total) return '';
                 const allOk = pr.done === pr.total;
                 return `<div class="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <button type="button" data-action="popup" data-id="${s.id}" class="px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${allOk ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25' : 'bg-violet-500/15 text-violet-200 border-violet-500/40 hover:bg-violet-500/25'}">📦 품목 ${pr.done}/${pr.total} 확인${allOk ? ' ✓' : ''}</button>
+                  <button type="button" data-action="popup" data-id="${s.id}" class="px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${allOk ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25' : 'bg-violet-500/15 text-violet-200 border-violet-500/40 hover:bg-violet-500/25'}">품목 ${pr.done}/${pr.total} 확인${allOk ? ' ✓' : ''}</button>
                   ${ex.map(x => `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-800 text-violet-200 border border-slate-700">${escapeHtml(x.name)}${x.qty ? ' ' + x.qty : ''}</span>`).join('')}
                 </div>`;
               })()}
@@ -2154,24 +2165,24 @@ function speakSchoolQuantity(school) {
             </div>
 
             <div class="pt-2.5 border-t border-slate-800/80 space-y-2">
-              <div class="grid grid-cols-[1fr_auto] gap-2">
+              <div class="card-primary-actions">
                 <a href="${buildNaverNaviSchemeUrl(s)}" target="_top" data-action="naver-speech" data-id="${s.id}" class="naver-btn-glow flex items-center justify-center gap-1.5 px-3 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 text-center transition shadow">
-                  <span class="text-sm">🟢</span><span>네이버 내비 길안내 (수량표시)</span>
+                  <span>길안내 시작</span>
                 </a>
                 <button type="button" data-action="lock-pip" data-id="${s.id}" class="hidden">📌 PiP고정</button>
                 <button type="button" data-action="toggle-done" data-id="${s.id}" class="px-3.5 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition shadow-sm ${isDone ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-emerald-500/20'}">
-                  ${isDone ? '완료 해제' : '✓ 납품완료'}
+                  ${isDone ? '완료 해제' : '납품 완료'}
                 </button>
               </div>
-              <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
+              <div class="card-secondary-actions">
                 <button type="button" data-action="popup" data-id="${s.id}" class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-300 border border-slate-700 transition flex items-center justify-center gap-1">
-                  <span>🔍</span><span>상세·수량확인</span>
+                  <span>상세 보기</span>
                 </button>
                 <a ${naverMapAttrs(s)} class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition flex items-center justify-center gap-1 text-center">
-                  <span>🗺️</span><span>네이버지도</span>
+                  <span>지도 보기</span>
                 </a>
                 <button type="button" data-action="calibrate" data-id="${s.id}" class="py-2 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 ${s.noCoords ? 'text-rose-300 border-rose-500/40 bg-rose-500/10' : 'text-slate-400 hover:text-slate-200 border-slate-700'} transition flex items-center justify-center gap-1" title="현재 서 있는 GPS 위치를 이 원의 도착 좌표로 저장">
-                  <span>📌</span><span>현위치저장</span>
+                  <span>현위치 저장</span>
                 </button>
               </div>
             </div>
@@ -2483,15 +2494,12 @@ function speakSchoolQuantity(school) {
 
     document.getElementById('saveAndCloseEditBtn').addEventListener('click', () => {
       collectEditModalInputs();
-      const saved = saveState();
-      renderList();
+      const saved = saveState(); renderList();
       if (saved) document.getElementById('editModal').classList.add('hidden');
       const school = SCHOOLS.find(s => s.id === editOnlySchoolId);
       document.getElementById('quantitySaveTitle').textContent = saved ? '저장 완료' : '저장하지 못했습니다';
-      document.getElementById('quantitySaveMessage').textContent = saved
-        ? (school ? school.name + '의 납품 수량을 이 기기에 저장했습니다.' : '납품 수량 변경사항을 이 기기에 저장했습니다.')
-        : '기기 저장 공간 또는 브라우저 저장 권한을 확인한 뒤 다시 저장해 주세요. 입력 내용은 수정 창에 남아 있습니다.';
-      document.getElementById('quantitySaveNote').textContent = saved ? '공유 로그인 상태의 서버 동기화 완료 여부와는 별개입니다.' : '';
+      document.getElementById('quantitySaveMessage').textContent = saved ? (school ? school.name + '의 납품 수량을 이 기기에 저장했습니다.' : '납품 수량 변경사항을 이 기기에 저장했습니다.') : '저장 공간·권한을 확인하고 다시 저장해 주세요. 수정 창은 유지됩니다.';
+      document.getElementById('quantitySaveNote').textContent = saved ? '서버 동기화 완료 여부와는 별개입니다.' : '';
       document.getElementById('quantitySaveDialog').showModal();
     });
 
