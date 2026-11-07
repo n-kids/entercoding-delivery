@@ -81,6 +81,32 @@
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+
+<style>
+#schoolList {gap:18px;align-items:stretch}
+#schoolList .delivery-card {background:#111c2e!important;border:1px solid #2a374b!important;border-radius:22px;padding:20px;box-shadow:0 5px 18px #02061725;gap:18px;overflow:hidden}
+#schoolList .delivery-card:hover {border-color:#536580!important}
+#schoolList .delivery-card-done {background:#101f25!important;border-color:#285348!important}
+#schoolList .delivery-card-arrived {border-color:#d4a94e!important}
+#schoolList h3 {font-size:21px;line-height:1.4;letter-spacing:-.025em}
+#schoolList article>div:first-child>div:first-child span {box-shadow:none;border-radius:7px;font-weight:600}
+#schoolList article>div:first-child>p {color:#a2b0c4;line-height:1.65;margin-top:6px}
+#schoolList .card-quantity-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding-top:14px;border-top:1px solid #28354a;color:#b6c3d6;font-size:12px;font-weight:700}
+#schoolList .card-edit-button {border:1px solid #52618b;background:#273451;color:#e0e7ff;padding:8px 13px;border-radius:10px;font-size:12px;min-height:36px;font-weight:700}
+#schoolList .card-edit-button:hover {background:#35466c}
+#schoolList .naver-btn-glow {box-shadow:none!important;animation:none!important;background:#4c79ec!important;color:white!important}
+#schoolList [data-action="toggle-done"] {box-shadow:none!important}
+#schoolList button,#schoolList a {transition:background .15s,border-color .15s}
+#schoolList button:focus-visible,#schoolList a:focus-visible {outline:2px solid #a5b4fc;outline-offset:3px}
+.quantity-save-dialog {width:min(420px,calc(100% - 32px));padding:26px;background:#152136;color:#eef2ff;border:1px solid #42526e;border-radius:22px;box-shadow:0 24px 80px #0008}
+.quantity-save-dialog::backdrop {background:#020617b8;backdrop-filter:blur(4px)}
+.quantity-save-dialog .save-dialog-label {color:#a5b4fc;font-size:12px;font-weight:700;margin-bottom:10px}
+.quantity-save-dialog h2 {font-size:22px;font-weight:800;margin-bottom:12px}
+.quantity-save-dialog p {font-size:14px;line-height:1.7;overflow-wrap:anywhere}
+.quantity-save-dialog .save-note {font-size:12px;color:#a4b1c7;margin-top:12px}
+.quantity-save-dialog button {width:100%;padding:12px;margin-top:22px;border-radius:12px;background:#6684f2;color:#fff;font-weight:700}
+@media(max-width:639px){#schoolList .delivery-card{padding:16px;border-radius:18px}#schoolList h3{font-size:20px}}
+</style>
 </head>
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
 
@@ -116,7 +142,7 @@
             <span>📥</span><span>불러오기</span>
           </button>
           <button id="openEditModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1 whitespace-nowrap" title="원별 수량 수정 및 새 납품처 추가">
-            <span>✏️</span><span>수량 수정</span>
+            <span>✏️</span><span>원 추가·전체 관리</span>
           </button>
         </div>
 
@@ -137,7 +163,7 @@
             <span class="text-base">📥</span><span>불러오기</span>
           </button>
           <button type="button" data-proxy="openEditModalBtn" class="py-2.5 px-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 border border-slate-700 text-center flex flex-col items-center gap-1">
-            <span class="text-base">✏️</span><span>수량 수정</span>
+            <span class="text-base">✏️</span><span>원 추가·전체 관리</span>
           </button>
         </div>
 
@@ -834,6 +860,12 @@
         </div>
         <button id="closeItemsModalBtn" type="button" aria-label="닫기" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold shrink-0">✕</button>
       </div>
+      <div class="space-y-2">
+        <label for="itemsSearchInput" class="text-xs text-violet-300">교재·품목 검색</label>
+        <div class="flex gap-2"><input id="itemsSearchInput" type="search" placeholder="교재명 또는 단계 입력" class="flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-base text-white"><button id="itemsSearchClear" type="button" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs">초기화</button></div>
+        <select id="itemsProductFilter" aria-label="품목 선택" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm"><option value="">전체 품목</option></select>
+        <p id="itemsSearchSummary" role="status" class="text-xs text-slate-400"></p>
+      </div>
       <div class="flex flex-wrap gap-1.5" id="itemsScopeTabs">
         <button type="button" data-items-scope="pending" class="px-3 py-1.5 rounded-lg text-xs font-bold">미완료 원만</button>
         <button type="button" data-items-scope="all" class="px-3 py-1.5 rounded-lg text-xs font-bold">전체 원</button>
@@ -961,7 +993,7 @@
       <button type="button" data-proxy="prevStopBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">◀</span><span class="text-[11px] font-bold">이전 원</span></button>
       <button type="button" data-proxy="nextStopBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl bg-indigo-500 text-white active:bg-indigo-400"><span class="text-lg leading-none">▶</span><span class="text-[11px] font-black">다음 미완료</span></button>
       <button type="button" data-proxy="openItemsModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-violet-200 active:bg-slate-800"><span class="text-lg leading-none">📦</span><span class="text-[11px] font-bold">품목 확인</span></button>
-      <button type="button" data-proxy="openEditModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">✏️</span><span class="text-[11px] font-bold">수량 수정</span></button>
+      <button type="button" data-proxy="openEditModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">✏️</span><span class="text-[11px] font-bold">원 관리</span></button>
     </div>
   </nav>
 
@@ -1066,6 +1098,14 @@
     </div>
   </div>
 
+
+  <dialog id="quantitySaveDialog" aria-labelledby="quantitySaveTitle" aria-describedby="quantitySaveMessage" class="quantity-save-dialog">
+    <div class="save-dialog-label">납품 수량</div>
+    <h2 id="quantitySaveTitle">저장 완료</h2>
+    <p id="quantitySaveMessage"></p>
+    <p id="quantitySaveNote" class="save-note"></p>
+    <form method="dialog"><button autofocus type="submit">확인</button></form>
+  </dialog>
   <script>
     const DEFAULT_SCHOOLS = [
       {
@@ -1419,12 +1459,14 @@
     } catch (e) {}
 
     function saveState() {
+      let persisted = true;
       try {
         localStorage.setItem(SCHOOLS_KEY, JSON.stringify(SCHOOLS));
         localStorage.setItem('entercoding_completed_v1', JSON.stringify(completedMap));
         localStorage.setItem('entercoding_coords_v1', JSON.stringify(customCoords));
-      } catch (e) {}
+      } catch (e) { persisted = false; }
       scheduleSync();
+      return persisted;
     }
 
     function buildQuantityLabel(school) {
@@ -1939,9 +1981,19 @@ function speakSchoolQuantity(school) {
         <thead><tr class="text-[11px] text-slate-400"><th class="text-left font-bold pb-1">교재</th>${cols.map(n => `<th class="font-bold pb-1">${n}단계</th>`).join('')}<th class="text-right font-bold pb-1">합계</th></tr></thead>
         <tbody>${rowsHtml}</tbody></table>`;
     }
+    let editOnlySchoolId = null;
+    function openSchoolQuantityEditor(id = null) {
+      editOnlySchoolId = id;
+      const school = SCHOOLS.find(s => s.id === id);
+      document.querySelector('#editModal h3').textContent = school ? school.name + ' · 납품 수량 수정' : '원 추가·전체 관리';
+      document.getElementById('newSchoolDetails').hidden = id !== null;
+      renderEditModalList();
+      document.getElementById('editModal').classList.remove('hidden');
+      document.getElementById('editScrollBody').scrollTop = 0;
+    }
     function renderEditModalList() {
       const container = document.getElementById('editSchoolListContainer');
-      container.innerHTML = SCHOOLS.map(s => `
+      container.innerHTML = SCHOOLS.filter(s => editOnlySchoolId === null || s.id === editOnlySchoolId).map(s => `
         <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
           <div class="min-w-[180px]">
             <div class="text-xs font-bold text-amber-300">[${escapeHtml(s.regionGroup)} · ${escapeHtml(s.subRegion)}]</div>
@@ -2083,6 +2135,7 @@ function speakSchoolQuantity(school) {
               </div>
               <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">${escapeHtml(s.address)}${s.noCoords ? ' <span class="text-rose-300 font-bold">· 위치 미등록 (도착 시 [📌 현위치 저장])</span>' : ''}</p>
 
+              <div class="card-quantity-heading"><span>납품 수량</span><button type="button" data-action="edit-quantity" data-id="${s.id}" class="card-edit-button">수량 수정</button></div>
               <!-- 1~4단계 (학생용) + 교사용 Quantity Grid -->
               ${isMulti(s) ? `<div class="mt-3 overflow-x-auto">${productTableHtml(s, false)}</div>` : `<div class="grid grid-cols-4 gap-1.5 mt-3">
                 ${STEPS.map(n => renderStepPill(n)).join('')}
@@ -2422,10 +2475,7 @@ function speakSchoolQuantity(school) {
       document.getElementById('installModal').classList.add('hidden');
     });
 
-    document.getElementById('openEditModalBtn').addEventListener('click', () => {
-      renderEditModalList();
-      document.getElementById('editModal').classList.remove('hidden');
-    });
+    document.getElementById('openEditModalBtn').addEventListener('click', () => openSchoolQuantityEditor());
 
     document.getElementById('closeEditModalBtn').addEventListener('click', () => {
       document.getElementById('editModal').classList.add('hidden');
@@ -2433,10 +2483,16 @@ function speakSchoolQuantity(school) {
 
     document.getElementById('saveAndCloseEditBtn').addEventListener('click', () => {
       collectEditModalInputs();
-      saveState();
+      const saved = saveState();
       renderList();
-      document.getElementById('editModal').classList.add('hidden');
-      showToast('원별 납품수량 변경사항이 저장되었습니다.');
+      if (saved) document.getElementById('editModal').classList.add('hidden');
+      const school = SCHOOLS.find(s => s.id === editOnlySchoolId);
+      document.getElementById('quantitySaveTitle').textContent = saved ? '저장 완료' : '저장하지 못했습니다';
+      document.getElementById('quantitySaveMessage').textContent = saved
+        ? (school ? school.name + '의 납품 수량을 이 기기에 저장했습니다.' : '납품 수량 변경사항을 이 기기에 저장했습니다.')
+        : '기기 저장 공간 또는 브라우저 저장 권한을 확인한 뒤 다시 저장해 주세요. 입력 내용은 수정 창에 남아 있습니다.';
+      document.getElementById('quantitySaveNote').textContent = saved ? '공유 로그인 상태의 서버 동기화 완료 여부와는 별개입니다.' : '';
+      document.getElementById('quantitySaveDialog').showModal();
     });
 
     document.getElementById('addNewSchoolBtn').addEventListener('click', () => {
@@ -2560,6 +2616,7 @@ function speakSchoolQuantity(school) {
       const school = SCHOOLS.find(s => s.id === id);
       if (!school) return;
 
+      if (action === 'edit-quantity') { openSchoolQuantityEditor(id); return; }
       if (action === 'naver-speech') {
         e.preventDefault();
         if (typeof setNaviLockedSchool === 'function') setNaviLockedSchool(school.id);
@@ -3950,28 +4007,47 @@ function speakSchoolQuantity(school) {
 
     // ---------- 납품 품목 확인 (총괄표 + 원별 체크) ----------
     let itemsScope = 'pending';
+    function normalizeItemSearch(v) { return String(v || '').normalize('NFKC').toLocaleLowerCase('ko').replace(/\s+/g, ''); }
+    function matchesItemSearch(it) {
+      const q = normalizeItemSearch(document.getElementById('itemsSearchInput').value);
+      const p = document.getElementById('itemsProductFilter').value;
+      return (!q || normalizeItemSearch(it.label).includes(q)) && (!p || it.label === p);
+    }
+    function refreshItemProductOptions() {
+      const el = document.getElementById('itemsProductFilter'), prev = el.value;
+      const labels = [...new Set(SCHOOLS.flatMap(s => deliveryItems(s).map(it => it.label)))].sort((a,b) => a.localeCompare(b,'ko'));
+      el.innerHTML = '<option value="">전체 품목</option>' + labels.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+      el.value = labels.includes(prev) ? prev : '';
+    }
+    document.getElementById('itemsSearchInput').addEventListener('input', renderItemsModal);
+    document.getElementById('itemsProductFilter').addEventListener('change', renderItemsModal);
+    document.getElementById('itemsSearchClear').addEventListener('click', () => {
+      document.getElementById('itemsSearchInput').value = '';
+      document.getElementById('itemsProductFilter').value = ''; renderItemsModal();
+    });
     function renderItemsModal() {
       document.querySelectorAll('[data-items-scope]').forEach(b => {
         const on = b.getAttribute('data-items-scope') === itemsScope;
         b.className = `px-3 py-1.5 rounded-lg text-xs font-bold ${on ? 'bg-violet-500 text-slate-950' : 'bg-slate-800 text-slate-300 border border-slate-700'}`;
       });
-      const list = [...SCHOOLS].sort((a, b) => a.order - b.order).filter(s => itemsScope === 'all' || !completedMap[s.id]);
+      const list = [...SCHOOLS].sort((a, b) => a.order - b.order).filter(s => itemsScope === 'all' || !completedMap[s.id]).filter(s => deliveryItems(s).some(matchesItemSearch));
       const totals = new Map();
-      list.forEach(s => deliveryItems(s).forEach(it => {
+      list.forEach(s => deliveryItems(s).filter(matchesItemSearch).forEach(it => {
         const t = totals.get(it.label) || { label: it.label, kind: it.kind, qty: 0, schools: 0 };
         t.qty += it.qty; t.schools += 1; totals.set(it.label, t);
       }));
       const rank = { student: 0, teacher: 1, extra: 2 };
       const tot = [...totals.values()].sort((a, b) => (rank[a.kind] - rank[b.kind]) || a.label.localeCompare(b.label, 'ko'));
       const color = k => k === 'teacher' ? 'border-sky-500/40 bg-sky-500/10 text-sky-200' : k === 'extra' ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'border-amber-500/40 bg-amber-500/10 text-amber-200';
+      document.getElementById('itemsSearchSummary').textContent = `표시 중: ${list.length}곳 · ${tot.length}품목`;
       const grand = tot.filter(t => t.kind !== 'extra').reduce((a, t) => a + t.qty, 0);
       document.getElementById('itemsTotals').innerHTML = tot.length
         ? tot.map(t => `<div class="rounded-xl border px-2.5 py-2 ${color(t.kind)}"><div class="text-[11px] font-bold leading-tight">${escapeHtml(t.label)}</div><div class="text-lg font-black text-white">${t.qty ? t.qty + '개' : '-'}</div><div class="text-[10px] opacity-75">${t.schools}곳</div></div>`).join('')
-          + `<div class="rounded-xl border px-2.5 py-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-200"><div class="text-[11px] font-bold">교재 합계 (단계별)</div><div class="text-lg font-black text-white">${grand}개</div><div class="text-[10px] opacity-75">${list.length}곳</div></div>`
+          + `<div class="rounded-xl border px-2.5 py-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-200"><div class="text-[11px] font-bold">검색 결과 교재 합계</div><div class="text-lg font-black text-white">${grand}개</div><div class="text-[10px] opacity-75">${list.length}곳</div></div>`
         : '<div class="col-span-full text-xs text-slate-500">표시할 품목이 없습니다.</div>';
       document.getElementById('itemsBySchool').innerHTML = list.map(s => {
-        const items = deliveryItems(s);
-        const pr = itemProgress(s);
+        const items = deliveryItems(s).filter(matchesItemSearch);
+        const pr = { total: items.length, done: items.filter(it => isItemChecked(s.id, it.key)).length };
         const done = !!completedMap[s.id];
         return `<div class="bg-slate-950 border ${pr.total && pr.done === pr.total ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-3">
           <div class="flex items-center justify-between gap-2 mb-2">
@@ -3982,9 +4058,9 @@ function speakSchoolQuantity(school) {
             ${items.length ? items.map(it => { const on = isItemChecked(s.id, it.key); return `<label class="flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer border ${on ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'}"><input type="checkbox" data-ic-id="${Number(s.id)}" data-ic-key="${escapeHtml(it.key)}" ${on ? 'checked' : ''} class="w-4 h-4 accent-emerald-500 shrink-0"><span class="flex-1 text-xs font-bold ${on ? 'text-slate-500 line-through' : it.kind === 'teacher' ? 'text-sky-200' : it.kind === 'extra' ? 'text-violet-200' : 'text-amber-200'}">${escapeHtml(it.label)}</span><span class="text-sm font-black ${on ? 'text-slate-500' : 'text-white'}">${it.qty ? it.qty : '-'}</span></label>`; }).join('') : '<div class="text-xs text-slate-500">품목 없음</div>'}
           </div>
         </div>`;
-      }).join('') || '<div class="text-xs text-slate-500">미완료 원이 없습니다.</div>';
+      }).join('') || '<div class="text-xs text-slate-500">조건에 맞는 납품처가 없습니다.</div>';
     }
-    function openItemsModal() { renderItemsModal(); document.getElementById('itemsModal').classList.remove('hidden'); }
+    function openItemsModal() { refreshItemProductOptions(); renderItemsModal(); document.getElementById('itemsModal').classList.remove('hidden'); }
     function closeItemsModal() { document.getElementById('itemsModal').classList.add('hidden'); renderList(); }
     document.getElementById('openItemsModalBtn').addEventListener('click', openItemsModal);
     document.getElementById('closeItemsModalBtn').addEventListener('click', closeItemsModal);
@@ -4017,13 +4093,9 @@ function speakSchoolQuantity(school) {
       };
       menuBtn.addEventListener('click', () => setMenu(tools.classList.contains('hidden')));
       tools.addEventListener('click', (e) => {
-        const button = e.target.closest('button');
-        if (!button || !tools.contains(button)) return;
-        const proxyId = button.getAttribute('data-proxy');
-        if (proxyId) {
-          const target = document.getElementById(proxyId);
-          if (target && target !== button && !target.disabled) target.click();
-        }
+        const b = e.target.closest('button'); if (!b || !tools.contains(b)) return;
+        const id = b.getAttribute('data-proxy'); const t = id && document.getElementById(id);
+        if (t && t !== b && !t.disabled) t.click();
         if (window.innerWidth < 640) setMenu(false);
       });
       document.getElementById('mobileBottomBar').addEventListener('click', (e) => {
