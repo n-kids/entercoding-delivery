@@ -102,6 +102,90 @@
 #schoolList button:focus-visible,#schoolList a:focus-visible,#deliveryActionToolbar button:focus-visible,#itemsModal :focus-visible,#importModal :focus-visible,#editModal :focus-visible{outline:2px solid #b8caff;outline-offset:2px}
 @media(max-width:639px){#schoolList{gap:12px;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}#schoolList .dc-card{padding:14px;border-radius:17px}.dc-state-row{padding-bottom:11px}.dc-identity{padding:12px 0}#schoolList .dc-name h3{font-size:20px}.dc-step-grid{gap:6px}.dc-step{padding:9px 3px}.dc-step strong{font-size:23px}#schoolList .dc-navigate,#schoolList .dc-complete{min-height:48px}.dc-secondary-actions{gap:6px}#deliveryActionToolbar{padding:12px}.da-actions{gap:6px}.da-actions button{font-size:11px;padding:9px 4px}#itemsModal,#importModal,#editModal{padding:8px!important}#itemsModal>div,#importModal>div,#editModal>div{width:100%;max-height:calc(100dvh - 16px);border-radius:17px;padding:12px}#itemsModal>div,#importModal>div{height:calc(100dvh - 16px)}#editModal>div{height:calc(100dvh - 16px)}#editSchoolListContainer>div{padding:11px}.items-search{padding:10px}}
 </style>
+<style id="ui-polish-final">
+/* UI polish: style only. Navigation, storage and sync handlers are unchanged. */
+:root{--ui-page:#0b1423;--ui-panel:#142238;--ui-line:#344760;--ui-copy:#e8eef9;--ui-muted:#a5b4ca;--ui-primary:#5578df}
+body{background:var(--ui-page);letter-spacing:-.015em}
+main{min-width:0}
+/* Keep one visible management action group: the delivery toolbar. Hidden original buttons remain callable. */
+header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditModalBtn){display:none!important}
+#deliveryActionToolbar{display:block;padding:14px 16px;margin:12px 0 16px;background:#132137;border:1px solid var(--ui-line);border-radius:16px;box-shadow:none}
+#deliveryActionToolbar h2{font-size:15px;font-weight:750;line-height:1.5}
+#deliveryActionToolbar p{font-size:12px;color:var(--ui-muted);line-height:1.65}
+#deliveryActionToolbar .da-actions{gap:8px;margin-top:11px}
+#deliveryActionToolbar .da-actions button{min-height:46px;border-radius:10px;background:#22334e;color:#e2eafa;border:1px solid #415978;font-size:12px;line-height:1.5;box-shadow:none}
+#deliveryActionToolbar .da-actions button:first-child{background:#2a3754;border-color:#53668b}
+#deliveryActionToolbar .da-note{margin-top:8px;font-size:11px}
+/* Restrict text overflow at its origin rather than hiding page overflow. */
+#schoolList,#pkList{min-width:0;gap:14px;align-items:stretch}
+#schoolList article,#pkList article{min-width:0;box-shadow:0 4px 16px #02061720!important}
+#schoolList .dc-card{padding:18px;border-radius:18px;background:#132136;border-color:#33465f;opacity:1;backdrop-filter:none}
+#schoolList .dc-card:hover{border-color:#526888;box-shadow:0 4px 16px #02061720}
+#schoolList .dc-card[data-delivery-state=done]{background:#13282b;border-color:#365c52;opacity:1}
+#schoolList .dc-name-row,#schoolList [data-action=popup]{min-width:0}
+#schoolList .dc-name{flex:1 1 0;min-width:0;max-width:100%}
+#schoolList h3,#pkList h3{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:normal;line-height:1.45}
+#schoolList .dc-name h3{font-size:20px;font-weight:750;letter-spacing:-.025em}
+#schoolList .dc-address,#schoolList .dc-product,#schoolList article p,#pkList article p{overflow-wrap:anywhere;line-height:1.65}
+.dc-identity{padding:13px 0}.dc-state-row{padding-bottom:11px}
+.dc-progress{font-size:11px;color:#aab9cf}.dc-state{font-size:11px;padding:5px 8px;line-height:1.5}
+.dc-meta{gap:6px;line-height:1.6}.dc-quantity-heading{gap:10px}.dc-quantity-heading>div{min-width:0}
+.dc-product-table{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.dc-step{padding:10px 4px;border-color:#3a4d69;background:#1b2d47}.dc-step strong{font-size:24px}.dc-step small{font-size:11px}
+#schoolList .dc-extras span,#pkList article span{overflow-wrap:anywhere}
+#schoolList .dc-actions{padding-top:12px}.dc-primary-actions{gap:8px}.dc-secondary-actions{gap:7px;margin-top:8px}
+#schoolList .dc-button{min-height:44px;border-radius:10px;line-height:1.5;white-space:normal;box-shadow:none}
+#schoolList .dc-navigate{background:var(--ui-primary);min-height:46px}
+#schoolList .dc-complete{background:#25463d;border-color:#456c5d;color:#b7e8d3;min-height:46px}
+#schoolList .dc-secondary{background:#1b2b41;border-color:#354b68;color:#bfcee2;font-size:11px;font-weight:600}
+#schoolList .dc-edit{font-size:12px;background:#2a3d5b;border-color:#526c91;padding:9px 11px}
+/* Remove heavy glow from legacy cards as well. */
+#schoolList .naver-btn-glow{box-shadow:none!important;animation:none!important}
+#schoolList .delivery-card-done{opacity:1}
+/* Modal panels: the content scrolls, header and footer remain in the flex layout. */
+#itemsModal>div,#importModal>div,#editModal>div{min-width:0;min-height:0;border-color:#3c5272;border-radius:18px;background:#142238;box-shadow:0 20px 70px #02061770}
+#itemsModal>div>div:first-child,#importModal>div>div:first-child,#editModal>div>div:first-child{flex-shrink:0}
+#itemsModal .overflow-y-auto,#importModal .overflow-y-auto,#editScrollBody{min-width:0;min-height:0;overscroll-behavior:contain}
+#itemsModal button,#importModal button,#editModal button{min-height:44px;line-height:1.5}
+#closeItemsModalBtn,#closeImportModalBtn,#closeEditModalBtn{width:44px;min-width:44px;height:44px;border-radius:10px}
+#itemsModal h3,#importModal h3,#editModal h3{font-size:17px;font-weight:750;line-height:1.5;overflow-wrap:anywhere}
+.items-search{border-radius:12px;background:#102037;padding:11px;border-color:#354c69}
+.items-search input,.items-search select{min-width:0;font-size:16px}
+#editSchoolListContainer>div{min-width:0;max-width:100%;border-radius:13px;background:#102038;padding:13px;border-color:#354c69}
+#editSchoolListContainer>div>div{min-width:0;max-width:100%}
+#editSchoolListContainer input,#editSchoolListContainer textarea{font-size:16px;min-width:0;max-width:100%;min-height:44px}
+#editSchoolListContainer .grid input{width:100%;min-width:0;padding:8px 3px}
+#editSchoolListContainer .grid{width:100%;grid-template-columns:32px repeat(4,minmax(0,1fr));gap:5px}
+#editSchoolListContainer .min-w-\[180px\]{min-width:0;width:100%}
+#itemsTotals>div{min-width:0;overflow-wrap:anywhere}
+#persistenceStatusPanel,#deliveryPersistenceStatus{font-size:12px;line-height:1.65;border-radius:13px;box-shadow:none}
+#mobileBottomBar{padding-bottom:max(8px,env(safe-area-inset-bottom));background:#101d30;border-color:#35465f}
+#mobileBottomBar button{min-height:48px;border-radius:10px}
+#schoolList button:focus-visible,#schoolList a:focus-visible,#itemsModal :focus-visible,#importModal :focus-visible,#editModal :focus-visible{outline:2px solid #b3c8ff;outline-offset:2px}
+@media(max-width:639px){
+ main{padding-left:12px!important;padding-right:12px!important}
+ #schoolList,#pkList{gap:12px}
+ #schoolList{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+ #schoolList .dc-card{padding:14px;border-radius:16px}
+ #schoolList .dc-name h3{font-size:19px}
+ #schoolList .dc-step-grid{gap:5px}.dc-step{padding:9px 3px}.dc-step strong{font-size:22px}
+ #schoolList .dc-button{padding:10px 5px}.dc-secondary-actions{gap:5px}
+ #deliveryActionToolbar{padding:12px;border-radius:14px}
+ #deliveryActionToolbar .da-actions{gap:6px}
+ #deliveryActionToolbar .da-actions button{font-size:11px;padding:9px 5px}
+ #itemsModal,#importModal,#editModal{padding:8px!important;align-items:center}
+ #itemsModal>div,#importModal>div,#editModal>div{height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);padding:12px;border-radius:16px;overflow:hidden}
+ #itemsModal h3,#importModal h3,#editModal h3{font-size:16px}
+ #itemsModal>div>div:last-child,#importModal>div>div:last-child,#editModal>div>div:last-child{flex-shrink:0}
+ #editSchoolListContainer>div{padding:10px}
+ #editSchoolListContainer .grid{grid-template-columns:30px repeat(4,minmax(0,1fr));gap:4px}
+ #editSchoolListContainer .grid input{font-size:15px}
+}
+@media(max-width:359px){.dc-name-row{flex-wrap:wrap;gap:3px}.dc-distance{font-size:10px}.dc-state-row{gap:5px}.dc-progress{font-size:10px}#deliveryActionToolbar .da-actions button{font-size:10px}.dc-secondary-actions .dc-button{font-size:10px}}
+@media(max-height:440px){#itemsModal>div,#importModal>div,#editModal>div{height:calc(100dvh - 12px);max-height:calc(100dvh - 12px)}.items-search{padding:7px}#itemsModal .items-search label{margin-bottom:4px}}
+@media(prefers-reduced-motion:reduce){#schoolList *,#pkList *{animation:none!important;transition:none!important}}
+
+</style>
 </head>
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
 
