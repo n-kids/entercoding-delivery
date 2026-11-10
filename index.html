@@ -1090,9 +1090,13 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
         <textarea id="pkEdItems" rows="2" placeholder="예: 마음빛깔 2단계 5개 (오배송)" class="mt-1 w-full bg-slate-800 text-white text-base rounded-xl px-3 py-2.5 border border-slate-700"></textarea></label>
       <div class="grid grid-cols-2 gap-2">
         <label class="block"><span class="text-[11px] font-bold text-slate-400">담당자</span>
-          <input id="pkEdAssignee" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore class="mt-1 w-full bg-slate-800 text-white text-base rounded-xl px-3 py-2.5 border border-slate-700"></label>
+          <input id="pkEdAssignee" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore placeholder="예: 홍길동, 김철수" class="mt-1 w-full bg-slate-800 text-white text-base rounded-xl px-3 py-2.5 border border-slate-700"></label>
         <label class="block"><span class="text-[11px] font-bold text-slate-400">주소 (선택)</span>
           <input id="pkEdAddress" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore placeholder="위치 찾기에 사용" class="mt-1 w-full bg-slate-800 text-white text-base rounded-xl px-3 py-2.5 border border-slate-700"></label>
+      </div>
+      <div id="pkEdMembers" class="hidden -mt-1">
+        <div class="text-[11px] font-bold text-slate-400 mb-1">웍스 담당자 선택 <span class="font-normal text-slate-500">(눌러서 넣고 빼기 · 저장하면 웍스 할 일 담당자도 바뀝니다)</span></div>
+        <div id="pkEdMemberChips" class="flex flex-wrap gap-1.5"></div>
       </div>
       <label class="block"><span class="text-[11px] font-bold text-slate-400">메모</span>
         <input id="pkEdMemo" type="text" autocomplete="off" placeholder="예: 3층 원무실로 방문" class="mt-1 w-full bg-slate-800 text-white text-base rounded-xl px-3 py-2.5 border border-slate-700"></label>
@@ -4081,6 +4085,9 @@ function speakSchoolQuantity(school) {
       '기타': 'bg-slate-700/60 text-slate-200 border-slate-600'
     };
 
+    function pkAssigneeList(p) {
+      return String((p && p.assignee) || '').split(/[,，/·]+/).map(x => x.trim()).filter(Boolean);
+    }
     function savePickups() {
       const saved=persistEntries([[PICKUPS_KEY,PICKUPS]],'회수·추가 납품');
       if(saved&&typeof scheduleSync==='function')scheduleSync();return saved;
@@ -4799,9 +4806,9 @@ function speakSchoolQuantity(school) {
       const chips = [['pending', '남은 할 일'], ...typeChips, ['done', '완료'], ['all', '전체']]
         .filter(([k]) => k === 'pending' || k === 'all' || k === 'done' || cnt[k]);
       document.getElementById('pkFilterBar').innerHTML = chips.map(([k, l]) => `<button type="button" data-pkf="${k}" class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border ${pkFilter === k ? 'bg-rose-500 text-white border-rose-400' : 'bg-slate-800 text-slate-300 border-slate-700'}">${l} ${cnt[k]}</button>`).join('');
-      const names = [...new Set(mine.map(p => p.assignee).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+      const names = [...new Set(mine.flatMap(pkAssigneeList))].sort((a, b) => a.localeCompare(b, 'ko'));
       if (pkAssignee && !names.includes(pkAssignee)) pkAssignee = '';
-      document.getElementById('pkAssigneeSelect').innerHTML = `<option value="">담당자 전체</option>` + names.map(n => `<option value="${escapeHtml(n)}" ${n === pkAssignee ? 'selected' : ''}>${escapeHtml(n)} (${pend.filter(p => p.assignee === n).length})</option>`).join('');
+      document.getElementById('pkAssigneeSelect').innerHTML = `<option value="">담당자 전체</option>` + names.map(n => `<option value="${escapeHtml(n)}" ${n === pkAssignee ? 'selected' : ''}>${escapeHtml(n)} (${pend.filter(p => pkAssigneeList(p).includes(n)).length})</option>`).join('');
       document.getElementById('pkPendingCount').textContent = cnt.pending;
       document.getElementById('pkTotalCount').textContent = cnt.all;
       const nRet = PICKUPS.filter(p => !p.done && pkGroupOf(p) === 'return').length, nEx = PICKUPS.filter(p => !p.done && pkGroupOf(p) === 'extra').length;
@@ -4827,7 +4834,7 @@ function speakSchoolQuantity(school) {
       const sort = document.getElementById('pkSortSelect').value;
       let list = PICKUPS.filter(p => {
         if (!pkInMode(p)) return false;
-        if (pkAssignee && p.assignee !== pkAssignee) return false;
+        if (pkAssignee && !pkAssigneeList(p).includes(pkAssignee)) return false;
         if (pkFilter === 'pending') return !p.done;
         if (pkFilter === 'done') return p.done;
         if (pkFilter === 'all') return true;
@@ -4858,6 +4865,7 @@ function speakSchoolQuantity(school) {
             <span class="px-2 py-0.5 rounded-full border ${dueCls}">기한 ${escapeHtml(pkDueLabel(p.due))}${ds === 'over' ? ' 지남' : ''}</span>
             ${p.qty ? `<span class="px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-300 border-emerald-500/40">총 ${p.qty}개</span>` : ''}
             ${p.assignee ? `<span class="px-2 py-0.5 rounded-full border bg-slate-800 text-slate-300 border-slate-700">👤 ${escapeHtml(p.assignee)}</span>` : ''}
+            ${p.worksTaskId && p.worksAssigneePending ? `<span class="px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-200 border-amber-500/40">⏳ 담당자 웍스 반영 중</span>` : ''}
             ${p.worksTaskId ? (p.worksSyncPending ? `<span class="px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-200 border-amber-500/40">⚠️ 웍스 반영 대기</span>` : `<span class="px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-200 border-emerald-500/30">🔗 웍스${p.worksClosedRemote ? ' · 웍스에서 완료됨' : ''}</span>`) : ''}
             ${dist !== null ? `<span class="px-2 py-0.5 rounded-full border bg-indigo-500/15 text-indigo-200 border-indigo-500/30">${formatDistance(dist)}</span>` : ''}
           </div>
@@ -5115,8 +5123,66 @@ function speakSchoolQuantity(school) {
         fieldQuantities: a.fieldQuantities,
         worksContent: content,
         due: t.dueDate && /^\d{4}-\d{2}-\d{2}/.test(t.dueDate) ? String(t.dueDate).slice(0, 10) : pkDueFrom(t.dueDate || ''),
-        assignee: assignees
+        assignee: stripWorksUserId(assignees),
+        assigneeIds: Array.isArray(t.assigneeIds) ? t.assigneeIds.filter(Boolean) : null
       };
+    }
+    // 웍스 할 일이 실제로 끝났는지 (발주방 할 일은 '담당자 중 1명 완료'라 한 명만 완료해도 끝)
+    function worksTaskDone(t) {
+      if (!t) return false;
+      if (t.done === true || String(t.status || '').toUpperCase() === 'DONE') return true;
+      const sts = (Array.isArray(t.assignees) ? t.assignees : []).filter(a => a && typeof a === 'object').map(a => String(a.status || 'TODO').toUpperCase());
+      if (!sts.length) return false;
+      return String(t.completionCondition || 'ANY_ONE').toUpperCase() === 'MUST_ALL' ? sts.every(x => x === 'DONE') : sts.some(x => x === 'DONE');
+    }
+    function worksTitleKey(title) {
+      return normName(stripWorksUserId(String(title || '')).replace(/^\s*\[[^\]]*\]\s*/, ''));
+    }
+    // 앱에서 바꾼 담당자를 웍스 할 일에도 바로 반영 (다른 기기에는 공유 서버로 실시간 전달)
+    async function worksPushAssignee(p) {
+      if (!p || !p.worksTaskId) return false;
+      const want = String(p.assignee || '').trim();
+      if (!want) { p.worksAssigneePending = false; savePickups(); showToast('웍스 할 일은 담당자가 한 명 이상 있어야 합니다. 웍스 담당자로 되돌립니다.'); return false; }
+      try {
+        const r = await worksApi(`/app/pickups/${encodeURIComponent(p.worksTaskId)}/assignees`, 'POST', { assignee: want });
+        const cur = PICKUPS.find(x => x.id === p.id) || p;
+        if (String(cur.assignee || '').trim() === want) {
+          cur.assignee = stripWorksUserId(r.assignee || want);
+          if (Array.isArray(r.assigneeIds)) cur.assigneeIds = r.assigneeIds;
+          cur.worksAssigneePending = false; cur.worksAssigneeError = '';
+          cur.worksAssigneePrev = undefined;
+        }
+        savePickups(); renderPickups(); renderList();
+        showToast(`웍스 할 일 담당자도 ${cur.assignee}(으)로 바꿨습니다.`);
+        return true;
+      } catch (e) {
+        const msg = e.message || String(e);
+        const cur = PICKUPS.find(x => x.id === p.id) || p;
+        if (/찾지 못한 이름|권한이 없습니다|한 명 이상/.test(msg)) {
+          // 웍스에서 받아 줄 수 없는 변경 → 원래 담당자로 되돌림 (다음 동기화 때 웍스 값으로 맞춰짐)
+          if (cur.worksAssigneePrev !== undefined) cur.assignee = cur.worksAssigneePrev;
+          cur.worksAssigneePending = false; cur.worksAssigneeError = msg; cur.worksAssigneePrev = undefined;
+        } else {
+          cur.worksAssigneeError = msg;
+        }
+        savePickups(); renderPickups(); renderList();
+        showToast('⚠️ 웍스 담당자 반영 실패: ' + msg + (cur.worksAssigneePending ? ' · 봇 서버가 다시 시도합니다.' : ''));
+        return false;
+      }
+    }
+    var worksMembers = (function () { try { return JSON.parse(localStorage.getItem('entercoding_works_members_v1') || '[]') || []; } catch (e) { return []; } })();
+    var worksMembersAt = 0;
+    async function worksLoadMembers() {
+      if (Date.now() - worksMembersAt < 600000 && worksMembers.length) return worksMembers;
+      try {
+        const r = await worksApi('/app/members');
+        if (Array.isArray(r.members) && r.members.length) {
+          worksMembers = r.members.filter(m => m && m.name);
+          worksMembersAt = Date.now();
+          try { localStorage.setItem('entercoding_works_members_v1', JSON.stringify(worksMembers)); } catch (e) {}
+        }
+      } catch (e) {}
+      return worksMembers;
     }
     async function worksPushDone(p) {
       if (!p || !p.worksTaskId) return false;
@@ -5137,6 +5203,8 @@ function speakSchoolQuantity(school) {
     async function worksRetryPending() {
       const list = PICKUPS.filter(p => p.worksTaskId && p.worksSyncPending);
       for (const p of list) { await worksPushDone(p); }
+      const al = PICKUPS.filter(p => p.worksTaskId && p.worksAssigneePending);
+      for (const p of al) { await worksPushAssignee(p); }
     }
     // 봇 서버 또는 웍스에서 들어온 항목: 원 목록 매칭 + 본문(worksContent) 품목/수량 파싱 + 사용자 직접 등록 할 일 분류 보정 + 위치 자동 탐색
     function pkEnrichWorks() {
@@ -5223,6 +5291,7 @@ function speakSchoolQuantity(school) {
     function worksUpsertTasks(tasks, opts = {}) {
       if (!Array.isArray(tasks) || !tasks.length) return { added: [], closed: 0, reopened: 0, updated: 0 };
       const remote = {};
+      tasks = tasks.filter(t => t && !worksTaskDone(t));
       tasks.forEach(t => {
         const tid = t && (t.taskId || t.id);
         if (tid) remote[tid] = t;
@@ -5236,6 +5305,17 @@ function speakSchoolQuantity(school) {
         let p = PICKUPS.find(x => x.worksTaskId === tid || x.id === 'w_' + tid);
         const r = worksRowFromTask(t);
         if (!p) {
+          // 웍스 캡처·붙여넣기로 넣은 같은 제목 할 일이 있으면 새로 만들지 않고 연결 (완료 상태가 서로 맞춰짐)
+          const key = worksTitleKey(t.title);
+          const twin = key && PICKUPS.find(x => !x.worksTaskId && x.source === 'works' && worksTitleKey(x.title) === key);
+          if (twin) {
+            twin.worksTaskId = tid; twin.worksStatus = 'TODO'; twin.worksSyncPending = !!twin.done; twin.worksClosedRemote = false;
+            if (!twin.assignee) twin.assignee = r.assignee;
+            p = twin; updated++;
+            if (twin.done) worksPushDone(twin);
+          }
+        }
+        if (!p) {
           p = {
             id: 'w_' + tid,
             title: String(t.title || '').replace(/^\s*\[[^\]]*\]\s*/, ''),
@@ -5247,6 +5327,7 @@ function speakSchoolQuantity(school) {
             fieldQuantities: Array.isArray(r.fieldQuantities) ? r.fieldQuantities : [],
             due: r.due,
             assignee: r.assignee,
+            assigneeIds: r.assigneeIds || [],
             memo: '',
             address: '',
             lat: null,
@@ -5264,9 +5345,13 @@ function speakSchoolQuantity(school) {
           added.push(p);
           return;
         }
-        if (p.due !== r.due || p.assignee !== r.assignee || (p.worksContent || '') !== (r.worksContent || '')) {
-          p.due = r.due;
+        if (!p.worksAssigneePending && (p.assignee !== r.assignee || (r.assigneeIds && stableStr(p.assigneeIds || []) !== stableStr(r.assigneeIds)))) {
           p.assignee = r.assignee;
+          if (r.assigneeIds) p.assigneeIds = r.assigneeIds;
+          updated++;
+        }
+        if (p.due !== r.due || (p.worksContent || '') !== (r.worksContent || '')) {
+          p.due = r.due;
           p.worksContent = r.worksContent || '';
           updated++;
         }
@@ -5407,7 +5492,7 @@ function speakSchoolQuantity(school) {
     document.getElementById('pkWorksFetchBtn').addEventListener('click', () => worksFetchPickups(false));
     window.addEventListener('online', () => {
       if (typeof syncUser !== 'undefined' && syncUser) {
-        if (PICKUPS.some(p => p.worksSyncPending)) worksRetryPending();
+        if (PICKUPS.some(p => p.worksSyncPending || p.worksAssigneePending)) worksRetryPending();
         if (Date.now() - worksLastFetchAt > 30000) worksFetchPickups(true);
       }
     });
@@ -5439,6 +5524,8 @@ function speakSchoolQuantity(school) {
       document.getElementById('pkEdDue').value = p ? p.due || '' : '';
       document.getElementById('pkEdItems').value = p ? p.items || '' : '';
       document.getElementById('pkEdAssignee').value = p ? p.assignee || '' : '';
+      pkRenderMemberChips();
+      if (p && p.worksTaskId && typeof syncUser !== 'undefined' && syncUser) worksLoadMembers().then(() => { if (pkEditingId === id) pkRenderMemberChips(); });
       document.getElementById('pkEdAddress').value = p ? p.address || '' : '';
       document.getElementById('pkEdMemo').value = p ? p.memo || '' : '';
       const raw = document.getElementById('pkEdRaw');
@@ -5449,6 +5536,29 @@ function speakSchoolQuantity(school) {
       pkUpdateEditLoc();
       document.getElementById('pkEditModal').classList.remove('hidden');
     }
+    function pkRenderMemberChips() {
+      const wrap = document.getElementById('pkEdMembers'), box = document.getElementById('pkEdMemberChips');
+      if (!wrap || !box) return;
+      const p = pkEditingId ? PICKUPS.find(x => x.id === pkEditingId) : null;
+      const show = !!(p && p.worksTaskId && worksMembers.length);
+      wrap.classList.toggle('hidden', !show);
+      if (!show) { box.innerHTML = ''; return; }
+      const cur = pkAssigneeList({ assignee: document.getElementById('pkEdAssignee').value });
+      box.innerHTML = worksMembers.map(m => {
+        const on = cur.includes(m.name);
+        return `<button type="button" data-member="${escapeHtml(m.name)}" aria-pressed="${on}" class="min-h-[40px] px-3 py-1.5 rounded-full text-sm font-bold border transition ${on ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-800 text-slate-200 border-slate-700'}">${on ? '✓ ' : ''}${escapeHtml(m.name)}</button>`;
+      }).join('');
+    }
+    document.getElementById('pkEdMemberChips').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-member]'); if (!b) return;
+      const name = b.getAttribute('data-member');
+      const inp = document.getElementById('pkEdAssignee');
+      let list = pkAssigneeList({ assignee: inp.value });
+      list = list.includes(name) ? list.filter(n => n !== name) : list.concat(name);
+      inp.value = list.join(', ');
+      pkRenderMemberChips();
+    });
+    document.getElementById('pkEdAssignee').addEventListener('input', () => pkRenderMemberChips());
     function pkUpdateEditLoc() {
       const p = pkEditingId ? PICKUPS.find(x => x.id === pkEditingId) : null;
       const el = document.getElementById('pkEdLocInfo');
@@ -5473,7 +5583,12 @@ function speakSchoolQuantity(school) {
         p.fieldQuantities = pkMergeFieldQuantities(p.fieldQuantities, parsed.fieldQuantities, !!p.done);
         p.qty = parsed.totalQty;
       }
-      p.assignee = document.getElementById('pkEdAssignee').value.trim();
+      const newAssignee = pkAssigneeList({ assignee: document.getElementById('pkEdAssignee').value }).join(', ');
+      if (p.worksTaskId && newAssignee !== pkAssigneeList(p).join(', ')) {
+        if (!p.worksAssigneePending) p.worksAssigneePrev = p.assignee || '';
+        p.worksAssigneePending = true; p._assigneeChanged = true;
+      }
+      p.assignee = newAssignee;
       const addr = document.getElementById('pkEdAddress').value.trim();
       if (addr !== (p.address || '')) { p.address = addr; if (!p.schoolId) { p.lat = null; p.lng = null; } }
       p.memo = document.getElementById('pkEdMemo').value.trim();
@@ -5488,7 +5603,9 @@ function speakSchoolQuantity(school) {
       pkCollectEdit(p);
       if (!p.title) p.title = `${p.school} ${p.items} ${p.type}`.replace(/\s+/g, ' ').trim();
       if (isNew) PICKUPS.push(p);
+      const pushAssignee = !!p._assigneeChanged; delete p._assigneeChanged;
       savePickups(); closePickupEdit(); renderPickups(); renderList();
+      if (pushAssignee) worksPushAssignee(p);
       showToast(isNew ? `${p.school} ${p.type} 할 일을 추가했습니다.` : '저장했습니다.');
       if (!pkLinkedSchool(p) && !hasCoords({ lat: p.lat, lng: p.lng })) pkAutoGeocode([p]);
     });
