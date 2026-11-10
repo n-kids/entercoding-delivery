@@ -7008,6 +7008,7 @@ ${school.address || ''}`;
             : `${isExtra ? '추가 납품' : '회수·반품'} ${grp.items.length}건 · 터치 시 완료 체크`,
           naviUrl,
           webNaviUrl,
+          nearby: best.dist !== null && best.dist !== undefined && best.dist <= 300,
           closeOnOpenApp: true,
           autoHideOnAppOpen: true,
           items: overlayItems
@@ -7038,6 +7039,7 @@ ${school.address || ''}`;
         progressText: `품목체크 ${pr.done}/${pr.total} · ${totalLabel(s)}${pickups.length ? ` · 회수${pickups.length}건` : ''}`,
         naviUrl: buildNaverNaviSchemeUrl(s),
         webNaviUrl: buildNaverWebUrl(s),
+        nearby: best.dist !== null && best.dist !== undefined && best.dist <= 300,
         closeOnOpenApp: true,
         autoHideOnAppOpen: true,
         items: mappedItems
