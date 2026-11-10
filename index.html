@@ -4171,13 +4171,27 @@ function speakSchoolQuantity(school) {
       return out;
     }
 
-    function parseWorksTaskItems(titleRest, worksContent) {
+    // 품목 이름 앞에 붙은 원 이름 떼기 ("시립풍무푸르지오 만3세 영어" → "만3세 영어")
+    function pkStripSchoolPrefix(label, schoolHints) {
+      let out = String(label || '');
+      (schoolHints || []).forEach(h => {
+        const core = String(h || '').replace(/\s+/g, '');
+        if (core.length < 2) return;
+        const re = new RegExp('^\\s*' + core.split('').map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*') + '(?:어린이집|유치원)?\\s*');
+        const cut = out.replace(re, '');
+        if (cut !== out && cut.trim()) out = cut;
+      });
+      return out.trim();
+    }
+
+    function parseWorksTaskItems(titleRest, worksContent, schoolHints) {
       const rows = [];
       const seen = new Map();
+      const hints = (Array.isArray(schoolHints) ? schoolHints : [schoolHints]).filter(Boolean);
       const addRow = (rawLabel, rawQty) => {
-        let label = stripWorksUserId(rawLabel || '')
+        let label = pkStripSchoolPrefix(stripWorksUserId(rawLabel || '')
           .replace(/^[\s\-•·*▶▷►✔✓□■◆◇○●\d]+[.)]\s*/, '')
-          .replace(/^(?:추가\s*납품|추가|납품|교구|선물용품|선물|품목|원문)\s*[:：\-]\s*/, '')
+          .replace(/^(?:추가\s*납품|추가|납품|교구|선물용품|선물|품목|원문)\s*[:：\-]\s*/, ''), hints)
           .replace(/\s*(?:추가\s*납품|추가|납품|배송|발송|요청|전달|회수|반품|수거|보내기|드리기)\s*$/, '')
           .replace(/^[\s,.:·\-|]+|[\s,.:·\-|]+$/g, '')
           .trim();
@@ -4210,26 +4224,46 @@ function speakSchoolQuantity(school) {
         });
       }
 
+      const titleRowCount = rows.length;
       const contentSummaryParts = [];
+      const titleKey = normName(cleanTitleRest);
+      const pushSummary = (part) => {
+        const k = normName(part);
+        if (!k || (titleKey && titleKey.includes(k))) return;
+        if (contentSummaryParts.some(x => normName(x) === k)) return;
+        contentSummaryParts.push(part);
+      };
       if (worksContent) {
+        const originalLines = [];
+        const handleSeg = (seg, fromOriginal) => {
+          let s = seg.trim();
+          if (!s || isWorksMetaSegment(s)) return;
+          if (!fromOriginal && /^원문\s*[:：]/i.test(s)) { originalLines.push(s.replace(/^원문\s*[:：]\s*/i, '').trim()); return; }
+          if (/^원\s*[:：]/.test(s)) return;                       // "원: 시립풍무푸르지오" → 원 이름 (품목 아님)
+          s = s.replace(/^품목\s*[:：]\s*/, '').trim();           // "품목: 만3세 영어 1개" → "만3세 영어 1개"
+          if (!s || isWorksMetaSegment(s)) return;
+          const m = s.match(itemLineRe);
+          if (m && !/^\d+\s*[월일층호]$/.test(s) && !/번\s*배송/.test(s)) {
+            if (addRow(m[1], m[2]) && (!fromOriginal || !titleRowCount)) {
+              pushSummary(`${pkStripSchoolPrefix(m[1].trim(), hints)} ${parseInt(m[2], 10)}`);
+            }
+          } else if (!fromOriginal) {
+            pushSummary(s);
+          }
+        };
         String(worksContent).split(/\r?\n/).map(s => stripWorksUserId(s).trim()).filter(Boolean).forEach(line => {
           if (isWorksMetaSegment(line)) return;
-          const cleanedLine = line.replace(/^원문\s*[:：]\s*/i, '').trim();
-          if (!cleanedLine || isWorksMetaSegment(cleanedLine)) return;
-          const subSegs = cleanedLine.includes(',') ? cleanedLine.split(/\s*[,，]\s*/) : [cleanedLine];
-          subSegs.forEach(seg => {
-            const s = seg.trim();
-            if (!s || isWorksMetaSegment(s)) return;
-            const m = s.match(itemLineRe);
-            if (m && !/^\d+\s*[월일층호]$/.test(s) && !/번\s*배송/.test(s)) {
-              if (addRow(m[1], m[2])) {
-                contentSummaryParts.push(`${m[1].trim()} ${parseInt(m[2], 10)}`);
-              }
-            } else {
-              contentSummaryParts.push(s);
-            }
-          });
+          // "원문: …" 은 제목·품목과 같은 내용을 한 번 더 적은 것 → 다른 곳에서 품목을 못 찾았을 때만 사용
+          if (/^원문\s*[:：]/i.test(line)) { originalLines.push(line.replace(/^원문\s*[:：]\s*/i, '').trim()); return; }
+          const subSegs = line.includes(',') ? line.split(/\s*[,，]\s*/) : [line];
+          subSegs.forEach(seg => handleSeg(seg, false));
         });
+        if (!rows.length) {
+          originalLines.forEach(line => {
+            const t = line.replace(/\s*(?:회수|반품|수거|반송)\s*(?:요청)?\s*[.]?$/, '');
+            (t.includes(',') ? t.split(/\s*[,，]\s*/) : [t]).forEach(seg => handleSeg(seg, true));
+          });
+        }
       }
 
       const totalQty = rows.reduce((sum, r) => sum + r.qty, 0);
@@ -4346,7 +4380,7 @@ function speakSchoolQuantity(school) {
       let rest = t;
       if (first && t.indexOf(first) === 0) rest = t.slice(first.length);
       rest = rest.replace(/^[\s,.:·-]+/, '').trim();
-      const parsed = parseWorksTaskItems(rest, worksContent);
+      const parsed = parseWorksTaskItems(rest, worksContent, [first, school]);
       const qtyM = t.match(/(\d+)\s*(개|권|부|세트|박스|set)/i);
       const qty = parsed.totalQty || (qtyM ? parseInt(qtyM[1], 10) : 0);
       return {
@@ -5256,17 +5290,24 @@ function speakSchoolQuantity(school) {
             p.school = a.school;
             changed = true;
           }
-          if (a.items && (!p.items || (p.worksContent && p.items.length < a.items.length && !p.userEditedItems))) {
-            p.items = a.items;
+          if (a.items && !p.userEditedItems && p.items !== a.items) {
+            p.items = a.items;   // 예전 파서가 원·품목·원문을 이어붙여 중복된 요약도 다시 정리
             changed = true;
           }
-          if (a.qty && (!p.qty || p.qty < a.qty)) {
+          const fqKey = rows => normalizeFieldQuantities(rows, false).map(r => normName(r.label) + ':' + r.qty).sort().join('|');
+          if (!p.userEditedRows && Array.isArray(a.fieldQuantities) && a.fieldQuantities.length) {
+            if (fqKey(p.fieldQuantities) !== fqKey(a.fieldQuantities)) {
+              p.fieldQuantities = pkMergeFieldQuantities(normalizeFieldQuantities(p.fieldQuantities, !!p.done), a.fieldQuantities, !!p.done);
+              changed = true;
+            }
+            if (a.qty && p.qty !== a.qty) { p.qty = a.qty; changed = true; }
+          } else if (a.qty && (!p.qty || p.qty < a.qty)) {
             p.qty = a.qty;
             changed = true;
           }
           if (Array.isArray(a.fieldQuantities) && a.fieldQuantities.length) {
             const curFq = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
-            if (curFq.length < a.fieldQuantities.length) {
+            if (curFq.length < a.fieldQuantities.length && !p.userEditedRows) {
               p.fieldQuantities = pkMergeFieldQuantities(curFq, a.fieldQuantities, !!p.done);
               changed = true;
             } else if (Array.isArray(p.fieldQuantities) && p.fieldQuantities.length !== curFq.length) {
@@ -5578,7 +5619,8 @@ function speakSchoolQuantity(school) {
       const newItems = document.getElementById('pkEdItems').value.trim();
       if (p.items && p.items !== newItems) p.userEditedItems = true;
       p.items = newItems;
-      const parsed = parseWorksTaskItems(p.items, p.worksContent || '');
+      const parsed = parseWorksTaskItems(p.items, p.worksContent || '', [p.school]);
+      if (parsed.fieldQuantities.length && p.userEditedItems) p.userEditedRows = true;
       if (parsed.fieldQuantities.length) {
         p.fieldQuantities = pkMergeFieldQuantities(p.fieldQuantities, parsed.fieldQuantities, !!p.done);
         p.qty = parsed.totalQty;
@@ -7799,7 +7841,7 @@ ${school.address || ''}`;
         }
         if(!Array.isArray(p.fieldQuantities)||!p.fieldQuantities.length){
           if(typeof parseWorksTaskItems==='function'){
-            const parsed=parseWorksTaskItems(p.items||p.title||'',p.worksContent||'');
+            const parsed=parseWorksTaskItems(p.items||p.title||'',p.worksContent||'',[p.school]);
             if(parsed.fieldQuantities.length)p.fieldQuantities=normalizeFieldQuantities(parsed.fieldQuantities,!!p.done);
           }
         }
@@ -7867,7 +7909,7 @@ ${school.address || ''}`;
         if(a==='setRows'){
           const lines=box.querySelector('[data-rows]').value.split('\n').map(v=>v.trim()).filter(Boolean),parsed=[];
           for(const line of lines){const m=line.match(/^(.+?)\s*\|\s*(\d+)$/);if(!m||Number(m[2])<=0||!Number.isSafeInteger(Number(m[2]))){showToast('각 줄을 품목명 | 양의 정수 형식으로 입력하세요.');return;}const label=m[1].trim();if(parsed.some(r=>r.label===label)){showToast('품목명을 중복하지 마세요.');return;}const old=pickupRows(p).find(r=>r.label===label);if(old&&Number(old.done||0)>Number(m[2])){showToast('처리 수량보다 예정 수량을 줄일 수 없습니다.');return;}parsed.push({label,qty:Number(m[2]),done:p.done?Number(m[2]):Number(old?.done||0)});}
-          if(pickupRows(p).some(old=>old.done>0&&!parsed.some(r=>r.label===old.label))){showToast('처리 기록이 있는 품목은 삭제할 수 없습니다.');return;}p.fieldQuantities=parsed;if(commit())draw();return;
+          if(pickupRows(p).some(old=>old.done>0&&!parsed.some(r=>r.label===old.label))){showToast('처리 기록이 있는 품목은 삭제할 수 없습니다.');return;}p.fieldQuantities=parsed;p.userEditedRows=true;if(commit())draw();return;
         }
         if(a==='saveTask'){
           const rows=pickupRows(p).map((r,i)=>({...r,done:Number(box.querySelector(`[data-taskqty="${i}"]`).value)})),state=box.querySelector('[data-taskstate]').value,reason=box.querySelector('[data-taskreason]').value.trim();

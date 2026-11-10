@@ -2,7 +2,7 @@
 // 앱 파일 캐시와 시스템 알림을 담당합니다.
 // 원 정보·수량을 Service Worker가 직접 저장했다고 간주하지 않습니다.
 
-const BUILD = 'integrated-20261107-r1';
+const BUILD = 'integrated-20261110-r1';
 
 const SCOPE = new URL(self.registration.scope);
 
