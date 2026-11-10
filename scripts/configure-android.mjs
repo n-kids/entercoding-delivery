@@ -111,6 +111,14 @@ public class FloatingOverlayManager {
     private TextView progressView;
     private boolean isShowing = false;
     private boolean isCollapsed = false;
+    private TextView headerNaviView;
+    private ScrollView itemsScroll;
+    private String lastName = "";
+    private String lastDist = "";
+    private boolean lastNearby = false;
+    private static final String PREFS = "overlay_prefs";
+    private static final int EXPANDED_W_DP = 208;
+    private static final int COLLAPSED_W_DP = 158;
     private String lastPayloadJson = "{}";
     private String currentNaviUrl = "";
     private String currentWebNaviUrl = "";
@@ -128,6 +136,68 @@ public class FloatingOverlayManager {
             v,
             appContext.getResources().getDisplayMetrics()
         );
+    }
+
+    private android.content.SharedPreferences prefs() {
+        return appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    private int screenW() { return appContext.getResources().getDisplayMetrics().widthPixels; }
+    private int screenH() { return appContext.getResources().getDisplayMetrics().heightPixels; }
+
+    // 내비 화면 위쪽(회전 안내·차로)과 아래쪽(도착 시간·메뉴)을 피해서 오른쪽 가장자리 중간쯤에 둔다
+    private void clampPosition() {
+        if (layoutParams == null) return;
+        int w = layoutParams.width > 0 ? layoutParams.width : dp(EXPANDED_W_DP);
+        int h = rootContainer != null && rootContainer.getHeight() > 0 ? rootContainer.getHeight() : dp(48);
+        int maxX = Math.max(0, screenW() - w);
+        int maxY = Math.max(0, screenH() - h - dp(24));
+        layoutParams.x = Math.max(0, Math.min(layoutParams.x, maxX));
+        layoutParams.y = Math.max(dp(24), Math.min(layoutParams.y, maxY));
+    }
+
+    private void savePosition() {
+        if (layoutParams == null) return;
+        prefs().edit()
+            .putInt("x", layoutParams.x)
+            .putInt("y", layoutParams.y)
+            .putBoolean("collapsed", isCollapsed)
+            .apply();
+    }
+
+    private void refreshLayout() {
+        if (isShowing && windowManager != null && rootContainer != null) {
+            try { windowManager.updateViewLayout(rootContainer, layoutParams); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+
+    private void applyCollapsed(boolean collapsed, boolean remember) {
+        isCollapsed = collapsed;
+        if (rootContainer == null) return;
+        boolean wasRightEdge = layoutParams.x + layoutParams.width >= screenW() - dp(16);
+        bodyContainer.setVisibility(collapsed ? View.GONE : View.VISIBLE);
+        titleView.setVisibility(collapsed ? View.GONE : View.VISIBLE);
+        badgeView.setVisibility(collapsed ? View.GONE : View.VISIBLE);
+        if (headerNaviView != null) headerNaviView.setVisibility(collapsed ? View.GONE : View.VISIBLE);
+        collapseBtn.setText(collapsed ? "➕" : "➖");
+        distView.setText(collapsed ? (lastName.length() > 0 ? lastName + " · " + lastDist : lastDist) : lastDist);
+        distView.setTextColor(Color.parseColor(collapsed ? "#F8FAFC" : "#38BDF8"));
+        rootContainer.setPadding(collapsed ? dp(6) : dp(7), collapsed ? dp(3) : dp(5), collapsed ? dp(4) : dp(7), collapsed ? dp(3) : dp(6));
+        rootContainer.setBackground(collapsed ? makeBg("#B30F172A", 14, "#10B981", 1) : makeBg("#E00F172A", 14, "#10B981", 2));
+        int newW = dp(collapsed ? COLLAPSED_W_DP : EXPANDED_W_DP);
+        if (wasRightEdge) layoutParams.x = screenW() - newW - dp(4);
+        layoutParams.width = newW;
+        clampPosition();
+        refreshLayout();
+        if (remember) savePosition();
+    }
+
+    @JavascriptInterface
+    public void setCollapsed(final boolean collapsed) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() { applyCollapsed(collapsed, true); }
+        });
     }
 
     private GradientDrawable makeBg(String fillHex, int cornerDp, String strokeHex, int strokeDp) {
@@ -221,6 +291,8 @@ public class FloatingOverlayManager {
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
+                if (rootContainer != null) applyCollapsed(true, true);
+                else prefs().edit().putBoolean("collapsed", true).apply();
                 launchNaviIntent(naviUrl, webUrl);
             }
         });
@@ -286,6 +358,7 @@ public class FloatingOverlayManager {
     }
 
     private void triggerStartNaviFromOverlay() {
+        applyCollapsed(true, true);
         evalJs("window.onNativeOverlayStartNavi && window.onNativeOverlayStartNavi(false);");
         launchNaviIntent(currentNaviUrl, currentWebNaviUrl);
     }
@@ -298,20 +371,21 @@ public class FloatingOverlayManager {
             : WindowManager.LayoutParams.TYPE_PHONE;
 
         layoutParams = new WindowManager.LayoutParams(
-            dp(296),
+            dp(EXPANDED_W_DP),
             WindowManager.LayoutParams.WRAP_CONTENT,
             overlayType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             android.graphics.PixelFormat.TRANSLUCENT
         );
         layoutParams.gravity = Gravity.TOP | Gravity.START;
-        layoutParams.x = dp(12);
-        layoutParams.y = dp(90);
+        // 기본 위치: 오른쪽 가장자리, 화면 높이 42% 지점 (네이버 내비 상단 회전안내·하단 도착정보를 피함)
+        layoutParams.x = prefs().getInt("x", screenW() - dp(EXPANDED_W_DP) - dp(4));
+        layoutParams.y = prefs().getInt("y", (int) (screenH() * 0.42f));
 
         rootContainer = new LinearLayout(appContext);
         rootContainer.setOrientation(LinearLayout.VERTICAL);
-        rootContainer.setPadding(dp(12), dp(10), dp(12), dp(10));
-        rootContainer.setBackground(makeBg("#EB0F172A", 16, "#10B981", 2));
+        rootContainer.setPadding(dp(7), dp(5), dp(7), dp(6));
+        rootContainer.setBackground(makeBg("#E00F172A", 14, "#10B981", 2));
 
         // Header Bar (Draggable)
         LinearLayout headerBar = new LinearLayout(appContext);
@@ -321,29 +395,33 @@ public class FloatingOverlayManager {
         badgeView = new TextView(appContext);
         badgeView.setText("🧭 내비고정");
         badgeView.setTextColor(Color.WHITE);
-        badgeView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        badgeView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9);
         badgeView.setTypeface(null, Typeface.BOLD);
-        badgeView.setPadding(dp(7), dp(3), dp(7), dp(3));
+        badgeView.setSingleLine(true);
+        badgeView.setPadding(dp(4), dp(1), dp(4), dp(1));
         badgeView.setBackground(makeBg("#059669", 8, null, 0));
         headerBar.addView(badgeView);
 
         distView = new TextView(appContext);
         distView.setText("거리 계산중");
         distView.setTextColor(Color.parseColor("#38BDF8"));
-        distView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        distView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
         distView.setTypeface(null, Typeface.BOLD);
+        distView.setSingleLine(true);
+        distView.setEllipsize(android.text.TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams distLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        distLp.setMargins(dp(6), 0, dp(4), 0);
+        distLp.setMargins(dp(5), 0, dp(3), 0);
         distView.setLayoutParams(distLp);
         headerBar.addView(distView);
 
         // Quick Header Naver Navi Button (Accessible even when collapsed!)
         TextView headerNaviBtn = new TextView(appContext);
-        headerNaviBtn.setText("🟢 내비");
+        headerNaviView = headerNaviBtn;
+        headerNaviBtn.setText("내비");
         headerNaviBtn.setTextColor(Color.parseColor("#052E16"));
-        headerNaviBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        headerNaviBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
         headerNaviBtn.setTypeface(null, Typeface.BOLD);
-        headerNaviBtn.setPadding(dp(7), dp(4), dp(7), dp(4));
+        headerNaviBtn.setPadding(dp(5), dp(3), dp(5), dp(3));
         LinearLayout.LayoutParams hNaviLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         hNaviLp.setMargins(0, 0, dp(4), 0);
         headerNaviBtn.setLayoutParams(hNaviLp);
@@ -357,18 +435,16 @@ public class FloatingOverlayManager {
         headerBar.addView(headerNaviBtn);
 
         collapseBtn = new TextView(appContext);
-        collapseBtn.setText("접기 ➖");
+        collapseBtn.setText("➖");
         collapseBtn.setTextColor(Color.parseColor("#E2E8F0"));
-        collapseBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        collapseBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
         collapseBtn.setTypeface(null, Typeface.BOLD);
-        collapseBtn.setPadding(dp(7), dp(4), dp(7), dp(4));
+        collapseBtn.setPadding(dp(6), dp(3), dp(6), dp(3));
         collapseBtn.setBackground(makeBg("#334155", 8, "#475569", 1));
         collapseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                isCollapsed = !isCollapsed;
-                bodyContainer.setVisibility(isCollapsed ? View.GONE : View.VISIBLE);
-                collapseBtn.setText(isCollapsed ? "펼치기 ➕" : "접기 ➖");
+                applyCollapsed(!isCollapsed, true);
             }
         });
         headerBar.addView(collapseBtn);
@@ -376,11 +452,11 @@ public class FloatingOverlayManager {
         TextView closeBtn = new TextView(appContext);
         closeBtn.setText("✕");
         closeBtn.setTextColor(Color.parseColor("#FCA5A5"));
-        closeBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        closeBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
         closeBtn.setTypeface(null, Typeface.BOLD);
-        closeBtn.setPadding(dp(7), dp(4), dp(7), dp(4));
+        closeBtn.setPadding(dp(6), dp(3), dp(6), dp(3));
         LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        closeLp.setMargins(dp(4), 0, 0, 0);
+        closeLp.setMargins(dp(3), 0, 0, 0);
         closeBtn.setLayoutParams(closeLp);
         closeBtn.setBackground(makeBg("#450A0A", 8, "#DC2626", 1));
         closeBtn.setOnClickListener(new View.OnClickListener() {
@@ -398,9 +474,11 @@ public class FloatingOverlayManager {
         titleView = new TextView(appContext);
         titleView.setText("목적지 준비중");
         titleView.setTextColor(Color.WHITE);
-        titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         titleView.setTypeface(null, Typeface.BOLD);
-        titleView.setPadding(0, dp(6), 0, dp(2));
+        titleView.setSingleLine(true);
+        titleView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        titleView.setPadding(0, dp(3), 0, 0);
         rootContainer.addView(titleView);
 
         // Body Container (Collapsible)
@@ -410,18 +488,19 @@ public class FloatingOverlayManager {
         progressView = new TextView(appContext);
         progressView.setText("품목 터치 시 즉시 체크됩니다");
         progressView.setTextColor(Color.parseColor("#FCD34D"));
-        progressView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        progressView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
         progressView.setTypeface(null, Typeface.BOLD);
-        progressView.setPadding(0, 0, 0, dp(6));
+        progressView.setPadding(0, 0, 0, dp(4));
         bodyContainer.addView(progressView);
 
         // Scrollable Items Checklist
         ScrollView scrollView = new ScrollView(appContext);
         LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(130)
+            ViewGroup.LayoutParams.WRAP_CONTENT
         );
         scrollView.setLayoutParams(scrollLp);
+        itemsScroll = scrollView;
 
         itemsContainer = new LinearLayout(appContext);
         itemsContainer.setOrientation(LinearLayout.VERTICAL);
@@ -430,18 +509,18 @@ public class FloatingOverlayManager {
 
         // Primary Full-Width Naver Navigation Route Guidance Button
         TextView mainNaviBtn = new TextView(appContext);
-        mainNaviBtn.setText("🟢 네이버 내비 길안내 출발 (수량표시)");
+        mainNaviBtn.setText("🟢 네이버 내비 출발");
         mainNaviBtn.setTextColor(Color.parseColor("#052E16"));
-        mainNaviBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        mainNaviBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
         mainNaviBtn.setTypeface(null, Typeface.BOLD);
         mainNaviBtn.setGravity(Gravity.CENTER);
-        mainNaviBtn.setPadding(dp(10), dp(8), dp(10), dp(8));
+        mainNaviBtn.setPadding(dp(6), dp(4), dp(6), dp(4));
         mainNaviBtn.setBackground(makeBg("#03C75A", 10, "#6EE7B7", 1));
         LinearLayout.LayoutParams mainNaviLp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        mainNaviLp.setMargins(0, dp(8), 0, 0);
+        mainNaviLp.setMargins(0, dp(4), 0, 0);
         mainNaviBtn.setLayoutParams(mainNaviLp);
         mainNaviBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -458,16 +537,16 @@ public class FloatingOverlayManager {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        actionRowLp.setMargins(0, dp(6), 0, 0);
+        actionRowLp.setMargins(0, dp(4), 0, 0);
         actionRow.setLayoutParams(actionRowLp);
 
         TextView completeBtn = new TextView(appContext);
-        completeBtn.setText("✓ 완료처리");
+        completeBtn.setText("✓ 완료");
         completeBtn.setTextColor(Color.WHITE);
-        completeBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        completeBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
         completeBtn.setTypeface(null, Typeface.BOLD);
         completeBtn.setGravity(Gravity.CENTER);
-        completeBtn.setPadding(dp(8), dp(7), dp(8), dp(7));
+        completeBtn.setPadding(dp(4), dp(4), dp(4), dp(4));
         completeBtn.setBackground(makeBg("#059669", 10, "#34D399", 1));
         LinearLayout.LayoutParams btn1Lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         btn1Lp.setMargins(0, 0, dp(4), 0);
@@ -481,12 +560,12 @@ public class FloatingOverlayManager {
         actionRow.addView(completeBtn);
 
         TextView nextBtn = new TextView(appContext);
-        nextBtn.setText("다음 원 ▶");
+        nextBtn.setText("다음 ▶");
         nextBtn.setTextColor(Color.WHITE);
-        nextBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        nextBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
         nextBtn.setTypeface(null, Typeface.BOLD);
         nextBtn.setGravity(Gravity.CENTER);
-        nextBtn.setPadding(dp(8), dp(7), dp(8), dp(7));
+        nextBtn.setPadding(dp(4), dp(4), dp(4), dp(4));
         nextBtn.setBackground(makeBg("#2563EB", 10, "#60A5FA", 1));
         LinearLayout.LayoutParams btn2Lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         btn2Lp.setMargins(dp(2), 0, dp(2), 0);
@@ -500,12 +579,12 @@ public class FloatingOverlayManager {
         actionRow.addView(nextBtn);
 
         TextView openAppBtn = new TextView(appContext);
-        openAppBtn.setText("앱 열기");
+        openAppBtn.setText("앱");
         openAppBtn.setTextColor(Color.parseColor("#E2E8F0"));
-        openAppBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        openAppBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
         openAppBtn.setTypeface(null, Typeface.BOLD);
         openAppBtn.setGravity(Gravity.CENTER);
-        openAppBtn.setPadding(dp(8), dp(7), dp(8), dp(7));
+        openAppBtn.setPadding(dp(4), dp(4), dp(4), dp(4));
         openAppBtn.setBackground(makeBg("#334155", 10, "#64748B", 1));
         LinearLayout.LayoutParams btn3Lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         btn3Lp.setMargins(dp(4), 0, 0, 0);
@@ -529,6 +608,7 @@ public class FloatingOverlayManager {
             private int initialY;
             private float initialTouchX;
             private float initialTouchY;
+            private boolean moved;
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -538,12 +618,28 @@ public class FloatingOverlayManager {
                         initialY = layoutParams.y;
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
+                        moved = false;
                         return true;
                     case MotionEvent.ACTION_MOVE:
-                        layoutParams.x = initialX + (int) (event.getRawX() - initialTouchX);
-                        layoutParams.y = initialY + (int) (event.getRawY() - initialTouchY);
-                        if (isShowing && windowManager != null) {
-                            windowManager.updateViewLayout(rootContainer, layoutParams);
+                        float dx = event.getRawX() - initialTouchX;
+                        float dy = event.getRawY() - initialTouchY;
+                        if (Math.abs(dx) > dp(6) || Math.abs(dy) > dp(6)) moved = true;
+                        layoutParams.x = initialX + (int) dx;
+                        layoutParams.y = initialY + (int) dy;
+                        clampPosition();
+                        refreshLayout();
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        if (!moved) {
+                            if (isCollapsed) applyCollapsed(false, true);   // 접힌 막대를 톡 누르면 펼침
+                        } else {
+                            // 가장자리 가까이 놓으면 붙여서 지도를 덜 가리게
+                            int w = layoutParams.width;
+                            if (layoutParams.x + w / 2 > screenW() / 2) layoutParams.x = screenW() - w - dp(4);
+                            else layoutParams.x = dp(4);
+                            clampPosition();
+                            refreshLayout();
+                            savePosition();
                         }
                         return true;
                 }
@@ -552,6 +648,9 @@ public class FloatingOverlayManager {
         };
         headerBar.setOnTouchListener(dragListener);
         titleView.setOnTouchListener(dragListener);
+        distView.setOnTouchListener(dragListener);
+
+        applyCollapsed(prefs().getBoolean("collapsed", false), false);
     }
 
     private void renderPayload(String jsonStr) {
@@ -565,14 +664,29 @@ public class FloatingOverlayManager {
             currentNaviUrl = obj.optString("naviUrl", "");
             currentWebNaviUrl = obj.optString("webNaviUrl", "");
 
+            boolean nearby = obj.optBoolean("nearby", false);
+            lastName = name;
+            lastDist = distText;
             badgeView.setText(modeBadge);
             badgeView.setBackground(makeBg(modeColor, 8, null, 0));
-            distView.setText(distText);
             titleView.setText(name);
             progressView.setText(progressText);
+            if (nearby && !lastNearby && isCollapsed) {
+                applyCollapsed(false, false);   // 도착 근처면 품목 체크를 위해 자동으로 펼침
+            } else {
+                distView.setText(isCollapsed ? (name.length() > 0 ? name + " · " + distText : distText) : distText);
+            }
+            lastNearby = nearby;
 
             itemsContainer.removeAllViews();
             JSONArray items = obj.optJSONArray("items");
+            if (itemsScroll != null) {
+                // 품목이 많아도 3줄 높이까지만 차지하고 나머지는 스크롤
+                int n = items != null ? items.length() : 1;
+                ViewGroup.LayoutParams lp = itemsScroll.getLayoutParams();
+                lp.height = n > 3 ? dp(84) : ViewGroup.LayoutParams.WRAP_CONTENT;
+                itemsScroll.setLayoutParams(lp);
+            }
             if (items != null && items.length() > 0) {
                 for (int i = 0; i < items.length(); i++) {
                     JSONObject item = items.getJSONObject(i);
@@ -583,9 +697,9 @@ public class FloatingOverlayManager {
                     TextView row = new TextView(appContext);
                     row.setText((checked ? "☑ " : "☐ ") + label);
                     row.setTextColor(Color.parseColor(checked ? "#6EE7B7" : "#F8FAFC"));
-                    row.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+                    row.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
                     row.setTypeface(null, Typeface.BOLD);
-                    row.setPadding(dp(10), dp(7), dp(10), dp(7));
+                    row.setPadding(dp(6), dp(4), dp(6), dp(4));
                     row.setBackground(makeBg(
                         checked ? "#064E3B" : "#1E293B",
                         8,
@@ -597,7 +711,7 @@ public class FloatingOverlayManager {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                     );
-                    rowLp.setMargins(0, 0, 0, dp(5));
+                    rowLp.setMargins(0, 0, 0, dp(3));
                     row.setLayoutParams(rowLp);
 
                     row.setOnClickListener(new View.OnClickListener() {
