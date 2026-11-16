@@ -729,7 +729,8 @@ public class FloatingOverlayManager {
     // 배지가 길면 거리 표시가 밀려나므로 짧게 줄이고, 누를 수 있다는 ▾ 표시를 붙임
     private String compactBadge(String raw) {
         String t = raw == null ? "" : raw.replace("▾", "").trim();
-        t = t.replaceAll("\\s*\\([^)]*\\)", "");
+        int paren = t.indexOf("(");
+        if (paren > 0) t = t.substring(0, paren).trim();
         t = t.replace("최단거리 자동", "자동").replace("회수·내비고정", "회수·고정").replace("추가납품·고정", "추가·고정");
         return t + " ▾";
     }
