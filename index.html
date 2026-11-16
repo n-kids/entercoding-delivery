@@ -6963,13 +6963,76 @@ ${school.address || ''}`;
       return !!(pipActive || domOverlayActive || nativeShowing);
     }
 
+
+    // OVERLAY_KIND_SWITCH_V1
+    let overlayKindChoice = 'auto';
+    let overlayChoiceId = null;
+    function overlayKindPool(mode) {
+      if (mode === 'delivery') {
+        return SCHOOLS.filter(s => !completedMap[s.id]).map(s => ({
+          kind:'delivery', school:s, dist:distanceToSchool(s), pickups:[], isNaviLocked:false
+        })).sort((a,b)=>(a.dist ?? Infinity)-(b.dist ?? Infinity));
+      }
+      return getPendingPickupGroupsWithDist(mode).map(g => ({
+        kind:'pickup', pickupGroup:g, dist:g.dist, isNaviLocked:false
+      }));
+    }
+    function overlayTargetKey(t) {
+      return t.kind === 'delivery' ? String(t.school.id) : String(t.pickupGroup.key);
+    }
+    function getOverlayDisplayTarget() {
+      if (overlayKindChoice === 'auto') return getBestPipTarget();
+      const pool = overlayKindPool(overlayKindChoice);
+      return pool.find(t => overlayTargetKey(t) === overlayChoiceId) || pool[0] || null;
+    }
+    window.onNativeOverlaySelectKind = function(mode) {
+      if (!['auto','delivery','return','extra'].includes(mode)) return;
+      const current = getOverlayDisplayTarget();
+      const name = current?.school?.name || current?.pickupGroup?.name;
+      overlayKindChoice = mode;
+      const pool = mode === 'auto' ? [] : overlayKindPool(mode);
+      const target = pool.find(t => (t.school?.name || t.pickupGroup?.name) === name) || pool[0];
+      overlayChoiceId = target ? overlayTargetKey(target) : null;
+      syncNativeAndDomOverlays();
+      if (mode !== 'auto' && !target) showToast('선택한 종류의 미완료 업무가 없습니다.');
+    };
+    function nextOverlayDisplayTarget() {
+      const pool = overlayKindPool(overlayKindChoice);
+      if (!pool.length) { showToast('선택한 종류의 미완료 업무가 없습니다.'); return; }
+      const current = getOverlayDisplayTarget();
+      const i = current ? pool.findIndex(t => overlayTargetKey(t) === overlayTargetKey(current)) : -1;
+      overlayChoiceId = overlayTargetKey(pool[(i+1)%pool.length]);
+      syncNativeAndDomOverlays();
+    }
+    (function bindOverlayKindMenu() {
+      const badge = document.getElementById('domOverlayBadge');
+      if (!badge) return;
+      badge.setAttribute('role','button'); badge.tabIndex=0;
+      badge.setAttribute('aria-label','표시할 업무 종류 선택');
+      badge.setAttribute('aria-expanded','false');
+      const menu=document.createElement('div');menu.hidden=true;
+      menu.setAttribute('role','group');menu.setAttribute('aria-label','표시할 업무 종류');
+      menu.style.cssText='padding:8px;gap:6px;flex-wrap:wrap;background:#152238;border-radius:10px';
+      for (const [mode,label] of [['delivery','납품'],['return','반품·회수'],['extra','추가 납품'],['auto','자동 표시']]) {
+        const b=document.createElement('button');b.type='button';b.textContent=label;
+        b.style.cssText='padding:10px;color:white;background:#334155;border-radius:8px;min-height:44px';
+        b.onclick=()=>{window.onNativeOverlaySelectKind(mode);menu.hidden=true;menu.style.display='none';badge.setAttribute('aria-expanded','false');};
+        menu.append(b);
+      }
+      document.getElementById('domOverlayDragHeader').after(menu);
+      const toggle=()=>{menu.hidden=!menu.hidden;menu.style.display=menu.hidden?'none':'flex';badge.setAttribute('aria-expanded',String(!menu.hidden));};
+      badge.addEventListener('click',toggle);
+      badge.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+      for(const event of ['mousedown','touchstart'])badge.addEventListener(event,e=>e.stopPropagation());
+    })();
+
     function buildOverlayPayload() {
-      const best = getBestPipTarget();
+      const best = getOverlayDisplayTarget();
       if (!best) {
         return {
-          modeBadge: '✅ 완료',
+          modeBadge: overlayKindChoice === 'auto' ? '✅ 완료' : ({delivery:'납품',return:'반품·회수',extra:'추가 납품'}[overlayKindChoice] + ' ▾'),
           modeColor: '#059669',
-          name: '모든 납품·회수 완료!',
+          name: overlayKindChoice === 'auto' ? '모든 납품·회수 완료!' : '선택한 종류의 미완료 업무 없음',
           distText: '완료',
           progressText: '남은 목적지가 없습니다',
           naviUrl: '',
@@ -7032,7 +7095,7 @@ ${school.address || ''}`;
         });
       });
       return {
-        modeBadge: best.isNaviLocked ? '🧭 내비고정(거리무관)' : '🏫 최단거리 자동',
+        modeBadge: overlayKindChoice === 'delivery' ? '납품 ▾' : (best.isNaviLocked ? '🧭 내비고정(거리무관)' : '🏫 최단거리 자동'),
         modeColor: best.isNaviLocked ? '#059669' : '#2563EB',
         name: `${s.order}. ${s.name}`,
         distText: distLabel,
@@ -7101,7 +7164,7 @@ ${school.address || ''}`;
 
     // Callbacks invoked by Android Native Overlay (FloatingOverlayManager.java) or DOM Overlay
     window.onNativeOverlayToggleItem = function(idx) {
-      const best = getBestPipTarget();
+      const best = getOverlayDisplayTarget();
       if (!best) return;
       if (best.kind === 'pickup' && best.pickupGroup) {
         const grp = best.pickupGroup;
@@ -7147,7 +7210,7 @@ ${school.address || ''}`;
     };
 
     window.onNativeOverlayCompleteTarget = function() {
-      const best = getBestPipTarget();
+      const best = getOverlayDisplayTarget();
       if (!best) return;
       if (best.kind === 'pickup' && best.pickupGroup) {
         best.pickupGroup.items.forEach(p => { p.done = true; });
@@ -7179,7 +7242,8 @@ ${school.address || ''}`;
     };
 
     window.onNativeOverlayNextTarget = function() {
-      const best = getBestPipTarget();
+      if (overlayKindChoice !== 'auto') { nextOverlayDisplayTarget(); return; }
+      const best = getOverlayDisplayTarget();
       if (best && best.kind === 'pickup' && typeof PICKUPS !== 'undefined') {
         const curFirst = best.pickupGroup && best.pickupGroup.items && best.pickupGroup.items[0];
         const gMode = (best.pickupGroup && best.pickupGroup.groupMode) || (curFirst && typeof pkGroupOf === 'function' ? pkGroupOf(curFirst) : null);
@@ -7206,7 +7270,7 @@ ${school.address || ''}`;
     };
 
     window.onNativeOverlayStartNavi = function(shouldLaunchFromJs = true) {
-      const best = getBestPipTarget();
+      const best = getOverlayDisplayTarget();
       if (!best) {
         showToast('현재 안내할 미완료 목적지가 없습니다.');
         return;
