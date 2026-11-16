@@ -6954,6 +6954,19 @@ ${school.address || ''}`;
       }
     }
 
+    // WEB_OVERLAY_SHELL_V1: 미니창 자동 업데이트를 지원하지 않는 옛 APK면 새 APK 설치를 한 번 안내
+    window.addEventListener('load', () => {
+      try {
+        if (!hasAndroidNativeOverlay()) return;
+        if (typeof window.AndroidOverlay.getShellVersion === 'function') return;
+        const key = 'nk_shell_update_notice';
+        const today = new Date().toISOString().slice(0, 10);
+        if (localStorage.getItem(key) === today) return;
+        localStorage.setItem(key, today);
+        setTimeout(() => showToast('미니창 자동 업데이트를 쓰려면 새 APK를 한 번 설치해 주세요. 이후에는 재설치가 필요 없습니다.'), 2500);
+      } catch (e) {}
+    });
+
     function hasAndroidNativeOverlay() {
       return typeof window.AndroidOverlay !== 'undefined' && typeof window.AndroidOverlay.isSupported === 'function' && window.AndroidOverlay.isSupported();
     }
@@ -7030,7 +7043,8 @@ ${school.address || ''}`;
       const best = getOverlayDisplayTarget();
       if (!best) {
         return {
-          modeBadge: overlayKindChoice === 'auto' ? '✅ 완료' : ({delivery:'납품',return:'반품·회수',extra:'추가 납품'}[overlayKindChoice] + ' ▾'),
+          kindChoice: overlayKindChoice,
+        modeBadge: overlayKindChoice === 'auto' ? '✅ 완료' : ({delivery:'납품',return:'반품·회수',extra:'추가 납품'}[overlayKindChoice] + ' ▾'),
           modeColor: '#059669',
           name: overlayKindChoice === 'auto' ? '모든 납품·회수 완료!' : '선택한 종류의 미완료 업무 없음',
           distText: '완료',
@@ -7062,7 +7076,8 @@ ${school.address || ''}`;
             }));
         const doneCnt = overlayItems.filter(it => it.checked).length;
         return {
-          modeBadge: isExtra ? (best.isNaviLocked ? '🧭 추가납품·고정' : '➕ 추가 납품') : (best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품'),
+          kindChoice: overlayKindChoice,
+        modeBadge: isExtra ? (best.isNaviLocked ? '🧭 추가납품·고정' : '➕ 추가 납품') : (best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품'),
           modeColor: isExtra ? '#7C3AED' : (best.isNaviLocked ? '#059669' : '#E11D48'),
           name: `${isExtra ? '➕' : '↩️'} ${grp.name}`,
           distText: distLabel,
@@ -7095,6 +7110,7 @@ ${school.address || ''}`;
         });
       });
       return {
+        kindChoice: overlayKindChoice,
         modeBadge: overlayKindChoice === 'delivery' ? '납품 ▾' : (best.isNaviLocked ? '🧭 내비고정(거리무관)' : '🏫 최단거리 자동'),
         modeColor: best.isNaviLocked ? '#059669' : '#2563EB',
         name: `${s.order}. ${s.name}`,

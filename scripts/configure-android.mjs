@@ -124,6 +124,8 @@ public class FloatingOverlayManager {
     private static final int EXPANDED_W_DP = 208;
     private static final int COLLAPSED_W_DP = 158;
     private String lastPayloadJson = "{}";
+    // WEB_OVERLAY_SHELL_V1: 미니창 화면은 overlay.html(웹)이 그리고, 실패 시 아래 네이티브 미니창 사용
+    private WebOverlayController webOverlay;
     private String currentNaviUrl = "";
     private String currentWebNaviUrl = "";
 
@@ -132,6 +134,20 @@ public class FloatingOverlayManager {
         this.appContext = activity.getApplicationContext();
         this.webView = webView;
         this.windowManager = (WindowManager) this.appContext.getSystemService(Context.WINDOW_SERVICE);
+        this.webOverlay = new WebOverlayController(activity, webView, () -> {
+            // 웹 미니창을 불러오지 못하면 기존 네이티브 미니창으로 다시 표시
+            showOverlay(lastPayloadJson);
+        });
+    }
+
+    @JavascriptInterface
+    public int getShellVersion() {
+        return WebOverlayController.SHELL_VERSION;
+    }
+
+    @JavascriptInterface
+    public String getOverlayEngine() {
+        return webOverlay != null && webOverlay.isUsable() ? "web" : "native";
     }
 
     private int dp(int v) {
@@ -201,7 +217,10 @@ public class FloatingOverlayManager {
     public void setCollapsed(final boolean collapsed) {
         mainHandler.post(new Runnable() {
             @Override
-            public void run() { applyCollapsed(collapsed, true); }
+            public void run() {
+                if (webOverlay != null && webOverlay.isShowing()) webOverlay.setCollapsed(collapsed);
+                applyCollapsed(collapsed, true);
+            }
         });
     }
 
@@ -296,6 +315,7 @@ public class FloatingOverlayManager {
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
+                if (webOverlay != null && webOverlay.isShowing()) webOverlay.setCollapsed(true);
                 if (rootContainer != null) applyCollapsed(true, true);
                 else prefs().edit().putBoolean("collapsed", true).apply();
                 launchNaviIntent(naviUrl, webUrl);
@@ -305,12 +325,20 @@ public class FloatingOverlayManager {
 
     @JavascriptInterface
     public boolean isOverlayShowing() {
-        return isShowing;
+        return isShowing || (webOverlay != null && webOverlay.isShowing());
     }
 
     @JavascriptInterface
     public void showOverlay(final String jsonPayload) {
         lastPayloadJson = jsonPayload != null ? jsonPayload : "{}";
+        if (webOverlay != null && webOverlay.isUsable()) {
+            final String webPayload = lastPayloadJson;
+            mainHandler.post(() -> {
+                if (!canDrawOverlays()) { requestOverlayPermission(); return; }
+                webOverlay.show(webPayload);
+            });
+            return;
+        }
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -335,6 +363,11 @@ public class FloatingOverlayManager {
     @JavascriptInterface
     public void updateOverlay(final String jsonPayload) {
         lastPayloadJson = jsonPayload != null ? jsonPayload : "{}";
+        if (webOverlay != null && webOverlay.isShowing()) {
+            final String webPayload = lastPayloadJson;
+            mainHandler.post(() -> webOverlay.update(webPayload));
+            return;
+        }
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -347,6 +380,7 @@ public class FloatingOverlayManager {
 
     @JavascriptInterface
     public void hideOverlay() {
+        if (webOverlay != null) mainHandler.post(() -> webOverlay.hide());
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -731,7 +765,8 @@ public class FloatingOverlayManager {
         String t = raw == null ? "" : raw.replace("▾", "").trim();
         int paren = t.indexOf("(");
         if (paren > 0) t = t.substring(0, paren).trim();
-        t = t.replace("최단거리 자동", "자동").replace("회수·내비고정", "회수·고정").replace("추가납품·고정", "추가·고정");
+        t = t.replace("최단거리 자동", "자동").replace("회수·내비고정", "회수·고정").replace("추가납품·고정", "추가·고정")
+            .replace("회수·반품", "회수").replace("추가 납품", "추가");
         return t + " ▾";
     }
 
@@ -1208,4 +1243,21 @@ public class DeliveryAppBridge {
   console.log(
     'DeliveryAppBridge: 외부 지도 열기 및 한국어 TTS 연결 완료'
   );
+}
+
+// === 웹 미니창 창틀 복사 (WEB_OVERLAY_SHELL_V1) ===
+// android-overlay/WebOverlayController.java 를 MainActivity 패키지로 복사합니다.
+{
+  const shellMain = findMainActivity(javaRoot);
+  if (shellMain) {
+    const shellSrcPath = 'android-overlay/WebOverlayController.java';
+    if (!fs.existsSync(shellSrcPath)) {
+      throw new Error(`[WebOverlay] ${shellSrcPath} 파일이 없습니다.`);
+    }
+    const shellPkg = (fs.readFileSync(shellMain, 'utf8').match(/package\s+([a-zA-Z0-9_.]+)\s*;/) || [])[1];
+    if (!shellPkg) throw new Error('[WebOverlay] MainActivity package를 찾지 못했습니다.');
+    const shellSrc = fs.readFileSync(shellSrcPath, 'utf8').replace('package __PACKAGE__;', `package ${shellPkg};`);
+    fs.writeFileSync(path.join(path.dirname(shellMain), 'WebOverlayController.java'), shellSrc, 'utf8');
+    console.log('WebOverlayController: 미니창 화면을 overlay.html(웹)에서 불러오도록 연결 완료');
+  }
 }

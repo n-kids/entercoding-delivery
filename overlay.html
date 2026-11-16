@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>납품알리미 미니창</title>
+<!--
+  WEB_OVERLAY_SHELL_V1
+  Android 미니창(네이버 내비 위에 뜨는 창)의 화면입니다.
+  APK 의 WebOverlayController 가 이 페이지를 불러와 창 안에 표시합니다.
+  이 파일을 GitHub 에 올리면 APK 재설치 없이 다음 미니창부터 바로 반영됩니다.
+
+  네이티브 → 페이지 : window.nkRender(payload), window.nkSetCollapsed(bool)
+  페이지 → 네이티브 : OverlayHost.ready / setSize / beginDrag / callMain / startNavi / openApp / close / log
+  ?demo=1 을 붙이면 브라우저에서 미리보기할 수 있습니다.
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden;
+    font-family: system-ui, -apple-system, "Noto Sans KR", sans-serif; user-select: none; -webkit-user-select: none; }
+  #w { width: 208px; padding: 5px 7px 6px; border-radius: 14px; border: 2px solid #10B981;
+    background: rgba(15, 23, 42, 0.88); color: #F8FAFC; }
+  #w.collapsed { width: 158px; padding: 3px 4px 3px 6px; border-width: 1px; background: rgba(15, 23, 42, 0.70); }
+  .row { display: flex; align-items: center; gap: 4px; }
+  button { font: inherit; font-weight: 700; color: inherit; border: 0; border-radius: 8px; cursor: pointer; padding: 0; }
+  button:active { filter: brightness(1.25); }
+  #badge { flex: none; max-width: 84px; min-height: 26px; padding: 3px 5px; font-size: 9px; color: #fff;
+    background: #059669; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #dist { flex: 1; min-width: 0; font-size: 11px; font-weight: 700; color: #38BDF8;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 6px 2px; touch-action: none; }
+  #w.collapsed #dist { color: #F8FAFC; }
+  #hNavi { flex: none; font-size: 10px; padding: 5px 6px; color: #052E16; background: #03C75A; border: 1px solid #34D399; }
+  #collapse { flex: none; font-size: 10px; padding: 5px 7px; color: #E2E8F0; background: #334155; border: 1px solid #475569; }
+  #close { flex: none; font-size: 10px; padding: 5px 7px; color: #FCA5A5; background: #450A0A; border: 1px solid #DC2626; }
+  #w.collapsed #badge, #w.collapsed #hNavi, #w.collapsed #title, #w.collapsed #body, #w.collapsed #menu { display: none !important; }
+
+  #menu { display: none; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 2px; padding: 4px;
+    background: #152238; border: 1px solid #334155; border-radius: 10px; }
+  #menu.open { display: grid; }
+  #menu button { min-height: 36px; font-size: 11px; color: #fff; background: #334155; }
+  #menu button.on { background: #2563EB; border: 1px solid #93C5FD; }
+
+  #title { font-size: 13px; font-weight: 800; padding-top: 4px; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; touch-action: none; }
+  #progress { font-size: 10px; font-weight: 700; color: #FCD34D; padding: 2px 0 3px; }
+  #items { max-height: 84px; overflow-y: auto; overscroll-behavior: contain; }
+  .item { display: block; width: 100%; text-align: left; font-size: 11px; padding: 4px 6px; margin: 0 0 3px;
+    background: #1E293B; border: 1px solid #475569; color: #F8FAFC; }
+  .item.on { background: #064E3B; border-color: #10B981; color: #6EE7B7; }
+  .empty { font-size: 12px; color: #94A3B8; padding: 4px 2px; }
+  #mainNavi { width: 100%; margin-top: 4px; min-height: 30px; font-size: 11px; color: #052E16;
+    background: #03C75A; border: 1px solid #6EE7B7; border-radius: 10px; }
+  #actions { margin-top: 4px; }
+  #actions button { min-height: 30px; font-size: 11px; border-radius: 10px; }
+  #done { flex: 1; color: #fff; background: #059669; border: 1px solid #34D399; }
+  #next { flex: 1; color: #fff; background: #2563EB; border: 1px solid #60A5FA; }
+  #app { flex: none; padding: 0 9px; font-size: 10px !important; color: #E2E8F0; background: #334155; border: 1px solid #64748B; }
+</style>
+</head>
+<body>
+<div id="w">
+  <div class="row" id="header">
+    <button id="badge" type="button" aria-haspopup="true" aria-expanded="false" aria-label="표시할 업무 종류 선택">🧭 내비고정 ▾</button>
+    <div id="dist">거리 계산중</div>
+    <button id="hNavi" type="button">내비</button>
+    <button id="collapse" type="button" aria-label="접기">➖</button>
+    <button id="close" type="button" aria-label="닫기">✕</button>
+  </div>
+  <div id="menu" role="group" aria-label="표시할 업무 종류">
+    <button type="button" data-kind="delivery">납품</button>
+    <button type="button" data-kind="return">반품·회수</button>
+    <button type="button" data-kind="extra">추가 납품</button>
+    <button type="button" data-kind="auto">자동 표시</button>
+  </div>
+  <div id="title">목적지 준비중</div>
+  <div id="body">
+    <div id="progress">품목 터치 시 즉시 체크</div>
+    <div id="items"></div>
+    <button id="mainNavi" type="button">🟢 네이버 내비 출발</button>
+    <div class="row" id="actions">
+      <button id="done" type="button">✓ 완료</button>
+      <button id="next" type="button">다음 ▶</button>
+      <button id="app" type="button">앱</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var VERSION = '2026-11-16.1';
+  var H = window.OverlayHost || null;
+  var $ = function (id) { return document.getElementById(id); };
+  var w = $('w');
+  var state = {
+    p: {},
+    kind: 'auto',
+    collapsed: false,
+    menuOpen: false,
+    lastNearby: false
+  };
+  try { state.collapsed = localStorage.getItem('nk_overlay_collapsed') === '1'; } catch (e) {}
+
+  function log(m) { try { if (H && H.log) H.log(String(m)); else console.log('[overlay]', m); } catch (e) {} }
+  function callMain(fn, arg) {
+    if (H && H.callMain) H.callMain(fn, arg === undefined ? '' : JSON.stringify(arg));
+    else log('callMain ' + fn + ' ' + JSON.stringify(arg));
+  }
+
+  // 배지가 길면 거리 표시가 밀려나므로 짧게 줄이고 ▾ 를 붙임
+  function compactBadge(raw) {
+    var t = String(raw || '').replace('▾', '').trim();
+    var paren = t.indexOf('(');
+    if (paren > 0) t = t.slice(0, paren).trim();
+    t = t.replace('최단거리 자동', '자동').replace('회수·내비고정', '회수·고정').replace('추가납품·고정', '추가·고정')
+      .replace('회수·반품', '회수').replace('추가 납품', '추가');
+    return t + ' ▾';
+  }
+
+  function setCollapsed(c) {
+    state.collapsed = !!c;
+    if (state.collapsed) state.menuOpen = false;
+    try { localStorage.setItem('nk_overlay_collapsed', state.collapsed ? '1' : '0'); } catch (e) {}
+    draw();
+  }
+
+  function draw() {
+    var p = state.p || {};
+    var name = p.name || '목적지 없음';
+    var distText = p.distText || '거리 대기';
+    w.classList.toggle('collapsed', state.collapsed);
+    $('collapse').textContent = state.collapsed ? '➕' : '➖';
+    $('collapse').setAttribute('aria-label', state.collapsed ? '펼치기' : '접기');
+    $('badge').textContent = compactBadge(p.modeBadge || '🧭 내비고정');
+    $('badge').style.background = p.modeColor || '#059669';
+    $('badge').setAttribute('aria-expanded', String(state.menuOpen));
+    $('menu').classList.toggle('open', state.menuOpen && !state.collapsed);
+    var kindButtons = $('menu').querySelectorAll('button');
+    for (var k = 0; k < kindButtons.length; k++) {
+      kindButtons[k].classList.toggle('on', kindButtons[k].getAttribute('data-kind') === state.kind);
+    }
+    $('dist').textContent = state.collapsed ? (name ? name + ' · ' + distText : distText) : distText;
+    $('title').textContent = name;
+    $('progress').textContent = p.progressText || '품목 터치 시 즉시 체크';
+
+    var box = $('items');
+    box.textContent = '';
+    var items = Array.isArray(p.items) ? p.items : [];
+    if (!items.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = '표시할 품목이 없습니다.';
+      box.appendChild(empty);
+    }
+    items.forEach(function (it, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'item' + (it.checked ? ' on' : '');
+      b.textContent = (it.checked ? '☑ ' : '☐ ') + (it.label || '');
+      var idx = typeof it.index === 'number' ? it.index : i;
+      b.addEventListener('click', function () { callMain('onNativeOverlayToggleItem', idx); });
+      box.appendChild(b);
+    });
+    reportSize();
+  }
+
+  var lastW = 0, lastH = 0;
+  function reportSize() {
+    requestAnimationFrame(function () {
+      var r = w.getBoundingClientRect();
+      var cw = Math.ceil(r.width), ch = Math.ceil(r.height);
+      if (cw === lastW && ch === lastH) return;
+      lastW = cw; lastH = ch;
+      if (H && H.setSize) H.setSize(cw, ch);
+    });
+  }
+  if (window.ResizeObserver) new ResizeObserver(reportSize).observe(w);
+
+  // ---- 네이티브에서 호출 ----
+  window.nkRender = function (payload) {
+    try {
+      var p = payload || {};
+      state.p = p;
+      if (typeof p.kindChoice === 'string') state.kind = p.kindChoice;
+      // 도착 근처면 품목 체크를 위해 자동으로 펼침
+      if (p.nearby && !state.lastNearby && state.collapsed) state.collapsed = false;
+      state.lastNearby = !!p.nearby;
+      draw();
+    } catch (e) { log('render error ' + e); }
+  };
+  window.nkSetCollapsed = function (c) { setCollapsed(c); };
+
+  // ---- 버튼 ----
+  $('badge').addEventListener('click', function () { state.menuOpen = !state.menuOpen; draw(); });
+  $('menu').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-kind]');
+    if (!b) return;
+    state.kind = b.getAttribute('data-kind');
+    state.menuOpen = false;
+    draw();
+    // 표시 정보만 바뀜. 실제 주문 종류·완료 기록은 바뀌지 않음
+    callMain('onNativeOverlaySelectKind', state.kind);
+  });
+  function startNavi() {
+    setCollapsed(true);
+    if (H && H.startNavi) H.startNavi(); else log('startNavi');
+  }
+  $('hNavi').addEventListener('click', startNavi);
+  $('mainNavi').addEventListener('click', startNavi);
+  $('collapse').addEventListener('click', function () { setCollapsed(!state.collapsed); });
+  $('close').addEventListener('click', function () { if (H && H.close) H.close(); else log('close'); });
+  $('done').addEventListener('click', function () { callMain('onNativeOverlayCompleteTarget'); });
+  $('next').addEventListener('click', function () { callMain('onNativeOverlayNextTarget'); });
+  $('app').addEventListener('click', function () { if (H && H.openApp) H.openApp(); else log('openApp'); });
+
+  // 접힌 막대를 톡 누르면 펼침 (드래그한 경우에는 네이티브가 탭을 취소함)
+  $('dist').addEventListener('click', function () { if (state.collapsed) setCollapsed(false); });
+
+  // ---- 드래그 손잡이: 빈 머리줄·거리·원 이름 ----
+  function armDrag(e) {
+    if (e.target.closest('button')) return;
+    if (H && H.beginDrag) H.beginDrag();
+  }
+  $('header').addEventListener('pointerdown', armDrag);
+  $('title').addEventListener('pointerdown', armDrag);
+
+  draw();
+  if (H && H.ready) {
+    H.ready(VERSION);
+  } else if (/[?&]demo=1/.test(location.search)) {
+    document.body.style.background = '#475569';
+    document.body.style.padding = '12px';
+    window.nkRender({
+      modeBadge: '🧭 회수·내비고정', modeColor: '#059669', name: '1. 달빛유치원', distText: '거리 1.2km',
+      progressText: '품목체크 1/3 · 총 12개', kindChoice: 'auto', nearby: false,
+      items: [
+        { index: 0, checked: true, label: '교재 3단계 (학생용) : 8개' },
+        { index: 1, checked: false, label: '교재 3단계 (교사용) : 2개' },
+        { index: 2, checked: false, label: '교구 세트 : 2개' }
+      ]
+    });
+  }
+})();
+</script>
+</body>
+</html>

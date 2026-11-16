@@ -2,7 +2,7 @@
 // 앱 파일 캐시와 시스템 알림을 담당합니다.
 // 원 정보·수량을 Service Worker가 직접 저장했다고 간주하지 않습니다.
 
-const BUILD = 'integrated-20261110-r2';
+const BUILD = 'integrated-20261116-overlay1';
 
 const SCOPE = new URL(self.registration.scope);
 
@@ -19,6 +19,7 @@ const REQUIRED_FILES = [
 ];
 
 const OPTIONAL_FILES = [
+  'overlay.html',
   'icon.svg',
   'icon-192.png',
   'icon-512.png'
@@ -95,6 +96,8 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.endsWith('/sw.js')) return;
 
   const navigation = request.mode === 'navigate';
+  // 미니창(overlay.html)은 오프라인일 때 앱 본 화면(index.html)으로 대체하지 않음
+  const overlayPage = url.pathname.endsWith('/overlay.html');
 
   const staticAsset =
     /\.(?:html|js|mjs|css|webmanifest|svg|png|jpg|jpeg|webp|ico|woff2?)$/i
@@ -106,11 +109,11 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(CACHE_NAME);
 
     async function fallback() {
-      const exact = await cache.match(request);
+      const exact = await cache.match(request, { ignoreSearch: overlayPage });
 
       if (exact) return exact;
 
-      if (navigation) {
+      if (navigation && !overlayPage) {
         return cache.match(appUrl('index.html'));
       }
 
