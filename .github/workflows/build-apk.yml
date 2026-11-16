@@ -39,6 +39,7 @@ jobs:
           fi
 
           node scripts/configure-android.mjs
+          node scripts/patch-overlay-native.mjs --no-backup
           npx cap sync android
 
       - name: Set increasing Android version code
