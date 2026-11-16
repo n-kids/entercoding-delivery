@@ -403,8 +403,10 @@ public class FloatingOverlayManager {
         badgeView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9);
         badgeView.setTypeface(null, Typeface.BOLD);
         badgeView.setSingleLine(true);
-        badgeView.setPadding(dp(6), dp(4), dp(6), dp(4));
+        badgeView.setPadding(dp(5), dp(4), dp(5), dp(4));
         badgeView.setMinHeight(dp(26));
+        badgeView.setMaxWidth(dp(84));
+        badgeView.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
         badgeView.setGravity(Gravity.CENTER_VERTICAL);
         badgeView.setBackground(makeBg("#059669", 8, null, 0));
         badgeView.setClickable(true);
@@ -724,6 +726,14 @@ public class FloatingOverlayManager {
         }
     }
 
+    // 배지가 길면 거리 표시가 밀려나므로 짧게 줄이고, 누를 수 있다는 ▾ 표시를 붙임
+    private String compactBadge(String raw) {
+        String t = raw == null ? "" : raw.replace("▾", "").trim();
+        t = t.replaceAll("\\s*\\([^)]*\\)", "");
+        t = t.replace("최단거리 자동", "자동").replace("회수·내비고정", "회수·고정").replace("추가납품·고정", "추가·고정");
+        return t + " ▾";
+    }
+
     private void toggleKindMenu() {
         if (kindMenu == null) return;
         boolean open = kindMenu.getVisibility() != View.VISIBLE;
@@ -754,7 +764,7 @@ public class FloatingOverlayManager {
             boolean nearby = obj.optBoolean("nearby", false);
             lastName = name;
             lastDist = distText;
-            badgeView.setText(modeBadge.endsWith("▾") ? modeBadge : modeBadge + " ▾");
+            badgeView.setText(compactBadge(modeBadge));
             badgeView.setBackground(makeBg(modeColor, 8, null, 0));
             titleView.setText(name);
             progressView.setText(progressText);
