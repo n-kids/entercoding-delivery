@@ -105,6 +105,10 @@ public class FloatingOverlayManager {
     private LinearLayout bodyContainer;
     private LinearLayout itemsContainer;
     private TextView badgeView;
+    // OVERLAY_KIND_SWITCH_NATIVE_V1: 좌측 상단 배지를 누르면 열리는 표시 종류 선택 메뉴
+    private LinearLayout kindMenu;
+    private String kindChoice = "auto";
+    private final java.util.List<TextView> kindButtons = new java.util.ArrayList<>();
     private TextView distView;
     private TextView collapseBtn;
     private TextView titleView;
@@ -178,6 +182,7 @@ public class FloatingOverlayManager {
         bodyContainer.setVisibility(collapsed ? View.GONE : View.VISIBLE);
         titleView.setVisibility(collapsed ? View.GONE : View.VISIBLE);
         badgeView.setVisibility(collapsed ? View.GONE : View.VISIBLE);
+        if (collapsed && kindMenu != null) kindMenu.setVisibility(View.GONE);
         if (headerNaviView != null) headerNaviView.setVisibility(collapsed ? View.GONE : View.VISIBLE);
         collapseBtn.setText(collapsed ? "➕" : "➖");
         distView.setText(collapsed ? (lastName.length() > 0 ? lastName + " · " + lastDist : lastDist) : lastDist);
@@ -398,8 +403,18 @@ public class FloatingOverlayManager {
         badgeView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9);
         badgeView.setTypeface(null, Typeface.BOLD);
         badgeView.setSingleLine(true);
-        badgeView.setPadding(dp(4), dp(1), dp(4), dp(1));
+        badgeView.setPadding(dp(6), dp(4), dp(6), dp(4));
+        badgeView.setMinHeight(dp(26));
+        badgeView.setGravity(Gravity.CENTER_VERTICAL);
         badgeView.setBackground(makeBg("#059669", 8, null, 0));
+        badgeView.setClickable(true);
+        badgeView.setContentDescription("표시할 업무 종류 선택");
+        badgeView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleKindMenu();
+            }
+        });
         headerBar.addView(badgeView);
 
         distView = new TextView(appContext);
@@ -469,6 +484,8 @@ public class FloatingOverlayManager {
         headerBar.addView(closeBtn);
 
         rootContainer.addView(headerBar);
+        buildKindMenu();
+        rootContainer.addView(kindMenu);
 
         // Title View (Always visible even when collapsed so user sees school name)
         titleView = new TextView(appContext);
@@ -653,6 +670,76 @@ public class FloatingOverlayManager {
         applyCollapsed(prefs().getBoolean("collapsed", false), false);
     }
 
+    private void buildKindMenu() {
+        kindMenu = new LinearLayout(appContext);
+        kindMenu.setOrientation(LinearLayout.VERTICAL);
+        kindMenu.setPadding(dp(4), dp(4), dp(4), dp(4));
+        kindMenu.setBackground(makeBg("#152238", 10, "#334155", 1));
+        LinearLayout.LayoutParams menuLp = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        menuLp.setMargins(0, dp(4), 0, dp(2));
+        kindMenu.setLayoutParams(menuLp);
+        kindMenu.setVisibility(View.GONE);
+        kindButtons.clear();
+        String[][] options = {
+            {"delivery", "납품"}, {"return", "반품·회수"},
+            {"extra", "추가 납품"}, {"auto", "자동 표시"}
+        };
+        LinearLayout row = null;
+        for (int i = 0; i < options.length; i++) {
+            if (i % 2 == 0) {
+                row = new LinearLayout(appContext);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                kindMenu.addView(row);
+            }
+            final String mode = options[i][0];
+            TextView b = new TextView(appContext);
+            b.setText(options[i][1]);
+            b.setTag(mode);
+            b.setTextColor(Color.WHITE);
+            b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            b.setTypeface(null, Typeface.BOLD);
+            b.setGravity(Gravity.CENTER);
+            b.setSingleLine(true);
+            b.setMinHeight(dp(36));
+            LinearLayout.LayoutParams bLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            bLp.setMargins(dp(2), dp(2), dp(2), dp(2));
+            b.setLayoutParams(bLp);
+            b.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    selectKind(mode);
+                }
+            });
+            kindButtons.add(b);
+            row.addView(b);
+        }
+        refreshKindButtons();
+    }
+
+    private void refreshKindButtons() {
+        for (TextView b : kindButtons) {
+            boolean on = kindChoice.equals(b.getTag());
+            b.setBackground(on ? makeBg("#2563EB", 8, "#93C5FD", 1) : makeBg("#334155", 8, null, 0));
+        }
+    }
+
+    private void toggleKindMenu() {
+        if (kindMenu == null) return;
+        boolean open = kindMenu.getVisibility() != View.VISIBLE;
+        kindMenu.setVisibility(open ? View.VISIBLE : View.GONE);
+        refreshLayout();
+    }
+
+    private void selectKind(String mode) {
+        kindChoice = mode;
+        refreshKindButtons();
+        if (kindMenu != null) kindMenu.setVisibility(View.GONE);
+        refreshLayout();
+        // 표시 정보만 바뀜. 실제 주문 종류·완료 기록은 웹 코드(onNativeOverlaySelectKind)가 건드리지 않음
+        evalJs("window.onNativeOverlaySelectKind && window.onNativeOverlaySelectKind('" + mode + "');");
+    }
+
     private void renderPayload(String jsonStr) {
         try {
             JSONObject obj = new JSONObject(jsonStr);
@@ -667,7 +754,7 @@ public class FloatingOverlayManager {
             boolean nearby = obj.optBoolean("nearby", false);
             lastName = name;
             lastDist = distText;
-            badgeView.setText(modeBadge);
+            badgeView.setText(modeBadge.endsWith("▾") ? modeBadge : modeBadge + " ▾");
             badgeView.setBackground(makeBg(modeColor, 8, null, 0));
             titleView.setText(name);
             progressView.setText(progressText);
