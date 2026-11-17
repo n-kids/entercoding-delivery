@@ -4,42 +4,35 @@
   window.__pickupCardDesignV2 = true;
   const style = document.createElement('style');
   style.textContent = `
-  #pkList{gap:16px;align-items:stretch;min-width:0}
-  #pkList [data-pk-card]{display:flex;flex-direction:column;gap:14px;padding:20px;border:1px solid #2d3c52!important;border-radius:20px;background:#111d30!important;box-shadow:0 5px 18px #02061725;opacity:1!important;min-width:0;overflow:hidden}
-  #pkList [data-pk-card]> *{margin-top:0!important}
-  #pkList [data-pk-card][data-ui-complete=true]{background:#112529!important;border-color:#31584f!important}
-  #pkList [data-pk-card] h3{font-size:21px;line-height:1.4;letter-spacing:-.025em;overflow-wrap:anywhere;text-decoration:none}
-  #pkList [data-pk-card] p{line-height:1.65;overflow-wrap:anywhere}
+  #pkList{gap:14px;align-items:stretch;min-width:0}
+  #pkList [data-pk-card]:not(.dc-card){display:flex;flex-direction:column;gap:14px;padding:18px;border:1px solid #33465f!important;border-radius:18px;background:#132136!important;box-shadow:0 4px 16px #02061720;opacity:1!important;min-width:0;overflow:hidden}
+  #pkList [data-pk-card]:not(.dc-card)> *{margin-top:0!important}
+  #pkList [data-pk-card]:not(.dc-card)[data-ui-complete=true]{background:#13282b!important;border-color:#365c52!important}
+  #pkList [data-pk-card]:not(.dc-card) h3{font-size:20px;line-height:1.45;letter-spacing:-.025em;overflow-wrap:anywhere;text-decoration:none}
+  #pkList [data-pk-card]:not(.dc-card) p{line-height:1.65;overflow-wrap:anywhere}
   #pkList .pk-ui-metadata{gap:6px!important}
   #pkList .pk-ui-metadata>span{border-radius:7px;font-size:11px;font-weight:600;padding:3px 7px;box-shadow:none}
   #pkList .pk-ui-heading{padding:2px 0 6px}
   #pkList .pk-ui-heading>p{margin-top:7px}
   #pkList .pk-ui-nav{margin-top:auto!important;padding-top:10px;border-top:1px solid #29394f}
-  #pkList .pk-ui-nav>a,#pkList .pk-ui-nav>button{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;padding:11px 12px;border-radius:11px;background:#5276df!important;color:#fff!important;font-size:13px;font-weight:700;line-height:1.4;text-align:center;border:1px solid transparent;box-shadow:none!important}
-  #pkList .pk-ui-nav>button{background:#36331f!important;color:#f4d28b!important;border-color:#655630}
+  #pkList .pk-ui-nav>a,#pkList .pk-ui-nav>button{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;padding:11px 12px;border-radius:10px;background:#5578df!important;color:#fff!important;font-size:12px;font-weight:700;line-height:1.45;text-align:center;border:1px solid transparent;box-shadow:none!important}
+  #pkList .pk-ui-nav>button{background:#3a311d!important;color:#f7d58b!important;border-color:#756134}
   #pkList .pk-ui-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.3fr);gap:8px}
-  #pkList .pk-ui-actions button{min-height:44px;padding:9px 7px;border-radius:10px;border:1px solid #34465f;background:#19283c;color:#c6d1e2;font-size:12px;font-weight:600;line-height:1.4;box-shadow:none}
-  #pkList .pk-ui-actions [data-pk-done]{background:#213f38!important;border:1px solid #396657!important;color:#a7ebcf!important}
+  #pkList .pk-ui-actions button{min-height:44px;padding:9px 7px;border-radius:10px;border:1px solid #354b68;background:#1b2b41;color:#bfcee2;font-size:12px;font-weight:600;line-height:1.4;box-shadow:none}
+  #pkList .pk-ui-actions [data-pk-done]{background:#25463d!important;border:1px solid #456c5d!important;color:#b7e8d3!important}
   #pkList button,#pkList a{transition:background .15s,border-color .15s;animation:none!important;min-width:0}
-  #pkList button:focus-visible,#pkList a:focus-visible{outline:2px solid #b5c4ff;outline-offset:3px}
+  #pkList button:focus-visible,#pkList a:focus-visible{outline:2px solid #b3c8ff;outline-offset:2px}
   .pk-ui-statusrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:11px;border-bottom:1px solid #29394f}
-  .pk-ui-status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;background:#26364b;color:#d1dbea;border-radius:8px;padding:6px 10px}
-  .pk-ui-status:before{content:'';width:6px;height:6px;background:currentColor;border-radius:50%;flex-shrink:0}
-  .pk-ui-status[data-tone=done]{background:#1a4036;color:#91e0bd}
-  .pk-ui-status[data-tone=late]{background:#412730;color:#f3b4be}
-  .pk-ui-status[data-tone=progress]{background:#39331f;color:#f1d18a}
-  .pk-ui-progress{font-size:11px;color:#9caec6;text-align:right}
-  #pickupView>section:first-child{background:#142136!important;border:1px solid #35465f!important;border-radius:18px;box-shadow:none!important}
+  .pk-ui-status{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;background:#27364b;color:#cbd6e6;border-radius:8px;padding:5px 8px}
+  .pk-ui-status[data-tone=done]{background:#1b4036;color:#9be1bd}
+  .pk-ui-status[data-tone=late]{background:#422331;color:#f7b4c4}
+  .pk-ui-status[data-tone=progress]{background:#3c3422;color:#f1d391}
+  .pk-ui-progress{font-size:11px;color:#aab9cf;text-align:right}
   #pickupView input,#pickupView select{border-radius:10px}
   @media(max-width:639px){
-    #pickupView{padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
     #pkList{gap:12px}
-    #pkList [data-pk-card]{padding:14px;gap:12px;border-radius:17px}
-    #pkList [data-pk-card] h3{font-size:20px}
-    #pkList .pk-ui-actions{gap:6px}
-    #pkList .pk-ui-actions button{font-size:11px;min-height:44px;padding:9px 5px}
-    #pkList .pk-ui-nav>a,#pkList .pk-ui-nav>button{min-height:48px;font-size:12px}
-    #pickupView>section:first-child{padding:14px!important}
+    #pkList [data-pk-card]:not(.dc-card){padding:14px;gap:12px;border-radius:16px}
+    #pkList [data-pk-card]:not(.dc-card) h3{font-size:19px}
     #pkFilterBar{gap:6px}
     #pkFilterBar button{min-height:40px}
   }
@@ -50,6 +43,8 @@
   if (!box) return;
   function decorate() {
     box.querySelectorAll('[data-pk-card]').forEach(card => {
+      // 통일된 .dc-card 마크업은 이미 납품 카드와 동일한 4단 구조로 렌더링됨
+      if (card.classList.contains('dc-card')) return;
       const id = card.getAttribute('data-pk-card');
       const task = typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => String(p.id) === id) : null;
       if (!task) return;

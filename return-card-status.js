@@ -5,6 +5,7 @@
   const style = document.createElement('style');
   style.textContent = `
   #pkList .return-status-panel{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;border-bottom:1px solid #2d3b50;margin-top:0}
+  #pkList .return-status-panel span,#pkList .nk-pk-meta-tags{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center}
   #pkList .return-status-panel span{font-size:11px;font-weight:600;line-height:1.5;padding:4px 8px;border-radius:7px;background:#26364b;color:#cbd5e1;border:1px solid #3b4b63}
   #pkList .return-status-panel [data-tone=primary]{background:#26375c;color:#c6d4ff;border-color:#455d8a}
   #pkList .return-status-panel [data-tone=ok]{background:#183c32;color:#9be0bd;border-color:#32604c}
@@ -16,7 +17,16 @@
   const box = document.getElementById('pkList');
   if (!box) return;
   const signatures = new WeakMap();
-  function derive(p, today) {
+  function deriveCompactTags(p, today) {
+    const tags = [];
+    if (!p.done) {
+      if (p.due === today) tags.push({ text: '오늘 예정', cls: 'dc-tag' });
+      try { if (!hasCoords(pkCoords(p))) tags.push({ text: '위치 미등록', cls: 'dc-tag dc-tag-warn' }); } catch (_) {}
+      if (p.worksTaskId && p.worksAssigneePending) tags.push({ text: '담당자 반영 중', cls: 'dc-tag' });
+    }
+    return tags;
+  }
+  function deriveLegacy(p, today) {
     let fqs = [];
     try { fqs = normalizeFieldQuantities(p.fieldQuantities, !!p.done); } catch (_) {}
     const total = fqs.reduce((n,q) => n + Math.max(0,Number(q.qty)||0),0);
@@ -50,10 +60,24 @@
     box.querySelectorAll('[data-pk-card]').forEach(card => {
       const p = PICKUPS.find(p => String(p.id) === card.getAttribute('data-pk-card'));
       if (!p) return;
+      // 통일된 .dc-card: 반품/추가납품 모두 .dc-meta 안의 .nk-pk-meta-tags에 컴팩트 태그만 반영해 카드 구조 일치 유지
+      const slot = card.querySelector('.nk-pk-meta-tags');
+      if (card.classList.contains('dc-card') && slot) {
+        const tags = deriveCompactTags(p, today), sig = JSON.stringify(tags);
+        if (signatures.get(card) === sig) return;
+        signatures.set(card, sig);
+        slot.replaceChildren(...tags.map(t => {
+          const span = document.createElement('span');
+          span.className = t.cls;
+          span.textContent = t.text;
+          return span;
+        }));
+        return;
+      }
       let extra = false;
       try { extra = pkGroupOf(p) === 'extra'; } catch (_) {}
       if (extra) return;
-      const badges = derive(p,today), signature = JSON.stringify(badges);
+      const badges = deriveLegacy(p,today), signature = JSON.stringify(badges);
       if (signatures.get(card) === signature && card.querySelector('.return-status-panel')) return;
       signatures.set(card,signature);
       let panel = card.querySelector('.return-status-panel');

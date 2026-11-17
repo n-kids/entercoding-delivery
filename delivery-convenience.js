@@ -22,14 +22,13 @@
   const style = document.createElement('style');
   style.id = 'nk-convenience-css';
   style.textContent = `
-    #nkDeliverySearchWrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
-    #nkDeliverySearchWrap .nk-search-box{position:relative;flex:1;min-width:190px;display:flex;align-items:center}
+    #nkDeliverySearchWrap,#nkPickupSearchWrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+    #nkDeliverySearchWrap .nk-search-box,#nkPickupSearchWrap .nk-search-box{position:relative;flex:1;min-width:190px;display:flex;align-items:center}
     #nkDeliverySearchInput,#nkPickupSearchInput{width:100%;min-height:40px;padding:8px 34px 8px 12px;border-radius:10px;border:1px solid #384c68;background:#0e1b2e;color:#f1f5f9;font-size:14px}
     #nkDeliverySearchInput::placeholder,#nkPickupSearchInput::placeholder{color:#8fa1bb}
     #nkDeliverySearchInput:focus,#nkPickupSearchInput:focus{outline:none;border-color:#f59e0b}
     .nk-clear-btn{position:absolute;right:6px;min-width:28px;min-height:28px;border-radius:7px;background:#26364c;color:#cbd5e1;font-size:12px;font-weight:700}
     .nk-report-btn{min-height:40px;padding:8px 12px;border-radius:10px;border:1px solid #2f6956;background:#16342c;color:#9de8c8;font-size:12px;font-weight:800;white-space:nowrap}
-    #nkPickupSearchWrap{position:relative;display:flex;align-items:center;margin-top:4px}
     #nkRouteBanner{display:none;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:10px 12px;border-radius:12px;background:#172554;border:1px solid #3b82f6;color:#dbeafe;font-size:12px}
     #nkRouteBanner.open{display:flex}
     #nkRouteBanner button{min-height:36px;padding:6px 11px;border-radius:9px;font-size:11px;font-weight:800;background:#2563eb;color:#fff;border:1px solid #60a5fa}
@@ -129,16 +128,20 @@
     return hay.includes(q);
   };
 
-  // ---- 2. 회수·반품 탭 검색창 & 전화 링크 보강 ----
+  // ---- 2. 회수·반품/추가 납품 탭 검색창 & 결과 요약 버튼 & 전화 링크 보강 ----
   const pkFilterBar = document.getElementById('pkFilterBar');
   if (pkFilterBar && !document.getElementById('nkPickupSearchWrap')) {
     const pWrap = document.createElement('div');
     pWrap.id = 'nkPickupSearchWrap';
+    const isExtraInit = typeof pkMode !== 'undefined' && pkMode === 'extra';
     pWrap.innerHTML = `
-      <input id="nkPickupSearchInput" type="search" placeholder="🔍 회수·반품 원 이름 · 품목 · 담당자 · 메모 검색" aria-label="회수 반품 검색">
-      <button id="nkPickupSearchClear" type="button" class="nk-clear-btn hidden" aria-label="검색어 지우기">✕</button>
+      <div class="nk-search-box">
+        <input id="nkPickupSearchInput" type="search" placeholder="${isExtraInit ? '🔍 추가 납품 원 이름 · 품목 · 담당자 · 메모 검색' : '🔍 회수·반품 원 이름 · 품목 · 담당자 · 메모 검색'}" aria-label="회수 추가납품 검색">
+        <button id="nkPickupSearchClear" type="button" class="nk-clear-btn hidden" aria-label="검색어 지우기">✕</button>
+      </div>
+      <button id="nkPickupReportQuickBtn" type="button" class="nk-report-btn">📋 오늘 결과 요약</button>
     `;
-    pkFilterBar.after(pWrap);
+    pkFilterBar.before(pWrap);
     const pInput = document.getElementById('nkPickupSearchInput');
     const pClear = document.getElementById('nkPickupSearchClear');
     pInput.addEventListener('input', () => {
@@ -153,6 +156,9 @@
       decoratePickupCards();
       pInput.focus();
     });
+    document.getElementById('nkPickupReportQuickBtn').addEventListener('click', () => {
+      openDailyReportDialog();
+    });
   }
 
   function decoratePickupCards() {
@@ -166,16 +172,25 @@
       const phone = (linked && linked.phone) || p.phone || '';
       const cleaned = String(phone).replace(/[^0-9+*#,]/g, '');
 
-      // 전화 칩 추가 (없을 때만)
-      if (cleaned && !card.querySelector('.nk-pk-phone')) {
-        const heading = card.querySelector('div[data-pk-detail]');
-        if (heading) {
+      // 전화 칩 추가 (없을 때만 — 통일된 .dc-phone-chip 스타일 사용)
+      if (cleaned && !card.querySelector('.dc-phone-chip, .nk-pk-phone')) {
+        const contactRow = card.querySelector('.dc-contact-row') || (() => {
+          const identity = card.querySelector('.dc-identity');
+          if (!identity) return null;
+          const row = document.createElement('div');
+          row.className = 'dc-contact-row';
+          const memoLine = identity.querySelector('.dc-memo-line');
+          if (memoLine) memoLine.before(row); else identity.appendChild(row);
+          return row;
+        })();
+        const targetHost = contactRow || card.querySelector('div[data-pk-detail]');
+        if (targetHost) {
           const a = document.createElement('a');
-          a.className = 'nk-pk-phone';
+          a.className = contactRow ? 'dc-phone-chip' : 'nk-pk-phone';
           a.href = 'tel:' + cleaned;
           a.textContent = '📞 ' + phone;
           a.addEventListener('click', e => e.stopPropagation());
-          heading.appendChild(a);
+          targetHost.appendChild(a);
         }
       }
 

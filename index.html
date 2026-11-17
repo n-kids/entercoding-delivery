@@ -110,36 +110,47 @@ body{background:var(--ui-page);letter-spacing:-.015em}
 main{min-width:0}
 /* Keep one visible management action group: the delivery toolbar. Hidden original buttons remain callable. */
 header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditModalBtn){display:none!important}
-#deliveryActionToolbar{display:block;padding:14px 16px;margin:12px 0 16px;background:#132137;border:1px solid var(--ui-line);border-radius:16px;box-shadow:none}
-#deliveryActionToolbar h2{font-size:15px;font-weight:750;line-height:1.5}
-#deliveryActionToolbar p{font-size:12px;color:var(--ui-muted);line-height:1.65}
-#deliveryActionToolbar .da-actions{gap:8px;margin-top:11px}
-#deliveryActionToolbar .da-actions button{min-height:46px;border-radius:10px;background:#22334e;color:#e2eafa;border:1px solid #415978;font-size:12px;line-height:1.5;box-shadow:none}
-#deliveryActionToolbar .da-actions button:first-child{background:#2a3754;border-color:#53668b}
-#deliveryActionToolbar .da-note{margin-top:8px;font-size:11px}
+#deliveryActionToolbar,#pickupActionToolbar{display:block;padding:14px 16px;margin:12px 0 16px;background:#132137;border:1px solid var(--ui-line);border-radius:16px;box-shadow:none}
+#deliveryActionToolbar h2,#pickupActionToolbar h2{font-size:15px;font-weight:750;line-height:1.5;color:#edf3ff}
+#deliveryActionToolbar p,#pickupActionToolbar p{font-size:12px;color:var(--ui-muted);line-height:1.65;margin-top:3px}
+#deliveryActionToolbar .da-actions,#pickupActionToolbar .da-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:11px}
+#deliveryActionToolbar .da-actions button,#pickupActionToolbar .da-actions button,#pickupActionToolbar .da-actions label{display:flex;align-items:center;justify-content:center;text-align:center;min-height:46px;min-width:0;padding:10px 7px;border-radius:10px;background:#22334e;color:#e2eafa;border:1px solid #415978;font-size:12px;font-weight:700;line-height:1.4;box-shadow:none;cursor:pointer}
+#deliveryActionToolbar .da-actions button:first-child,#pickupActionToolbar .da-actions>*:first-child{background:#2a3754;border-color:#53668b}
+#deliveryActionToolbar .da-note,#pickupActionToolbar .da-note{margin-top:8px;font-size:11px}
 /* Restrict text overflow at its origin rather than hiding page overflow. */
 #schoolList,#pkList{min-width:0;gap:14px;align-items:stretch}
 #schoolList article,#pkList article{min-width:0;box-shadow:0 4px 16px #02061720!important}
-#schoolList .dc-card{padding:18px;border-radius:18px;background:#132136;border-color:#33465f;opacity:1;backdrop-filter:none}
-#schoolList .dc-card:hover{border-color:#526888;box-shadow:0 4px 16px #02061720}
-#schoolList .dc-card[data-delivery-state=done]{background:#13282b;border-color:#365c52;opacity:1}
-#schoolList .dc-name-row,#schoolList [data-action=popup]{min-width:0}
-#schoolList .dc-name{flex:1 1 0;min-width:0;max-width:100%}
+#schoolList .dc-card,#pkList .dc-card{display:flex;flex-direction:column;min-width:0;padding:18px;border:1px solid #33465f;border-radius:18px;background:#132136;opacity:1;backdrop-filter:none}
+#schoolList .dc-card:hover,#pkList .dc-card:hover{border-color:#526888;box-shadow:0 4px 16px #02061720}
+#schoolList .dc-card[data-delivery-state=done],#pkList .dc-card[data-delivery-state=done]{background:#13282b;border-color:#365c52;opacity:1}
+#schoolList .dc-card.dc-near,#pkList .dc-card.dc-near{border-color:#b99a56}
+#schoolList .dc-name-row,#schoolList [data-action=popup],#pkList .dc-name-row,#pkList [data-pk-detail]{min-width:0}
+#schoolList .dc-name,#pkList .dc-name{flex:1 1 0;min-width:0;max-width:100%;padding:0;background:transparent;color:#f1f5fb;text-align:left}
 #schoolList h3,#pkList h3{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:normal;line-height:1.45}
-#schoolList .dc-name h3{font-size:20px;font-weight:750;letter-spacing:-.025em}
-#schoolList .dc-address,#schoolList .dc-product,#schoolList article p,#pkList article p{overflow-wrap:anywhere;line-height:1.65}
-.dc-identity{padding:13px 0}.dc-state-row{padding-bottom:11px}
-.dc-progress{font-size:11px;color:#aab9cf}.dc-state{font-size:11px;padding:5px 8px;line-height:1.5}
-.dc-meta{gap:6px;line-height:1.6}.dc-quantity-heading{gap:10px}.dc-quantity-heading>div{min-width:0}
+#schoolList .dc-name h3,#pkList .dc-name h3{font-size:20px;font-weight:750;letter-spacing:-.025em;color:#f1f5fb}
+#pkList .dc-card[data-delivery-state=done] .dc-name h3{color:#d1fae5}
+#schoolList .dc-address,#schoolList .dc-product,#schoolList article p,#pkList .dc-address,#pkList .dc-product,#pkList article p{overflow-wrap:anywhere;line-height:1.65}
+#pkList .dc-quantities,#pkList .dc-actions{margin-top:0}
+#pkList .dc-actions{margin-top:auto;padding-top:12px;border-top:1px solid #2c3b50}
+.dc-identity{padding:13px 0}.dc-state-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:11px;border-bottom:1px solid #2c3b50}
+.dc-progress{font-size:11px;color:#aab9cf;white-space:nowrap}.dc-state{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:5px 8px;border-radius:8px;background:#27364b;color:#cbd6e6;line-height:1.5}
+.dc-state-ready{background:#283958;color:#c0d1ff}.dc-state-checking{background:#3c3422;color:#f1d391}.dc-state-done{background:#1b4036;color:#9be1bd}.dc-state-empty{background:#3e2b36;color:#f0bacd}.dc-state-hold{background:#3e311d;color:#f6d08a}.dc-state-revisit{background:#422331;color:#f7b4c4}
+.dc-tag-warn{background:#422832!important;color:#f7bac8!important;border:1px solid #754052}
+.dc-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;line-height:1.6;color:#9cacc3;font-size:11px}.dc-quantity-heading{gap:10px}.dc-quantity-heading>div{min-width:0}
 .dc-product-table{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.pk-qty-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 .dc-step{padding:10px 4px;border-color:#3a4d69;background:#1b2d47}.dc-step strong{font-size:24px}.dc-step small{font-size:11px}
-#schoolList .dc-extras span,#pkList article span{overflow-wrap:anywhere}
-#schoolList .dc-actions{padding-top:12px}.dc-primary-actions{gap:8px}.dc-secondary-actions{gap:7px;margin-top:8px}
-#schoolList .dc-button{min-height:44px;border-radius:10px;line-height:1.5;white-space:normal;box-shadow:none}
-#schoolList .dc-navigate{background:var(--ui-primary);min-height:46px}
-#schoolList .dc-complete{background:#25463d;border-color:#456c5d;color:#b7e8d3;min-height:46px}
-#schoolList .dc-secondary{background:#1b2b41;border-color:#354b68;color:#bfcee2;font-size:11px;font-weight:600}
-#schoolList .dc-edit{font-size:12px;background:#2a3d5b;border-color:#526c91;padding:9px 11px}
+.pk-qty-grid .dc-step{padding:9px 8px}.pk-qty-grid .dc-step span{text-align:center;line-height:1.35;word-break:keep-all}.pk-qty-grid .dc-step strong{font-size:20px}
+.pk-step-done{background:#17342f!important;border-color:#326254!important}
+#schoolList .dc-extras span,#pkList .dc-extras span,#pkList article span{overflow-wrap:anywhere}
+#schoolList .dc-actions,#pkList .dc-actions{padding-top:12px}.dc-primary-actions{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px}.dc-secondary-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:8px}
+#schoolList .dc-button,#pkList .dc-button{display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:44px;padding:10px 8px;border-radius:10px;border:1px solid transparent;font-size:12px;font-weight:700;line-height:1.5;text-align:center;text-decoration:none;white-space:normal;box-shadow:none;cursor:pointer}
+#schoolList .dc-navigate,#pkList .dc-navigate{background:var(--ui-primary);color:#fff;min-height:46px}
+#pkList .dc-geo-needed{background:#3a311d;border:1px solid #756134;color:#f7d58b}
+#schoolList .dc-complete,#pkList .dc-complete{background:#25463d;border-color:#456c5d;color:#b7e8d3;min-height:46px}
+#schoolList .dc-secondary,#pkList .dc-secondary{background:#1b2b41;border-color:#354b68;color:#bfcee2;font-size:11px;font-weight:600}
+#pkList .dc-secondary:disabled{opacity:.45;cursor:not-allowed}
+#schoolList .dc-edit,#pkList .dc-edit{flex-shrink:0;font-size:12px;background:#2a3d5b;border-color:#526c91;color:#dce7ff;padding:9px 11px}
 /* Remove heavy glow from legacy cards as well. */
 #schoolList .naver-btn-glow{box-shadow:none!important;animation:none!important}
 #schoolList .delivery-card-done{opacity:1}
@@ -159,21 +170,28 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
 #editSchoolListContainer .grid{width:100%;grid-template-columns:32px repeat(4,minmax(0,1fr));gap:5px}
 #editSchoolListContainer .min-w-\[180px\]{min-width:0;width:100%}
 #itemsTotals>div{min-width:0;overflow-wrap:anywhere}
-#persistenceStatusPanel,#deliveryPersistenceStatus{font-size:12px;line-height:1.65;border-radius:13px;box-shadow:none}
+#persistenceStatusPanel,#deliveryPersistenceStatus,#pkPersistenceStatus{font-size:12px;line-height:1.65;border-radius:13px;box-shadow:none}
+#pkPersistenceStatus{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0 14px;padding:12px 14px;background:#111e31;border:1px solid #304058;color:#cbd5e1}
+#pkPersistenceStatus .ps-cell{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+#pkPersistenceStatus .ps-label{color:#94a3b8}
+#pkPersistenceStatus [data-tone=ok]{color:#86dfbf}#pkPersistenceStatus [data-tone=warn]{color:#f4ce79}#pkPersistenceStatus [data-tone=error]{color:#f1a8b8}
+#pkPersistenceStatus .ps-note{width:100%;font-size:11px;color:#94a3b8}
 #mobileBottomBar{padding-bottom:max(8px,env(safe-area-inset-bottom));background:#101d30;border-color:#35465f}
 #mobileBottomBar button{min-height:48px;border-radius:10px}
-#schoolList button:focus-visible,#schoolList a:focus-visible,#itemsModal :focus-visible,#importModal :focus-visible,#editModal :focus-visible{outline:2px solid #b3c8ff;outline-offset:2px}
+#schoolList button:focus-visible,#schoolList a:focus-visible,#pkList button:focus-visible,#pkList a:focus-visible,#pickupActionToolbar :focus-visible,#itemsModal :focus-visible,#importModal :focus-visible,#editModal :focus-visible{outline:2px solid #b3c8ff;outline-offset:2px}
 @media(max-width:639px){
  main{padding-left:12px!important;padding-right:12px!important}
  #schoolList,#pkList{gap:12px}
- #schoolList{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
- #schoolList .dc-card{padding:14px;border-radius:16px}
- #schoolList .dc-name h3{font-size:19px}
+ #schoolList,#pkList{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+ #schoolList .dc-card,#pkList .dc-card{padding:14px;border-radius:16px}
+ #schoolList .dc-name h3,#pkList .dc-name h3{font-size:19px}
  #schoolList .dc-step-grid{gap:5px}.dc-step{padding:9px 3px}.dc-step strong{font-size:22px}
- #schoolList .dc-button{padding:10px 5px}.dc-secondary-actions{gap:5px}
- #deliveryActionToolbar{padding:12px;border-radius:14px}
- #deliveryActionToolbar .da-actions{gap:6px}
- #deliveryActionToolbar .da-actions button{font-size:11px;padding:9px 5px}
+ #schoolList .dc-button,#pkList .dc-button{padding:10px 5px}.dc-secondary-actions{gap:5px}
+ #deliveryActionToolbar,#pickupActionToolbar{padding:12px;border-radius:14px}
+ #deliveryActionToolbar .da-actions,#pickupActionToolbar .da-actions{gap:6px}
+ #deliveryActionToolbar .da-actions button,#pickupActionToolbar .da-actions button,#pickupActionToolbar .da-actions label{font-size:11px;padding:9px 5px}
+ #pkPersistenceStatus{padding:10px 12px;gap:5px 12px;margin:8px 0 12px}
+ #pkPersistenceStatus .ps-cell{width:100%}
  #itemsModal,#importModal,#editModal{padding:8px!important;align-items:center}
  #itemsModal>div,#importModal>div,#editModal>div{height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);padding:12px;border-radius:16px;overflow:hidden}
  #itemsModal h3,#importModal h3,#editModal h3{font-size:16px}
@@ -182,7 +200,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
  #editSchoolListContainer .grid{grid-template-columns:30px repeat(4,minmax(0,1fr));gap:4px}
  #editSchoolListContainer .grid input{font-size:15px}
 }
-@media(max-width:359px){.dc-name-row{flex-wrap:wrap;gap:3px}.dc-distance{font-size:10px}.dc-state-row{gap:5px}.dc-progress{font-size:10px}#deliveryActionToolbar .da-actions button{font-size:10px}.dc-secondary-actions .dc-button{font-size:10px}}
+@media(max-width:359px){.dc-name-row{flex-wrap:wrap;gap:3px}.dc-distance{font-size:10px}.dc-state-row{gap:5px}.dc-progress{font-size:10px}#deliveryActionToolbar .da-actions button,#pickupActionToolbar .da-actions button,#pickupActionToolbar .da-actions label{font-size:10px}.dc-secondary-actions .dc-button{font-size:10px}}
 @media(max-height:440px){#itemsModal>div,#importModal>div,#editModal>div{height:calc(100dvh - 12px);max-height:calc(100dvh - 12px)}.items-search{padding:7px}#itemsModal .items-search label{margin-bottom:4px}}
 @media(prefers-reduced-motion:reduce){#schoolList *,#pkList *{animation:none!important;transition:none!important}}
 .nk-modal-footer{display:grid;grid-template-columns:1fr 1.15fr auto;gap:8px;padding-top:8px;padding-bottom:2px}
@@ -488,39 +506,63 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
 
     </div><!-- /deliveryView -->
 
-    <!-- ===== 회수·반품 페이지 ===== -->
-    <div id="pickupView" class="hidden space-y-3 pb-6">
-      <section class="bg-gradient-to-r from-rose-950 via-slate-900 to-slate-900 border-2 border-rose-500/40 rounded-2xl p-3 sm:p-4 shadow-xl space-y-3">
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <h2 id="pkHeading" class="text-lg font-black text-white">↩️ 회수·반품</h2>
-            <p id="pkSubText" class="text-xs text-slate-300 mt-0.5">웍스 [회수]·[반품] 할 일이 자동으로 들어옵니다. 캡처·붙여넣기로도 추가할 수 있습니다.</p>
+    <!-- ===== 회수·반품 / 추가 납품 페이지 (납품 탭과 통일된 디자인 시스템) ===== -->
+    <div id="pickupView" class="hidden space-y-3 sm:space-y-4">
+      <section id="pkHeroSection" class="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xl space-y-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="pkModeBadge" class="px-2 py-0.5 rounded-lg text-[11px] font-black bg-[#03C75A] text-slate-950 shrink-0">N 웍스 연동</span>
+              <h2 id="pkHeading" class="text-[15px] sm:text-base font-extrabold text-white leading-snug">↩️ 회수·반품</h2>
+            </div>
+            <p id="pkSubText" class="text-xs text-slate-300 leading-relaxed">웍스 [회수]·[반품] 할 일이 자동으로 들어옵니다. 캡처·붙여넣기로도 추가할 수 있습니다.</p>
           </div>
-          <div class="text-right shrink-0">
+          <div class="bg-slate-800/80 rounded-xl p-2.5 sm:p-3 border border-slate-700/60 text-right shrink-0">
             <div class="text-[11px] text-slate-400">남은 할 일</div>
-            <div class="text-2xl font-black text-rose-300"><span id="pkPendingCount">0</span><span class="text-xs text-slate-400 font-bold"> / <span id="pkTotalCount">0</span></span></div>
+            <div class="text-xl font-black text-amber-400 mt-0.5"><span id="pkPendingCount">0</span> <span class="text-xs font-normal text-slate-400 whitespace-nowrap">/ <span id="pkTotalCount">0</span>건</span></div>
           </div>
         </div>
-        <div>
-          <button id="pkWorksFetchBtn" type="button" class="w-full py-3 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 disabled:opacity-60">🔄 웍스 할 일 불러오기</button>
-          <button id="pkPipHudBtn" type="button" class="hidden">🪟 팝업모드(미니창) 띄우기</button>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="pkWorksFetchBtn" type="button" class="flex-1 min-w-[180px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-[#5578df] hover:bg-indigo-400 text-white disabled:opacity-60 transition">🔄 웍스 할 일 불러오기</button>
+          <button id="pkPipHudBtn" type="button" class="hidden py-2.5 px-3 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 transition">🪟 팝업모드 띄우기</button>
         </div>
-        <p id="pkWorksInfo" class="text-[11px] text-slate-400 -mt-1">웍스에 할 일이 생기거나 완료되면 1분 안에 자동으로 반영됩니다. 앱에서 완료하면 웍스 할 일도 완료됩니다.</p>
-        <div class="grid grid-cols-3 gap-2">
-          <label class="cursor-pointer py-3 rounded-xl text-xs sm:text-sm font-extrabold bg-rose-500 hover:bg-rose-400 text-white text-center flex flex-col sm:flex-row items-center justify-center gap-1">
-            <span>📷</span><span>웍스 사진 스캔</span>
+        <p id="pkWorksInfo" class="text-[11px] text-slate-400">웍스에 할 일이 생기거나 완료되면 1분 안에 자동으로 반영됩니다. 앱에서 완료하면 웍스 할 일도 완료됩니다.</p>
+        <div id="pkKeyWarn" class="hidden text-xs rounded-xl px-3 py-2 border border-amber-500/40 bg-amber-500/10 text-amber-200 leading-relaxed"></div>
+      </section>
+
+      <section id="pkFilterPanel" class="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xl space-y-3">
+        <div class="hscroll items-center gap-1.5 -mx-3 px-3 sm:mx-0 sm:px-0" id="pkFilterBar"></div>
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
+          <select id="pkAssigneeSelect" class="flex-1 min-w-[110px] bg-slate-800 text-slate-200 text-xs font-semibold rounded-lg px-2.5 py-2 border border-slate-700" aria-label="담당자"></select>
+          <select id="pkSortSelect" class="flex-1 min-w-[120px] bg-slate-800 text-slate-200 text-xs font-semibold rounded-lg px-2.5 py-2 border border-slate-700" aria-label="정렬">
+            <option value="due">기한 빠른 순</option>
+            <option value="near">가까운 순 (GPS)</option>
+            <option value="new">최근 추가 순</option>
+            <option value="name">원 이름 순</option>
+          </select>
+          <button id="pkClearDoneBtn" type="button" class="shrink-0 px-2.5 py-2 rounded-lg text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition">↺ 완료 정리</button>
+        </div>
+      </section>
+
+      <section id="pickupActionToolbar" aria-label="할 일 관리">
+        <div>
+          <h2 id="pkToolbarHeading">회수·반품 관리</h2>
+          <p id="pkToolbarSub">웍스 사진 스캔·글 붙여넣기·할 일 직접 추가</p>
+        </div>
+        <div class="da-actions">
+          <label id="pkPhotoTrigger">
+            <span>📷 사진 스캔</span>
             <input id="pkPhotoInput" type="file" accept="image/*" multiple class="hidden">
           </label>
-          <button id="pkTextToggleBtn" type="button" class="py-3 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 flex flex-col sm:flex-row items-center justify-center gap-1"><span>📋</span><span>글 붙여넣기</span></button>
-          <button id="pkAddManualBtn" type="button" class="py-3 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 flex flex-col sm:flex-row items-center justify-center gap-1"><span>➕</span><span>직접 추가</span></button>
+          <button id="pkTextToggleBtn" type="button">📋 글 붙여넣기</button>
+          <button id="pkAddManualBtn" type="button">➕ 직접 추가</button>
         </div>
-        <div id="pkTextBox" class="hidden space-y-2">
-          <textarea id="pkTextInput" rows="5" placeholder="웍스 할 일 내용을 복사해 붙여 넣으세요.&#10;예)&#10;연천초병설 11월 마음빛깔 2번배송됨. 회수요청&#10;기한 없음 | 담당자 : 서부동심&#10;시립다울 아이크래용 샘플 회수&#10;기한 : 11. 30. (월) | 담당자 : 용수정" class="w-full bg-slate-800 text-white text-base sm:text-sm rounded-xl px-3 py-2.5 border border-slate-700 focus:outline-none focus:border-rose-400"></textarea>
-          <button id="pkTextReadBtn" type="button" class="w-full py-2.5 rounded-xl text-sm font-extrabold bg-rose-500 hover:bg-rose-400 text-white">읽어서 확인하기</button>
+        <div id="pkTextBox" class="hidden space-y-2 mt-3">
+          <textarea id="pkTextInput" rows="5" placeholder="웍스 할 일 내용을 복사해 붙여 넣으세요.&#10;예)&#10;연천초병설 11월 마음빛깔 2번배송됨. 회수요청&#10;기한 없음 | 담당자 : 서부동심&#10;시립다울 아이크래용 샘플 회수&#10;기한 : 11. 30. (월) | 담당자 : 용수정" class="w-full bg-slate-950 text-white text-base sm:text-sm rounded-xl px-3 py-2.5 border border-slate-700 focus:outline-none focus:border-amber-400"></textarea>
+          <button id="pkTextReadBtn" type="button" class="w-full py-2.5 rounded-xl text-sm font-extrabold bg-[#5578df] hover:bg-indigo-400 text-white">읽어서 확인하기</button>
         </div>
-        <div id="pkStatus" class="hidden text-xs rounded-xl px-3 py-2 border"></div>
-        <div id="pkKeyWarn" class="hidden text-xs rounded-xl px-3 py-2 border border-rose-500/40 bg-rose-500/10 text-rose-200 leading-relaxed"></div>
-        <div id="pkReview" class="hidden space-y-2">
+        <div id="pkStatus" class="hidden text-xs rounded-xl px-3 py-2 border mt-2.5"></div>
+        <div id="pkReview" class="hidden space-y-2 mt-3">
           <div class="flex items-center justify-between gap-2">
             <span class="text-xs font-bold text-amber-300">읽은 내용 확인 · 이름을 눌러 고칠 수 있습니다</span>
             <button id="pkReviewAllBtn" type="button" class="text-[11px] px-2 py-1 rounded-lg bg-slate-800 text-slate-200 border border-slate-700">전체 선택/해제</button>
@@ -533,21 +575,13 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
         </div>
       </section>
 
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-2.5 sm:p-3 space-y-2">
-        <div class="hscroll items-center gap-1.5 -mx-2.5 px-2.5 sm:mx-0 sm:px-0" id="pkFilterBar"></div>
-        <div class="flex items-center gap-1.5">
-          <select id="pkAssigneeSelect" class="flex-1 min-w-0 bg-slate-800 text-slate-200 text-xs font-semibold rounded-lg px-2 py-2 border border-slate-700" aria-label="담당자"></select>
-          <select id="pkSortSelect" class="flex-1 min-w-0 bg-slate-800 text-slate-200 text-xs font-semibold rounded-lg px-2 py-2 border border-slate-700" aria-label="정렬">
-            <option value="due">기한 빠른 순</option>
-            <option value="near">가까운 순 (GPS)</option>
-            <option value="new">최근 추가 순</option>
-            <option value="name">원 이름 순</option>
-          </select>
-          <button id="pkClearDoneBtn" type="button" class="shrink-0 px-2.5 py-2 rounded-lg text-xs font-semibold bg-rose-500/15 text-rose-200 border border-rose-500/30">완료 정리</button>
-        </div>
+      <section id="pkPersistenceStatus" aria-label="저장 및 공유 서버 동기화 상태">
+        <div class="ps-cell"><span class="ps-label">기기 저장</span><span id="pkLocal" role="status" aria-live="polite">확인 중</span></div>
+        <div class="ps-cell"><span class="ps-label">서버 동기화</span><span id="pkCloud" role="status" aria-live="polite">확인 중</span></div>
+        <div id="pkNote" class="ps-note"></div>
       </section>
 
-      <section id="pkList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></section>
+      <section id="pkList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></section>
     </div>
 
   </main>
@@ -1086,11 +1120,17 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
 
   <!-- Toast Banner -->
   <nav id="mobileBottomBar" class="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur border-t border-slate-800 px-2 pt-1.5 pb-safe" aria-label="빠른 메뉴">
-    <div class="grid grid-cols-4 gap-1.5">
+    <div id="mobileBottomDelivery" class="grid grid-cols-4 gap-1.5">
       <button type="button" data-proxy="prevStopBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800"><span class="text-lg leading-none">◀</span><span class="text-[11px] font-bold">이전 원</span></button>
       <button type="button" data-proxy="nextStopBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl bg-indigo-500 text-white active:bg-indigo-400"><span class="text-lg leading-none">▶</span><span class="text-[11px] font-black">다음 미완료</span></button>
       <button type="button" data-proxy="openItemsModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-violet-200 active:bg-slate-800"><span class="text-lg leading-none">📦</span><span class="text-[11px] font-bold">품목 확인</span></button>
       <button type="button" data-proxy="openEditModalBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-300 active:bg-slate-800">원 관리</button>
+    </div>
+    <div id="mobileBottomPickup" class="hidden grid grid-cols-4 gap-1.5">
+      <button type="button" data-proxy="pkWorksFetchBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl bg-indigo-500 text-white active:bg-indigo-400"><span class="text-lg leading-none">🔄</span><span class="text-[11px] font-black">웍스 연동</span></button>
+      <button type="button" data-proxy="pkPhotoInput" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-200 active:bg-slate-800"><span class="text-lg leading-none">📷</span><span class="text-[11px] font-bold">사진 스캔</span></button>
+      <button type="button" data-proxy="pkAddManualBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-slate-200 active:bg-slate-800"><span class="text-lg leading-none">➕</span><span class="text-[11px] font-bold">직접 추가</span></button>
+      <button type="button" data-proxy="openDailyReportBtn" class="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-emerald-200 active:bg-slate-800"><span class="text-lg leading-none">📋</span><span class="text-[11px] font-bold">결과 요약</span></button>
     </div>
   </nav>
 
@@ -5092,7 +5132,7 @@ function speakSchoolQuantity(school, opts = {}) {
       if (!['pending', 'done', 'all'].includes(pkFilter) && !typeChips.some(([k]) => k === pkFilter)) pkFilter = 'pending';
       const chips = [['pending', '남은 할 일'], ...typeChips, ['done', '완료'], ['all', '전체']]
         .filter(([k]) => k === 'pending' || k === 'all' || k === 'done' || cnt[k]);
-      document.getElementById('pkFilterBar').innerHTML = chips.map(([k, l]) => `<button type="button" data-pkf="${k}" class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border ${pkFilter === k ? 'bg-rose-500 text-white border-rose-400' : 'bg-slate-800 text-slate-300 border-slate-700'}">${l} ${cnt[k]}</button>`).join('');
+      document.getElementById('pkFilterBar').innerHTML = chips.map(([k, l]) => `<button type="button" data-pkf="${k}" class="shrink-0 ${pkFilter === k ? REGION_TAB_ON : REGION_TAB_OFF}">${l} (${cnt[k]})</button>`).join('');
       const names = [...new Set(mine.flatMap(pkAssigneeList))].sort((a, b) => a.localeCompare(b, 'ko'));
       if (pkAssignee && !names.includes(pkAssignee)) pkAssignee = '';
       document.getElementById('pkAssigneeSelect').innerHTML = `<option value="">담당자 전체</option>` + names.map(n => `<option value="${escapeHtml(n)}" ${n === pkAssignee ? 'selected' : ''}>${escapeHtml(n)} (${pend.filter(p => pkAssigneeList(p).includes(n)).length})</option>`).join('');
@@ -5102,8 +5142,17 @@ function speakSchoolQuantity(school, opts = {}) {
       const tab = document.getElementById('pkTabCount'); tab.textContent = nRet; tab.classList.toggle('hidden', !nRet);
       const tab2 = document.getElementById('exTabCount'); if (tab2) { tab2.textContent = nEx; tab2.classList.toggle('hidden', !nEx); }
       const ex = pkMode === 'extra';
+      const badge = document.getElementById('pkModeBadge');
+      if (badge) {
+        badge.textContent = ex ? 'N 웍스 연동 · 추가 납품' : 'N 웍스 연동 · 회수/반품';
+        badge.className = 'px-2 py-0.5 rounded-lg text-[11px] font-black shrink-0 ' + (ex ? 'bg-violet-500 text-white' : 'bg-[#03C75A] text-slate-950');
+      }
       const h = document.getElementById('pkHeading'); if (h) h.textContent = ex ? '➕ 추가 납품' : '↩️ 회수·반품';
       const st = document.getElementById('pkSubText'); if (st) st.textContent = ex ? '정규 납품(주문앱)과 별도로, 웍스 [추가]·[교구]·[A/S] 및 직접 등록한 납품 할 일이 자동으로 들어옵니다.' : '웍스 [회수]·[반품] 및 직접 등록한 회수 할 일이 자동으로 들어옵니다. 캡처·붙여넣기로도 추가할 수 있습니다.';
+      const th = document.getElementById('pkToolbarHeading'); if (th) th.textContent = ex ? '추가 납품 관리' : '회수·반품 관리';
+      const ts = document.getElementById('pkToolbarSub'); if (ts) ts.textContent = ex ? '사진 스캔·글 붙여넣기·추가 납품 직접 등록' : '웍스 사진 스캔·글 붙여넣기·할 일 직접 추가';
+      const searchInput = document.getElementById('nkPickupSearchInput');
+      if (searchInput) searchInput.placeholder = ex ? '🔍 추가 납품 원 이름 · 품목 · 담당자 · 메모 검색' : '🔍 회수·반품 원 이름 · 품목 · 담당자 · 메모 검색';
       const pipBtn = document.getElementById('pkPipHudBtn');
       if (pipBtn) {
         const active = typeof isAnyOverlayActive === 'function' && isAnyOverlayActive();
@@ -5136,43 +5185,95 @@ function speakSchoolQuantity(school, opts = {}) {
       });
       const box = document.getElementById('pkList');
       if (!list.length) {
-        box.innerHTML = `<div class="md:col-span-2 text-center text-sm text-slate-400 bg-slate-900 border border-dashed border-slate-700 rounded-2xl p-6">${PICKUPS.some(pkInMode) ? '조건에 맞는 할 일이 없습니다.' : pkMode === 'extra' ? '아직 추가 납품 할 일이 없습니다.<br>웍스에 <strong class="text-violet-300">[추가]·[교구]·[A/S] 또는 직접 등록한 납품 할 일</strong>이 생기면 자동으로 들어옵니다.' : '아직 회수·반품 할 일이 없습니다.<br>웍스에 <strong class="text-rose-300">[회수]·[반품] 또는 직접 등록한 할 일</strong>이 생기면 자동으로 들어옵니다.'}</div>`;
+        box.innerHTML = `<div class="md:col-span-2 text-center text-sm text-slate-400 bg-[#132136] border border-dashed border-[#344760] rounded-2xl p-6">${PICKUPS.some(pkInMode) ? '조건에 맞는 할 일이 없습니다.' : pkMode === 'extra' ? '아직 추가 납품 할 일이 없습니다.<br>웍스에 <strong class="text-amber-300">[추가]·[교구]·[A/S] 또는 직접 등록한 납품 할 일</strong>이 생기면 자동으로 들어옵니다.' : '아직 회수·반품 할 일이 없습니다.<br>웍스에 <strong class="text-amber-300">[회수]·[반품] 또는 직접 등록한 할 일</strong>이 생기면 자동으로 들어옵니다.'}</div>`;
         return;
       }
+      const wfLabels = { scheduled: '방문 예정', moving: '이동 중', arrived: '현장 도착', hold: '보류', revisit: '재방문 필요', contact: '연락 필요' };
       box.innerHTML = list.map(({ p, dist }) => {
         const s = pkLinkedSchool(p); const c = pkCoords(p); const ok = hasCoords(c);
         const ds = pkDueState(p);
-        const dueCls = ds === 'over' ? 'bg-rose-500 text-white border-rose-400' : ds === 'soon' ? 'bg-amber-500/20 text-amber-200 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700';
+        const isExtra = pkGroupOf(p) === 'extra';
         const delivered = s && completedMap[s.id];
         const fqs = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
+        const target = fqs.reduce((n, q) => n + Math.max(0, Number(q.qty) || 0), 0);
+        const handled = fqs.reduce((n, q) => n + Math.min(Math.max(0, Number(q.qty) || 0), Math.max(0, Number(q.done) || 0)), 0);
+        const inProgress = !p.done && handled > 0;
+        const wf = (p && p.manualWorkflow) || {};
+        const wfText = wfLabels[wf.status] || '';
+        const doneAtText = p.done && p.doneAt ? new Date(p.doneAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
+        const pkState = p.done ? 'done'
+          : (wf.status === 'revisit' || wf.status === 'contact' || ds === 'over') ? 'revisit'
+          : (wf.status === 'hold' || ds === 'soon') ? 'hold'
+          : (inProgress || wf.status === 'moving' || wf.status === 'arrived' || wf.status === 'scheduled') ? 'checking'
+          : (target === 0 && !(Number(p.qty) > 0)) ? 'empty' : 'pending';
+        const stateLabel = p.done
+          ? (doneAtText ? `${isExtra ? '납품 완료' : '처리 완료'} · ${doneAtText}` : (isExtra ? '납품 완료' : '처리 완료'))
+          : wfText ? wfText
+          : inProgress ? '일부 처리 중'
+          : ds === 'over' ? '기한 경과'
+          : (isExtra ? '추가 납품 대기' : `${p.type || '회수'} 대기`);
+        const progressHtml = (p.worksTaskId && p.worksSyncPending)
+          ? '웍스 반영 대기'
+          : target > 0 ? `처리 수량 <strong>${handled}/${target}</strong>` : (p.qty ? `총 <strong>${p.qty}개</strong>` : '수량 미등록');
+        const totalDisplay = target > 0 ? target : (Number(p.qty) || 0);
+        const addrText = (s && s.address) || p.address || (ok ? '위치 확인됨' : '주소 미등록');
+        const phoneStr = (s && s.phone) || p.phone || '';
+        const phoneCleaned = String(phoneStr).replace(/[^0-9+*#,]/g, '');
+        const memoParts = [];
+        if (p.memo) memoParts.push(`📝 ${p.memo}`);
+        if (wf.note) memoParts.push(`메모: ${wf.note}`);
+        if (p.title && normName(p.title) !== normName((p.school || '') + (p.items || ''))) memoParts.push(`원문: ${p.title}`);
+        if (p.worksContent && !fqs.length) memoParts.push(String(p.worksContent).trim().replace(/\s+/g, ' ').slice(0, 120));
         return `
-        <article class="rounded-2xl border ${p.done ? 'border-slate-800 bg-slate-900/50 opacity-60' : 'border-slate-700 bg-slate-900'} p-3 space-y-2.5" data-pk-card="${p.id}">
-          <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
-            <span class="px-2 py-0.5 rounded-full border ${PK_TYPE_CLASS[p.type] || PK_TYPE_CLASS['기타']}">${pkIcon(p.type)} ${escapeHtml(p.type)}</span>
-            <span class="px-2 py-0.5 rounded-full border ${dueCls}">기한 ${escapeHtml(pkDueLabel(p.due))}${ds === 'over' ? ' 지남' : ''}</span>
-            ${p.qty ? `<span class="px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-300 border-emerald-500/40">총 ${p.qty}개</span>` : ''}
-            ${p.assignee ? `<span class="px-2 py-0.5 rounded-full border bg-slate-800 text-slate-300 border-slate-700">👤 ${escapeHtml(p.assignee)}</span>` : ''}
-            ${p.worksTaskId && p.worksAssigneePending ? `<span class="px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-200 border-amber-500/40">⏳ 담당자 웍스 반영 중</span>` : ''}
-            ${p.worksTaskId ? (p.worksSyncPending ? `<span class="px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-200 border-amber-500/40">⚠️ 웍스 반영 대기</span>` : `<span class="px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-200 border-emerald-500/30">🔗 웍스${p.worksClosedRemote ? ' · 웍스에서 완료됨' : ''}</span>`) : ''}
-            ${dist !== null ? `<span class="px-2 py-0.5 rounded-full border bg-indigo-500/15 text-indigo-200 border-indigo-500/30">${formatDistance(dist)}</span>` : ''}
+        <article class="dc-card ${!p.done && ds === 'over' ? 'dc-near' : ''}" data-pk-card="${p.id}" data-delivery-state="${pkState}">
+          <div class="dc-state-row">
+            <span class="dc-state dc-state-${pkState}">${escapeHtml(stateLabel)}</span>
+            <span class="dc-progress">${progressHtml}</span>
           </div>
-          <div data-pk-detail="${p.id}" class="cursor-pointer">
-            <h3 class="text-lg font-black text-white leading-tight ${p.done ? 'line-through' : ''}">${escapeHtml(s ? s.name : (p.school || '원 이름 없음'))}</h3>
-            ${p.items ? `<p class="text-sm font-bold text-amber-200 mt-1 leading-snug">${escapeHtml(p.items)}</p>` : ''}
-            ${fqs.length ? `<div class="flex flex-wrap gap-1 mt-1.5">${fqs.map(q => `<span class="px-2 py-0.5 rounded-md bg-slate-800 text-violet-200 border border-slate-700 text-[11px] font-bold">${escapeHtml(q.label)} <strong class="text-amber-300">${q.qty}</strong></span>`).join('')}</div>` : ''}
-            ${p.title && normName(p.title) !== normName((p.school || '') + (p.items || '')) ? `<p class="text-[11px] text-slate-500 mt-1 leading-snug">웍스 원문: ${escapeHtml(p.title)}</p>` : ''}
-            ${p.memo ? `<p class="text-xs text-sky-200 mt-1">📝 ${escapeHtml(p.memo)}</p>` : ''}
-            ${p.worksContent && !fqs.length ? `<p class="text-[11px] text-slate-300 mt-1 whitespace-pre-line">${escapeHtml(p.worksContent)}</p>` : ''}
-            <p class="text-[11px] mt-1 ${ok ? 'text-emerald-300' : 'text-rose-300'}">${s ? `📦 납품 목록의 원${delivered ? ' · 납품완료' : ' · 납품 시 함께 처리'}` : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${(s && s.address) || p.address ? ' · ' + escapeHtml((s && s.address) || p.address) : ''}</p>
+          <div class="dc-identity">
+            <div class="dc-meta">
+              <span class="dc-order">${pkIcon(p.type)} ${escapeHtml(p.type)}</span>
+              <span>기한 ${escapeHtml(pkDueLabel(p.due))}${ds === 'over' && !p.done ? ' 지남' : ''}</span>
+              ${p.assignee ? `<span>· 👤 ${escapeHtml(p.assignee)}</span>` : ''}
+              ${ds === 'over' && !p.done ? '<span class="dc-tag dc-tag-warn">기한 경과</span>' : ds === 'soon' && !p.done ? '<span class="dc-tag">기한 임박</span>' : ''}
+              ${p.worksTaskId ? (p.worksSyncPending ? '<span class="dc-tag dc-tag-warn">웍스 대기</span>' : `<span class="dc-tag">${p.worksClosedRemote ? '웍스 완료' : '🔗 웍스'}</span>`) : ''}
+              <span class="nk-pk-meta-tags"></span>
+            </div>
+            <div class="dc-name-row">
+              <button type="button" class="dc-name" data-pk-detail="${p.id}"><h3>${escapeHtml(s ? s.name : (p.school || '원 이름 없음'))}</h3></button>
+              ${dist !== null ? `<span class="dc-distance">${formatDistance(dist)}</span>` : ''}
+            </div>
+            <p class="dc-address">${escapeHtml(addrText)}${!ok ? ' · 위치 미등록' : ''}${s ? ` · 정규 납품 원${delivered ? '(완료)' : ''}` : ''}</p>
+            <p class="dc-product">${escapeHtml(p.items || p.title || '품목 정보 없음')}</p>
+            ${(phoneCleaned || (s && !delivered)) ? `<div class="dc-contact-row">${phoneCleaned ? `<a href="tel:${escapeHtml(phoneCleaned)}" class="dc-phone-chip">📞 ${escapeHtml(phoneStr)}</a>` : ''}${s && !delivered ? '<span class="dc-pickup-pill">📦 납품 시 함께 처리</span>' : ''}</div>` : ''}
+            ${memoParts.length ? `<div class="dc-memo-line">${escapeHtml(memoParts.join(' · '))}</div>` : ''}
           </div>
-          <div>
-            ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pk-navi="${p.id}" class="block w-full py-2.5 px-3 rounded-xl bg-[#03C75A] hover:bg-emerald-400 text-slate-950 text-center font-black text-xs sm:text-sm transition shadow">🟢 네이버 내비 길안내 출발 (자동 팝업)</a>`
-                 : `<button type="button" data-pk-geo="${p.id}" class="w-full py-2.5 px-3 rounded-xl bg-amber-500 text-slate-950 font-black text-xs sm:text-sm">📍 위치 찾기 (길안내 연동)</button>`}
+          <div class="dc-quantities">
+            <div class="dc-quantity-heading">
+              <div>
+                <span>${isExtra ? '추가 납품 수량' : '회수·반품 수량'}</span>
+                <strong>${totalDisplay > 0 ? `합계 ${totalDisplay}개` : '수량 미등록'}</strong>
+                ${fqs.length ? `<small>완료 ${handled}/${target}개</small>` : ''}
+              </div>
+              <button type="button" class="dc-button dc-edit" data-pk-edit="${p.id}">내용 수정</button>
+            </div>
+            ${fqs.length
+              ? `<div class="pk-qty-grid">${fqs.map(q => `<div class="dc-step ${Number(q.done) >= Number(q.qty) && Number(q.qty) > 0 ? 'pk-step-done' : ''}"><span>${escapeHtml(q.label)}</span><strong>${q.qty}</strong><small>${Math.min(Math.max(0, Number(q.qty) || 0), Math.max(0, Number(q.done) || 0))}/${q.qty}</small></div>`).join('')}</div>`
+              : `<div class="dc-extras"><span>${escapeHtml(p.items || (isExtra ? '추가 납품' : '회수·반품'))}</span>${p.qty ? `<span>총 ${p.qty}개</span>` : ''}${p.worksTaskId && p.worksAssigneePending ? '<span>⏳ 담당자 반영 중</span>' : ''}</div>`}
           </div>
-          <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
-            <button type="button" data-pk-detail="${p.id}" class="py-2.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">🔍 상세보기</button>
-            <button type="button" data-pk-edit="${p.id}" class="py-2.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-700">✏️ 수정</button>
-            <button type="button" data-pk-done="${p.id}" class="py-2.5 rounded-xl font-extrabold ${p.done ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-rose-500 hover:bg-rose-400 text-white'}">${p.done ? '↺ 완료 취소' : `✓ ${pkDoneLabel(p.type)} 완료`}</button>
+          <div class="dc-actions">
+            <div class="dc-primary-actions">
+              ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pk-navi="${p.id}" class="dc-button dc-navigate">길안내 시작</a>`
+                   : `<button type="button" data-pk-geo="${p.id}" class="dc-button dc-navigate dc-geo-needed">위치 찾기</button>`}
+              <button type="button" data-pk-done="${p.id}" class="dc-button dc-complete">${p.done ? '완료 취소' : isExtra ? '납품 완료' : '처리 완료'}</button>
+            </div>
+            <div class="dc-secondary-actions">
+              <button type="button" data-pk-detail="${p.id}" class="dc-button dc-secondary">상세 보기</button>
+              <button type="button" data-return-workflow="${p.id}" class="dc-button dc-secondary" ${p.done ? 'disabled' : ''}>${p.done ? '완료됨' : (wfText || '상태 · 메모') + ' · 변경'}</button>
+              ${ok ? `<a ${naverMapAttrs(pkPseudo(p))} class="dc-button dc-secondary">지도 보기</a>`
+                   : `<button type="button" data-pk-geo="${p.id}" class="dc-button dc-secondary">위치 등록</button>`}
+              <button type="button" data-partial-check="${p.id}" class="dc-button dc-secondary" ${p.done ? 'disabled' : ''}>일부 완료 체크</button>
+            </div>
           </div>
         </article>`;
       }).join('');
@@ -5208,11 +5309,11 @@ function speakSchoolQuantity(school, opts = {}) {
       if (btn.getAttribute('data-confirm') !== '1') {
         btn.setAttribute('data-confirm', '1');
         btn.textContent = `한 번 더 누르면 ${n}건 정리`;
-        setTimeout(() => { if (btn.isConnected) { btn.removeAttribute('data-confirm'); btn.textContent = '완료 정리'; } }, 3000);
+        setTimeout(() => { if (btn.isConnected) { btn.removeAttribute('data-confirm'); btn.textContent = '↺ 완료 정리'; } }, 3000);
         return;
       }
       btn.removeAttribute('data-confirm');
-      btn.textContent = '완료 정리';
+      btn.textContent = '↺ 완료 정리';
       PICKUPS = PICKUPS.filter(p => !(p.done && pkInMode(p))); savePickups(); renderPickups(); renderList();
       showToast(`완료된 ${n}건을 정리했습니다.`);
     });
@@ -5266,7 +5367,7 @@ function speakSchoolQuantity(school, opts = {}) {
       const delivered = s && completedMap[s.id];
       const fqs = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
       const row = (k, v) => v ? `<div class="flex gap-2 py-1.5 border-b border-slate-800 last:border-0"><span class="shrink-0 w-16 text-slate-400">${k}</span><span class="flex-1 min-w-0 text-slate-100 break-keep">${v}</span></div>` : '';
-      document.getElementById('pkDetailBox').className = `bg-slate-900 border-2 ${extra ? 'border-violet-500/60' : 'border-rose-500/60'} rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3 max-h-[94dvh] overflow-y-auto overscroll-contain pb-safe`;
+      document.getElementById('pkDetailBox').className = 'bg-[#142238] border border-[#3c5272] rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3 max-h-[94dvh] overflow-y-auto overscroll-contain pb-safe';
       document.getElementById('pkDetailBox').innerHTML = `
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
@@ -5275,14 +5376,14 @@ function speakSchoolQuantity(school, opts = {}) {
               <span class="px-2 py-0.5 rounded-full border ${ds === 'over' ? 'bg-rose-500 text-white border-rose-400' : ds === 'soon' ? 'bg-amber-500/20 text-amber-200 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'}">기한 ${escapeHtml(pkDueLabel(p.due))}${ds === 'over' ? ' 지남' : ''}</span>
               ${p.done ? '<span class="px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-200 border-emerald-500/40">✓ 완료</span>' : ''}
             </div>
-            <h2 id="pkDtName" class="text-2xl font-black text-white mt-2 leading-tight break-keep ${p.done ? 'line-through' : ''}">${escapeHtml(s ? s.name : (p.school || '원 이름 없음'))}</h2>
-            <p class="text-xs mt-1 ${ok ? 'text-slate-400' : 'text-rose-300'}">${addr ? escapeHtml(addr) : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${dist !== null ? ' · ' + formatDistance(dist) : ''}</p>
+            <h2 id="pkDtName" class="text-2xl font-black text-white mt-2 leading-tight break-keep">${escapeHtml(s ? s.name : (p.school || '원 이름 없음'))}</h2>
+            <p class="text-xs mt-1 ${ok ? 'text-slate-400' : 'text-amber-300'}">${addr ? escapeHtml(addr) : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${dist !== null ? ' · ' + formatDistance(dist) : ''}</p>
           </div>
-          <button type="button" data-pkd-close class="shrink-0 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg" aria-label="닫기">✕</button>
+          <button type="button" data-pkd-close class="shrink-0 w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg" aria-label="닫기">✕</button>
         </div>
-        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 space-y-2">
+        <div class="bg-[#0e1b2e] border border-[#314661] rounded-2xl p-3.5 space-y-2">
           <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-bold ${extra ? 'text-violet-300' : 'text-rose-300'}">${extra ? '➕ 추가 납품 품목' : '↩️ 회수·반품 품목'}</span>
+            <span class="text-xs font-bold text-slate-300">${extra ? '➕ 추가 납품 품목' : '↩️ 회수·반품 품목'}</span>
             ${p.qty ? `<span class="shrink-0 text-sm font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">총 ${p.qty}개</span>` : ''}
           </div>
           <p class="text-xl font-black text-amber-200 leading-snug break-keep">${escapeHtml(p.items || p.title || '품목 정보 없음')}</p>
@@ -5290,12 +5391,12 @@ function speakSchoolQuantity(school, opts = {}) {
           ${p.memo ? `<p class="text-sm text-sky-200 mt-2">📝 ${escapeHtml(p.memo)}</p>` : ''}
         </div>
         ${p.worksContent || (p.title && normName(p.title) !== normName((p.school || '') + (p.items || ''))) ? `
-        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 space-y-1.5">
+        <div class="bg-[#0e1b2e] border border-[#314661] rounded-2xl p-3.5 space-y-1.5">
           <div class="text-xs font-bold text-emerald-300">🔗 웍스 할 일 원문</div>
           ${p.title ? `<p class="text-sm font-bold text-slate-100 break-keep">${escapeHtml(p.title)}</p>` : ''}
           ${p.worksContent ? `<p class="text-[13px] text-slate-300 leading-relaxed whitespace-pre-line break-keep">${escapeHtml(String(p.worksContent).slice(0, 3000))}</p>` : ''}
         </div>` : ''}
-        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-1.5 text-[13px]">
+        <div class="bg-[#0e1b2e] border border-[#314661] rounded-2xl px-3.5 py-1.5 text-[13px]">
           ${row('담당자', p.assignee ? escapeHtml(p.assignee) : '')}
           ${row('납품 목록', s ? `${escapeHtml(s.name)}${delivered ? ' · <span class="text-emerald-300">납품완료</span>' : ' · 납품 갈 때 함께 처리'}` : '연결 안 됨 (수정에서 원 이름을 맞추면 연결됩니다)')}
           ${row('웍스', p.worksTaskId ? (p.worksSyncPending ? '<span class="text-amber-300">⚠️ 반영 대기</span>' : p.worksClosedRemote ? '웍스에서 완료됨' : (p.done ? '완료 반영됨' : '연동 중')) : '')}
@@ -5303,14 +5404,14 @@ function speakSchoolQuantity(school, opts = {}) {
           ${row('완료 시각', p.done ? pkFmtTime(p.doneAt) : '')}
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs font-bold">
-          ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pkd-navi="${p.id}" class="col-span-2 py-3 rounded-xl bg-[#03C75A] text-slate-950 text-center font-black text-xs sm:text-sm shadow">🟢 네이버 내비 길안내 출발 (자동 팝업)</a>`
-               : `<button type="button" data-pk-geo="${p.id}" class="col-span-2 py-3 rounded-xl bg-amber-500 text-slate-950 font-black text-xs sm:text-sm">📍 위치 찾기</button>`}
-          <a ${naverMapAttrs(pkPseudo(p))} class="py-2.5 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-center">🗺️ 지도</a>
-          <a href="https://map.kakao.com/link/search/${encodeURIComponent(addr || (s ? s.name : p.school) || '')}" target="_blank" rel="noopener" class="py-2.5 rounded-xl bg-amber-500/10 text-amber-200 border border-amber-500/30 text-center">🟡 카카오맵</a>
-          <button type="button" data-pkd-speak class="py-2.5 rounded-xl bg-indigo-500/15 text-indigo-200 border border-indigo-500/30">🔊 읽어 주기</button>
-          <button type="button" data-pk-edit="${p.id}" class="py-2.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-700">✏️ 수정</button>
+          ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-pkd-navi="${p.id}" class="col-span-2 py-3 rounded-xl bg-[#5578df] hover:bg-indigo-400 text-white text-center font-extrabold text-xs sm:text-sm">길안내 시작 (자동 팝업)</a>`
+               : `<button type="button" data-pk-geo="${p.id}" class="col-span-2 py-3 rounded-xl bg-[#3a311d] border border-[#756134] text-[#f7d58b] font-extrabold text-xs sm:text-sm">📍 위치 찾기</button>`}
+          <a ${naverMapAttrs(pkPseudo(p))} class="py-2.5 rounded-xl bg-[#1b2b41] text-[#bfcee2] border border-[#354b68] text-center">지도 보기</a>
+          <a href="https://map.kakao.com/link/search/${encodeURIComponent(addr || (s ? s.name : p.school) || '')}" target="_blank" rel="noopener" class="py-2.5 rounded-xl bg-[#1b2b41] text-[#bfcee2] border border-[#354b68] text-center">카카오맵</a>
+          <button type="button" data-pkd-speak class="py-2.5 rounded-xl bg-[#1b2b41] text-[#bfcee2] border border-[#354b68]">🔊 읽어 주기</button>
+          <button type="button" data-pk-edit="${p.id}" class="py-2.5 rounded-xl bg-[#2a3d5b] text-[#dce7ff] border border-[#526c91]">내용 수정</button>
         </div>
-        <button type="button" data-pk-done="${p.id}" class="w-full py-3.5 rounded-xl text-base font-extrabold ${p.done ? 'bg-slate-800 text-slate-300 border border-slate-700' : extra ? 'bg-violet-500 hover:bg-violet-400 text-white' : 'bg-rose-500 hover:bg-rose-400 text-white'}">${p.done ? '↺ 완료 취소' : `✓ ${pkDoneLabel(p.type)} 완료`}</button>`;
+        <button type="button" data-pk-done="${p.id}" class="w-full py-3.5 rounded-xl text-sm font-extrabold border ${p.done ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-[#25463d] hover:bg-emerald-800/70 text-[#b7e8d3] border-[#456c5d]'}">${p.done ? '완료 취소' : `✓ ${pkDoneLabel(p.type)} 완료`}</button>`;
     }
     document.getElementById('pkDetailModal').addEventListener('click', (e) => {
       if (e.target.id === 'pkDetailModal' || e.target.closest('[data-pkd-close]')) { closePkDetail(); return; }
@@ -6015,10 +6116,15 @@ function speakSchoolQuantity(school, opts = {}) {
       const tabKey = currentView === 'pickup' ? (pkMode === 'extra' ? 'extra' : 'pickup') : 'delivery';
       document.getElementById('deliveryView').classList.toggle('hidden', currentView !== 'delivery');
       document.getElementById('pickupView').classList.toggle('hidden', currentView !== 'pickup');
-      const bar = document.getElementById('mobileBottomBar'); if (bar) bar.classList.toggle('hidden', currentView !== 'delivery');
+      const bar = document.getElementById('mobileBottomBar');
+      if (bar) bar.classList.remove('hidden');
+      const barDel = document.getElementById('mobileBottomDelivery');
+      const barPk = document.getElementById('mobileBottomPickup');
+      if (barDel) barDel.classList.toggle('hidden', currentView !== 'delivery');
+      if (barPk) barPk.classList.toggle('hidden', currentView !== 'pickup');
       document.querySelectorAll('#viewTabs [data-view]').forEach(b => {
         const on = b.getAttribute('data-view') === tabKey;
-        b.className = 'view-tab py-2.5 px-1 rounded-xl text-[13px] sm:text-sm font-extrabold whitespace-nowrap transition ' + (on ? (tabKey === 'extra' ? 'bg-violet-500 text-white' : tabKey === 'pickup' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-slate-950') : 'bg-transparent text-slate-400 hover:text-slate-200');
+        b.className = 'view-tab py-2.5 px-1 rounded-xl text-[13px] sm:text-sm font-extrabold whitespace-nowrap transition ' + (on ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-transparent text-slate-400 hover:text-slate-200');
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
       try { localStorage.setItem('entercoding_view_v1', tabKey); } catch (e) {}
@@ -7219,7 +7325,7 @@ ${school.address || ''}`;
         if (backdrop) backdrop.classList.add('hidden');
         if (headerEl) headerEl.classList.remove('hidden');
         if (mainEl) mainEl.classList.remove('hidden');
-        if (bottomBar && currentView === 'delivery') bottomBar.classList.remove('hidden');
+        if (bottomBar) bottomBar.classList.remove('hidden');
       }
     }
 

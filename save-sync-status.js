@@ -4,12 +4,12 @@
   window.__deliverySaveStatusInstalled = true;
   const style = document.createElement('style');
   style.textContent = `
-  #deliveryPersistenceStatus{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0 14px;padding:12px 14px;background:#111e31;border:1px solid #304058;border-radius:14px;color:#cbd5e1;font-size:12px;line-height:1.6}
-  #deliveryPersistenceStatus .ps-cell{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-  #deliveryPersistenceStatus .ps-label{color:#94a3b8}
-  #deliveryPersistenceStatus [data-tone=ok]{color:#86dfbf}#deliveryPersistenceStatus [data-tone=warn]{color:#f4ce79}#deliveryPersistenceStatus [data-tone=error]{color:#f1a8b8}
-  #deliveryPersistenceStatus .ps-note{width:100%;font-size:11px;color:#94a3b8}
-  @media(max-width:639px){#deliveryPersistenceStatus{padding:10px 12px;gap:5px 12px;margin:8px 0 12px}.ps-cell{width:100%}}
+  #deliveryPersistenceStatus,#pkPersistenceStatus{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0 14px;padding:12px 14px;background:#111e31;border:1px solid #304058;border-radius:14px;color:#cbd5e1;font-size:12px;line-height:1.6}
+  #deliveryPersistenceStatus .ps-cell,#pkPersistenceStatus .ps-cell{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+  #deliveryPersistenceStatus .ps-label,#pkPersistenceStatus .ps-label{color:#94a3b8}
+  #deliveryPersistenceStatus [data-tone=ok],#pkPersistenceStatus [data-tone=ok]{color:#86dfbf}#deliveryPersistenceStatus [data-tone=warn],#pkPersistenceStatus [data-tone=warn]{color:#f4ce79}#deliveryPersistenceStatus [data-tone=error],#pkPersistenceStatus [data-tone=error]{color:#f1a8b8}
+  #deliveryPersistenceStatus .ps-note,#pkPersistenceStatus .ps-note{width:100%;font-size:11px;color:#94a3b8}
+  @media(max-width:639px){#deliveryPersistenceStatus,#pkPersistenceStatus{padding:10px 12px;gap:5px 12px;margin:8px 0 12px}.ps-cell{width:100%}}
   `;
   document.head.append(style);
   const panel = document.createElement('section');
@@ -19,7 +19,7 @@
   const anchor = document.getElementById('schoolList');
   if (!anchor) return;
   anchor.before(panel);
-  let localResult = 'unknown', localAt = null, observedServerAt = null, serverVerified = false;
+  let localResult = 'unknown', localAt = null, pkLocalResult = 'unknown', pkLocalAt = null, observedServerAt = null, serverVerified = false;
   function time(d) { return d.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
   function write(id, text, tone) {
     const el = document.getElementById(id);
@@ -31,6 +31,14 @@
       return localStorage.getItem(SCHOOLS_KEY) === JSON.stringify(SCHOOLS)
         && localStorage.getItem('entercoding_completed_v1') === JSON.stringify(completedMap)
         && localStorage.getItem('entercoding_coords_v1') === JSON.stringify(customCoords);
+    } catch (_) { return false; }
+  }
+  function pickupMatches() {
+    try {
+      if (typeof PICKUPS === 'undefined' || typeof PICKUPS_KEY === 'undefined') return true;
+      const savedPk = localStorage.getItem(PICKUPS_KEY);
+      if (savedPk === null) return PICKUPS.length === 0;
+      return savedPk === JSON.stringify(PICKUPS);
     } catch (_) { return false; }
   }
   if (typeof saveState === 'function') {
@@ -45,11 +53,38 @@
       return result === undefined ? localResult === 'saved' : result;
     };
   }
+  if (typeof savePickups === 'function') {
+    const originalPk = savePickups;
+    savePickups = function(...args) {
+      let result;
+      try { result = originalPk.apply(this, args); }
+      catch (error) { pkLocalResult = 'error'; render(); throw error; }
+      pkLocalResult = pickupMatches() ? 'saved' : 'error';
+      if (pkLocalResult === 'saved') pkLocalAt = new Date();
+      render();
+      return result === undefined ? pkLocalResult === 'saved' : result;
+    };
+  }
+  function syncSecondaryBar(localText, localTone, cloudText, cloudTone, noteText) {
+    const l = document.getElementById('pkLocal');
+    const c = document.getElementById('pkCloud');
+    const n = document.getElementById('pkNote');
+    if (l) { if (l.textContent !== localText) l.textContent = localText; l.dataset.tone = localTone || ''; }
+    if (c) { if (c.textContent !== cloudText) c.textContent = cloudText; c.dataset.tone = cloudTone || ''; }
+    if (n && n.textContent !== noteText) n.textContent = noteText;
+  }
   function render() {
     let matches = localMatches();
-    write('psLocal', localResult === 'error' && !matches ? '저장 실패 · 다시 저장 필요'
+    const localText = localResult === 'error' && !matches ? '저장 실패 · 다시 저장 필요'
       : matches ? (localAt ? '저장 완료 · ' + time(localAt) : '현재 원 정보 저장됨')
-      : '현재 원 정보 저장 미확인', matches ? 'ok' : localResult === 'error' ? 'error' : 'warn');
+      : '현재 원 정보 저장 미확인';
+    const localTone = matches ? 'ok' : localResult === 'error' ? 'error' : 'warn';
+    write('psLocal', localText, localTone);
+    const pkOk = pickupMatches();
+    const pkLocalText = pkLocalResult === 'error' && !pkOk ? '저장 실패 · 다시 저장 필요'
+      : pkOk ? (pkLocalAt ? '저장 완료 · ' + time(pkLocalAt) : '현재 할 일 정보 저장됨')
+      : '현재 할 일 정보 저장 미확인';
+    const pkLocalTone = pkOk ? 'ok' : pkLocalResult === 'error' ? 'error' : 'warn';
     const logged = typeof syncUser !== 'undefined' && !!syncUser;
     const state = typeof syncState === 'undefined' ? 'off' : syncState;
     const last = typeof syncLastAt !== 'undefined' && syncLastAt ? +new Date(syncLastAt) : null;
@@ -76,6 +111,10 @@
       : !logged ? '원 정보는 이 기기에 저장됩니다. 공유하려면 기존 공유 로그인 버튼을 이용하세요.'
       : '기기 저장과 서버 동기화는 별개입니다. 완료는 현재 계정의 공유 데이터 기준이며 다른 기기의 수신 완료를 뜻하지 않습니다.';
     const el = document.getElementById('psNote'); if (el.textContent !== note) el.textContent = note;
+    const pkNote = !pkOk ? '기기 저장이 확인되지 않았습니다. 새로고침 전에 저장 결과를 확인하세요.'
+      : !logged ? '할 일 정보는 이 기기에 저장됩니다. 공유하려면 기존 공유 로그인 버튼을 이용하세요.'
+      : '기기 저장과 서버 동기화는 별개입니다. 완료는 현재 계정의 공유 데이터 기준이며 다른 기기의 수신 완료를 뜻하지 않습니다.';
+    syncSecondaryBar(pkLocalText, pkLocalTone, text, tone, pkNote);
   }
   window.addEventListener('online', render);
   window.addEventListener('offline', render);

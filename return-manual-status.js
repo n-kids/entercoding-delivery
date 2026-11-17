@@ -43,15 +43,28 @@
       const p=taskById(card.getAttribute('data-pk-card'));if(!p)return;
       const w=p.manualWorkflow||{};
       const sig=JSON.stringify([p.done,w,p.fieldQuantities]);
+      let status=card.querySelector('[data-return-workflow]');
+      let partial=card.querySelector('[data-partial-check]');
+      // 통일된 .dc-card 안에는 이미 하단 .dc-secondary-actions에 버튼이 배치되어 있으므로 위치 삽입 없이 상태만 동기화
+      if(status&&partial&&!card.querySelector('.return-manual-row')){
+        if(signatures.get(card)===sig)return;
+        signatures.set(card,sig);
+        status.dataset.returnWorkflow=String(p.id);
+        status.textContent=p.done?'완료됨':(labels.get(w.status)||'상태 · 메모')+' · 변경';
+        status.disabled=!!p.done;status.title=w.note||'진행 상태 선택';
+        partial.dataset.partialCheck=String(p.id);partial.disabled=!!p.done;
+        partial.title=p.done?'전체 완료를 취소한 뒤 수량을 변경하세요.':'품목별 완료 체크 또는 처리 수량 입력';
+        return;
+      }
       if(signatures.get(card)===sig&&card.querySelector('.return-manual-row'))return;
       signatures.set(card,sig);
       let row=card.querySelector('.return-manual-row');
       if(!row){row=document.createElement('div');row.className='return-manual-row';row.innerHTML='<span>진행 상태</span><button type=button data-return-workflow></button><button type=button data-partial-check>일부 완료 체크</button>';const header=card.querySelector('.pk-ui-statusrow');if(header)header.after(row);else card.prepend(row);}
-      const status=row.querySelector('[data-return-workflow]');
+      status=row.querySelector('[data-return-workflow]');
       status.dataset.returnWorkflow=String(p.id);
       status.textContent=p.done?'처리 완료':(labels.get(w.status)||'상태 선택')+' · 변경';
       status.disabled=!!p.done;status.title=w.note||'진행 상태 선택';
-      const partial=row.querySelector('[data-partial-check]');partial.dataset.partialCheck=String(p.id);partial.disabled=!!p.done;
+      partial=row.querySelector('[data-partial-check]');partial.dataset.partialCheck=String(p.id);partial.disabled=!!p.done;
       partial.title=p.done?'전체 완료를 취소한 뒤 수량을 변경하세요.':'품목별 완료 체크 또는 처리 수량 입력';
     });
   }
