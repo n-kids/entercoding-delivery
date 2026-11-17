@@ -324,6 +324,24 @@ public class FloatingOverlayManager {
     }
 
     @JavascriptInterface
+    public void callPhone(final String rawPhone) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                String cleaned = rawPhone != null ? rawPhone.replaceAll("[^0-9+*#,]", "") : "";
+                if (cleaned.isEmpty()) return;
+                try {
+                    Intent i = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + cleaned));
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    appContext.startActivity(i);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    @JavascriptInterface
     public boolean isOverlayShowing() {
         return isShowing || (webOverlay != null && webOverlay.isShowing());
     }
@@ -1063,6 +1081,24 @@ public class DeliveryAppBridge {
         handler.post(() -> {
             pendingText = null;
             if (tts != null) tts.stop();
+        });
+    }
+
+    @JavascriptInterface
+    public void callPhone(String rawPhone) {
+        handler.post(() -> {
+            String cleaned = rawPhone != null ? rawPhone.replaceAll("[^0-9+*#,]", "") : "";
+            if (cleaned.isEmpty()) {
+                notifyUser("등록된 전화번호가 없습니다.");
+                return;
+            }
+            try {
+                Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + cleaned));
+                dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                activity.startActivity(dialIntent);
+            } catch (Exception e) {
+                notifyUser("전화 앱을 열지 못했습니다.");
+            }
         });
     }
 

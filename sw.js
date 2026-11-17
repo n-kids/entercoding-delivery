@@ -2,7 +2,7 @@
 // 앱 파일 캐시와 시스템 알림을 담당합니다.
 // 원 정보·수량을 Service Worker가 직접 저장했다고 간주하지 않습니다.
 
-const BUILD = 'integrated-20261116-overlay1';
+const BUILD = 'integrated-20261117-convenience2';
 
 const SCOPE = new URL(self.registration.scope);
 
@@ -20,6 +20,12 @@ const REQUIRED_FILES = [
 
 const OPTIONAL_FILES = [
   'overlay.html',
+  'delivery-convenience.js',
+  'save-sync-status.js',
+  'pickup-extra-ui.js',
+  'return-card-status.js',
+  'return-manual-status.js',
+  'map-view-no-popup.js',
   'icon.svg',
   'icon-192.png',
   'icon-512.png'

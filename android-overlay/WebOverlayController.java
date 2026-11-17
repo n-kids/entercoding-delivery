@@ -394,6 +394,24 @@ public class WebOverlayController {
         }
 
         @JavascriptInterface
+        public void callPhone(final String rawPhone) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    String cleaned = rawPhone != null ? rawPhone.replaceAll("[^0-9+*#,]", "") : "";
+                    if (cleaned.isEmpty()) return;
+                    try {
+                        Intent i = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + cleaned));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        appContext.startActivity(i);
+                    } catch (Exception e) {
+                        Log.w(TAG, "전화 걸기 실패", e);
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void openApp() {
             handler.post(new Runnable() {
                 @Override

@@ -11,76 +11,137 @@
   이 파일을 GitHub 에 올리면 APK 재설치 없이 다음 미니창부터 바로 반영됩니다.
 
   네이티브 → 페이지 : window.nkRender(payload), window.nkSetCollapsed(bool)
-  페이지 → 네이티브 : OverlayHost.ready / setSize / beginDrag / callMain / startNavi / openApp / close / log
+  페이지 → 네이티브 : OverlayHost.ready / setSize / beginDrag / callMain / startNavi / callPhone / openApp / close / log
   ?demo=1 을 붙이면 브라우저에서 미리보기할 수 있습니다.
 -->
 <style>
-  :root { color-scheme: dark; }
+  :root { color-scheme: dark; --ov-bg-alpha: 0.88; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; background: transparent; overflow: hidden;
     font-family: system-ui, -apple-system, "Noto Sans KR", sans-serif; user-select: none; -webkit-user-select: none; }
-  #w { width: 208px; padding: 5px 7px 6px; border-radius: 14px; border: 2px solid #10B981;
-    background: rgba(15, 23, 42, 0.88); color: #F8FAFC; }
-  #w.collapsed { width: 158px; padding: 3px 4px 3px 6px; border-width: 1px; background: rgba(15, 23, 42, 0.70); }
+  #w { width: 234px; padding: 5px 7px 6px; border-radius: 14px; border: 2px solid #10B981;
+    background: rgba(15, 23, 42, var(--ov-bg-alpha)); color: #F8FAFC; }
+  #w.sz-sm { width: 206px; padding: 4px 6px 5px; }
+  #w.sz-lg { width: 266px; padding: 6px 8px 7px; }
+  #w.collapsed { width: 168px !important; padding: 3px 4px 3px 6px; border-width: 1px; background: rgba(15, 23, 42, 0.74); }
   .row { display: flex; align-items: center; gap: 4px; }
   button { font: inherit; font-weight: 700; color: inherit; border: 0; border-radius: 8px; cursor: pointer; padding: 0; }
   button:active { filter: brightness(1.25); }
-  #badge { flex: none; max-width: 84px; min-height: 26px; padding: 3px 5px; font-size: 9px; color: #fff;
+  button:disabled { opacity: 0.42; cursor: default; filter: none; }
+  #badge { flex: none; max-width: 90px; min-height: 25px; padding: 3px 6px; font-size: 9px; color: #fff;
     background: #059669; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #dist { flex: 1; min-width: 0; font-size: 11px; font-weight: 700; color: #38BDF8;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 6px 2px; touch-action: none; }
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 5px 2px; touch-action: none; }
+  #w.sz-lg #dist { font-size: 12px; }
   #w.collapsed #dist { color: #F8FAFC; }
-  #hNavi { flex: none; font-size: 10px; padding: 5px 6px; color: #052E16; background: #03C75A; border: 1px solid #34D399; }
   #collapse { flex: none; font-size: 10px; padding: 5px 7px; color: #E2E8F0; background: #334155; border: 1px solid #475569; }
   #close { flex: none; font-size: 10px; padding: 5px 7px; color: #FCA5A5; background: #450A0A; border: 1px solid #DC2626; }
-  #w.collapsed #badge, #w.collapsed #hNavi, #w.collapsed #title, #w.collapsed #body, #w.collapsed #menu { display: none !important; }
+  #w.collapsed #badge, #w.collapsed #title, #w.collapsed #body, #w.collapsed #menu, #w.collapsed #undoBar { display: none !important; }
 
-  #menu { display: none; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 2px; padding: 4px;
+  #menu, #holdMenu { display: none; margin: 4px 0 2px; padding: 5px;
     background: #152238; border: 1px solid #334155; border-radius: 10px; }
-  #menu.open { display: grid; }
-  #menu button { min-height: 36px; font-size: 11px; color: #fff; background: #334155; }
+  #menu.open { display: block; }
+  #holdMenu.open { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .menu-sec-label { font-size: 9px; color: #94A3B8; margin: 5px 0 3px; font-weight: 700; }
+  .menu-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  #menu button, #holdMenu button { min-height: 28px; font-size: 10px; color: #fff; background: #334155; padding: 2px 4px; }
   #menu button.on { background: #2563EB; border: 1px solid #93C5FD; }
 
-  #title { font-size: 13px; font-weight: 800; padding-top: 4px; white-space: nowrap; overflow: hidden;
+  #undoBar { display: none; width: 100%; margin-top: 4px; padding: 5px 7px; font-size: 10px; font-weight: 800;
+    color: #FEF3C7; background: #78350F; border: 1px solid #F59E0B; border-radius: 8px; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #undoBar.open { display: block; }
+
+  #title { font-size: 13px; font-weight: 800; padding-top: 3px; white-space: nowrap; overflow: hidden;
     text-overflow: ellipsis; touch-action: none; }
+  #w.sz-sm #title { font-size: 12px; }
+  #w.sz-lg #title { font-size: 15px; }
+
+  #memo { margin-top: 3px; padding: 3px 6px; border-radius: 7px; font-size: 10px; line-height: 1.35;
+    color: #BAE6FD; background: rgba(12, 27, 46, 0.9); border: 1px solid #1E3A5F;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #w.sz-lg #memo { font-size: 11px; }
+  #memo.hidden { display: none !important; }
+
   #progress { font-size: 10px; font-weight: 700; color: #FCD34D; padding: 2px 0 3px; }
-  #items { max-height: 84px; overflow-y: auto; overscroll-behavior: contain; }
+  #w.sz-lg #progress { font-size: 11px; }
+  #items { max-height: 92px; overflow-y: auto; overscroll-behavior: contain; }
+  #w.sz-sm #items { max-height: 68px; }
+  #w.sz-lg #items { max-height: 128px; }
   .item { display: block; width: 100%; text-align: left; font-size: 11px; padding: 4px 6px; margin: 0 0 3px;
-    background: #1E293B; border: 1px solid #475569; color: #F8FAFC; }
+    background: rgba(30, 41, 59, 0.92); border: 1px solid #475569; color: #F8FAFC; }
+  #w.sz-sm .item { font-size: 10px; padding: 3px 5px; }
+  #w.sz-lg .item { font-size: 12px; padding: 5px 7px; }
   .item.on { background: #064E3B; border-color: #10B981; color: #6EE7B7; }
-  .empty { font-size: 12px; color: #94A3B8; padding: 4px 2px; }
-  #mainNavi { width: 100%; margin-top: 4px; min-height: 30px; font-size: 11px; color: #052E16;
-    background: #03C75A; border: 1px solid #6EE7B7; border-radius: 10px; }
-  #actions { margin-top: 4px; }
-  #actions button { min-height: 30px; font-size: 11px; border-radius: 10px; }
-  #done { flex: 1; color: #fff; background: #059669; border: 1px solid #34D399; }
-  #next { flex: 1; color: #fff; background: #2563EB; border: 1px solid #60A5FA; }
-  #app { flex: none; padding: 0 9px; font-size: 10px !important; color: #E2E8F0; background: #334155; border: 1px solid #64748B; }
+  .empty { font-size: 11px; color: #94A3B8; padding: 4px 2px; }
+
+  #quickTools { margin-top: 4px; gap: 3px; }
+  #quickTools button { flex: 1; min-height: 29px; font-size: 10px; border-radius: 8px; padding: 3px 3px; white-space: nowrap; }
+  #w.sz-lg #quickTools button { min-height: 33px; font-size: 11px; }
+  #callBtn { color: #A7F3D0; background: #064E3B; border: 1px solid #10B981; }
+  #speakBtn { color: #C7D2FE; background: #1E1B4B; border: 1px solid #6366F1; }
+  #holdBtn { color: #FDE68A; background: #422006; border: 1px solid #D97706; }
+  #naviBtn { flex: 1.05; color: #052E16; background: #03C75A; border: 1px solid #6EE7B7; }
+
+  #actions { margin-top: 4px; gap: 3px; }
+  #actions button { min-height: 32px; font-size: 10px; border-radius: 9px; white-space: nowrap; }
+  #w.sz-lg #actions button { min-height: 36px; font-size: 11px; }
+  #done { flex: 1; color: #E2E8F0; background: #0F766E; border: 1px solid #2DD4BF; }
+  #doneNext { flex: 1.25; color: #052E16; background: #4ADE80; border: 1px solid #BBF7D0; font-weight: 900; }
+  #next { flex: 0.9; color: #fff; background: #2563EB; border: 1px solid #60A5FA; }
+  #app { flex: none; padding: 0 7px; font-size: 10px !important; color: #E2E8F0; background: #334155; border: 1px solid #64748B; }
 </style>
 </head>
 <body>
 <div id="w">
   <div class="row" id="header">
-    <button id="badge" type="button" aria-haspopup="true" aria-expanded="false" aria-label="표시할 업무 종류 선택">🧭 내비고정 ▾</button>
+    <button id="badge" type="button" aria-haspopup="true" aria-expanded="false" aria-label="표시할 업무 종류 및 창 설정">🧭 내비고정 ▾</button>
     <div id="dist">거리 계산중</div>
-    <button id="hNavi" type="button">내비</button>
     <button id="collapse" type="button" aria-label="접기">➖</button>
     <button id="close" type="button" aria-label="닫기">✕</button>
   </div>
-  <div id="menu" role="group" aria-label="표시할 업무 종류">
-    <button type="button" data-kind="delivery">납품</button>
-    <button type="button" data-kind="return">반품·회수</button>
-    <button type="button" data-kind="extra">추가 납품</button>
-    <button type="button" data-kind="auto">자동 표시</button>
+  <div id="menu" role="group" aria-label="표시할 업무 및 창 설정">
+    <div class="menu-grid">
+      <button type="button" data-kind="delivery">납품</button>
+      <button type="button" data-kind="return">반품·회수</button>
+      <button type="button" data-kind="extra">추가 납품</button>
+      <button type="button" data-kind="auto">자동 표시</button>
+    </div>
+    <div class="menu-sec-label">미니창 크기</div>
+    <div class="menu-row3">
+      <button type="button" data-size="sm">작게</button>
+      <button type="button" data-size="md">보통</button>
+      <button type="button" data-size="lg">크게</button>
+    </div>
+    <div class="menu-sec-label">배경 투명도</div>
+    <div class="menu-row3">
+      <button type="button" data-alpha="solid">진함</button>
+      <button type="button" data-alpha="mid">반투명</button>
+      <button type="button" data-alpha="light">투명</button>
+    </div>
   </div>
+  <button id="undoBar" type="button" aria-label="방금 완료 되돌리기">↩ 되돌리기</button>
   <div id="title">목적지 준비중</div>
   <div id="body">
+    <div id="memo" class="hidden"></div>
     <div id="progress">품목 터치 시 즉시 체크</div>
     <div id="items"></div>
-    <button id="mainNavi" type="button">🟢 네이버 내비 출발</button>
+    <div class="row" id="quickTools">
+      <button id="callBtn" type="button" title="원 전화 걸기">📞 전화</button>
+      <button id="speakBtn" type="button" title="수량 음성 다시 듣기">🔊 읽기</button>
+      <button id="holdBtn" type="button" title="보류 또는 재방문 상태 표시">⏸ 보류</button>
+      <button id="naviBtn" type="button" title="네이버 내비 길안내 출발">🟢 내비</button>
+    </div>
+    <div id="holdMenu" role="group" aria-label="빠른 상태 기록">
+      <button type="button" data-status="보류">⏸ 보류</button>
+      <button type="button" data-status="재방문">🔁 재방문</button>
+      <button type="button" data-status="연락필요">📞 연락</button>
+    </div>
     <div class="row" id="actions">
       <button id="done" type="button">✓ 완료</button>
-      <button id="next" type="button">다음 ▶</button>
+      <button id="doneNext" type="button">완료▶내비</button>
+      <button id="next" type="button">다음▶</button>
       <button id="app" type="button">앱</button>
     </div>
   </div>
@@ -88,18 +149,29 @@
 <script>
 (function () {
   'use strict';
-  var VERSION = '2026-11-16.1';
+  var VERSION = '2026-11-17.2';
   var H = window.OverlayHost || null;
   var $ = function (id) { return document.getElementById(id); };
   var w = $('w');
+  var ALPHA_MAP = { solid: '0.96', mid: '0.88', light: '0.68' };
   var state = {
     p: {},
     kind: 'auto',
+    size: 'md',
+    alpha: 'mid',
     collapsed: false,
     menuOpen: false,
-    lastNearby: false
+    holdOpen: false,
+    lastNearby: false,
+    autoExpandSuppressUntil: 0
   };
   try { state.collapsed = localStorage.getItem('nk_overlay_collapsed') === '1'; } catch (e) {}
+  try {
+    var svSz = localStorage.getItem('nk_overlay_size');
+    if (svSz === 'sm' || svSz === 'md' || svSz === 'lg') state.size = svSz;
+    var svAl = localStorage.getItem('nk_overlay_alpha');
+    if (svAl && ALPHA_MAP[svAl]) state.alpha = svAl;
+  } catch (e) {}
 
   function log(m) { try { if (H && H.log) H.log(String(m)); else console.log('[overlay]', m); } catch (e) {} }
   function callMain(fn, arg) {
@@ -119,7 +191,10 @@
 
   function setCollapsed(c) {
     state.collapsed = !!c;
-    if (state.collapsed) state.menuOpen = false;
+    if (state.collapsed) {
+      state.menuOpen = false;
+      state.holdOpen = false;
+    }
     try { localStorage.setItem('nk_overlay_collapsed', state.collapsed ? '1' : '0'); } catch (e) {}
     draw();
   }
@@ -128,19 +203,56 @@
     var p = state.p || {};
     var name = p.name || '목적지 없음';
     var distText = p.distText || '거리 대기';
+
     w.classList.toggle('collapsed', state.collapsed);
+    w.classList.toggle('sz-sm', state.size === 'sm');
+    w.classList.toggle('sz-lg', state.size === 'lg');
+    document.documentElement.style.setProperty('--ov-bg-alpha', ALPHA_MAP[state.alpha] || '0.88');
+
     $('collapse').textContent = state.collapsed ? '➕' : '➖';
     $('collapse').setAttribute('aria-label', state.collapsed ? '펼치기' : '접기');
     $('badge').textContent = compactBadge(p.modeBadge || '🧭 내비고정');
     $('badge').style.background = p.modeColor || '#059669';
     $('badge').setAttribute('aria-expanded', String(state.menuOpen));
     $('menu').classList.toggle('open', state.menuOpen && !state.collapsed);
-    var kindButtons = $('menu').querySelectorAll('button');
+    $('holdMenu').classList.toggle('open', state.holdOpen && !state.collapsed);
+
+    var kindButtons = $('menu').querySelectorAll('button[data-kind]');
     for (var k = 0; k < kindButtons.length; k++) {
       kindButtons[k].classList.toggle('on', kindButtons[k].getAttribute('data-kind') === state.kind);
     }
+    var sizeButtons = $('menu').querySelectorAll('button[data-size]');
+    for (var sIdx = 0; sIdx < sizeButtons.length; sIdx++) {
+      sizeButtons[sIdx].classList.toggle('on', sizeButtons[sIdx].getAttribute('data-size') === state.size);
+    }
+    var alphaButtons = $('menu').querySelectorAll('button[data-alpha]');
+    for (var aIdx = 0; aIdx < alphaButtons.length; aIdx++) {
+      alphaButtons[aIdx].classList.toggle('on', alphaButtons[aIdx].getAttribute('data-alpha') === state.alpha);
+    }
+
+    var undoText = String(p.undoLabel || '').trim();
+    $('undoBar').classList.toggle('open', !!undoText && !state.collapsed);
+    if (undoText) $('undoBar').textContent = '↩ ' + undoText + ' 완료 취소(되돌리기)';
+
     $('dist').textContent = state.collapsed ? (name ? name + ' · ' + distText : distText) : distText;
     $('title').textContent = name;
+
+    var memoParts = [];
+    if (p.memo) memoParts.push('📝 ' + String(p.memo));
+    if (p.pickupNote) memoParts.push(String(p.pickupNote));
+    var memoEl = $('memo');
+    if (memoParts.length) {
+      memoEl.textContent = memoParts.join(' · ');
+      memoEl.classList.remove('hidden');
+    } else {
+      memoEl.textContent = '';
+      memoEl.classList.add('hidden');
+    }
+
+    var hasPhone = !!String(p.phone || '').replace(/[^0-9+*#]/g, '');
+    $('callBtn').disabled = !hasPhone;
+    $('callBtn').textContent = hasPhone ? '📞 전화' : '📞 없음';
+
     $('progress').textContent = p.progressText || '품목 터치 시 즉시 체크';
 
     var box = $('items');
@@ -182,8 +294,10 @@
       var p = payload || {};
       state.p = p;
       if (typeof p.kindChoice === 'string') state.kind = p.kindChoice;
-      // 도착 근처면 품목 체크를 위해 자동으로 펼침
-      if (p.nearby && !state.lastNearby && state.collapsed) state.collapsed = false;
+      // 도착 근처면 품목 체크를 위해 자동으로 펼침 (단, 내비 출발/완료▶내비 직후 2.5초간은 자동 펼침 억제)
+      if (p.nearby && !state.lastNearby && state.collapsed && Date.now() >= state.autoExpandSuppressUntil) {
+        state.collapsed = false;
+      }
       state.lastNearby = !!p.nearby;
       draw();
     } catch (e) { log('render error ' + e); }
@@ -191,25 +305,72 @@
   window.nkSetCollapsed = function (c) { setCollapsed(c); };
 
   // ---- 버튼 ----
-  $('badge').addEventListener('click', function () { state.menuOpen = !state.menuOpen; draw(); });
-  $('menu').addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-kind]');
-    if (!b) return;
-    state.kind = b.getAttribute('data-kind');
-    state.menuOpen = false;
+  $('badge').addEventListener('click', function () {
+    state.menuOpen = !state.menuOpen;
+    if (state.menuOpen) state.holdOpen = false;
     draw();
-    // 표시 정보만 바뀜. 실제 주문 종류·완료 기록은 바뀌지 않음
-    callMain('onNativeOverlaySelectKind', state.kind);
+  });
+  $('menu').addEventListener('click', function (e) {
+    var kb = e.target.closest('button[data-kind]');
+    if (kb) {
+      state.kind = kb.getAttribute('data-kind');
+      state.menuOpen = false;
+      draw();
+      callMain('onNativeOverlaySelectKind', state.kind);
+      return;
+    }
+    var sb = e.target.closest('button[data-size]');
+    if (sb) {
+      state.size = sb.getAttribute('data-size');
+      try { localStorage.setItem('nk_overlay_size', state.size); } catch (err) {}
+      draw();
+      return;
+    }
+    var ab = e.target.closest('button[data-alpha]');
+    if (ab) {
+      state.alpha = ab.getAttribute('data-alpha');
+      try { localStorage.setItem('nk_overlay_alpha', state.alpha); } catch (err) {}
+      draw();
+    }
+  });
+  $('undoBar').addEventListener('click', function () {
+    callMain('onNativeOverlayUndoComplete');
+  });
+  $('callBtn').addEventListener('click', function () {
+    var phone = String((state.p && state.p.phone) || '');
+    if (!phone) return;
+    if (H && H.callPhone) H.callPhone(phone);
+    else callMain('onNativeOverlayCallPhone', phone);
+  });
+  $('speakBtn').addEventListener('click', function () {
+    callMain('onNativeOverlaySpeakTarget');
+  });
+  $('holdBtn').addEventListener('click', function () {
+    state.holdOpen = !state.holdOpen;
+    if (state.holdOpen) state.menuOpen = false;
+    draw();
+  });
+  $('holdMenu').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-status]');
+    if (!b) return;
+    state.holdOpen = false;
+    draw();
+    callMain('onNativeOverlayQuickStatus', b.getAttribute('data-status'));
   });
   function startNavi() {
+    state.autoExpandSuppressUntil = Date.now() + 2500;
     setCollapsed(true);
     if (H && H.startNavi) H.startNavi(); else log('startNavi');
   }
-  $('hNavi').addEventListener('click', startNavi);
-  $('mainNavi').addEventListener('click', startNavi);
+  $('naviBtn').addEventListener('click', startNavi);
   $('collapse').addEventListener('click', function () { setCollapsed(!state.collapsed); });
   $('close').addEventListener('click', function () { if (H && H.close) H.close(); else log('close'); });
   $('done').addEventListener('click', function () { callMain('onNativeOverlayCompleteTarget'); });
+  $('doneNext').addEventListener('click', function () {
+    state.autoExpandSuppressUntil = Date.now() + 2500;
+    setCollapsed(true);
+    callMain('onNativeOverlayCompleteAndNext');
+  });
   $('next').addEventListener('click', function () { callMain('onNativeOverlayNextTarget'); });
   $('app').addEventListener('click', function () { if (H && H.openApp) H.openApp(); else log('openApp'); });
 
@@ -232,6 +393,7 @@
     document.body.style.padding = '12px';
     window.nkRender({
       modeBadge: '🧭 회수·내비고정', modeColor: '#059669', name: '1. 달빛유치원', distText: '거리 1.2km',
+      phone: '031-987-2730', memo: '정문 옆 주차 · 2층 교무실', pickupNote: '↩️ 회수·반품 1건',
       progressText: '품목체크 1/3 · 총 12개', kindChoice: 'auto', nearby: false,
       items: [
         { index: 0, checked: true, label: '교재 3단계 (학생용) : 8개' },
