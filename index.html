@@ -246,6 +246,10 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
 #domOverlayGpsDot.denied{background:#ef4444}
 #domOverlayQuickMenu button.is-active,#domOverlayCfgMenu button.is-active{background:#2563eb!important;color:#fff!important;border-color:#93c5fd!important}
 #domOverlayHoldDoneToggle.is-active{background:#b45309!important;color:#fef3c7!important;border-color:#fbbf24!important}
+#domOverlayUnlockNearBtn{background:#065f46!important;color:#a7f3d0!important;border-color:#10b981!important}
+#domFloatingOverlay.nk-dom-light #domOverlayUnlockNearBtn{background:#d1fae5!important;color:#065f46!important;border-color:#059669!important}
+#domOverlayAutoNearToggle.is-active{background:#065f46!important;color:#a7f3d0!important;border-color:#10b981!important}
+#domFloatingOverlay.nk-dom-light #domOverlayAutoNearToggle.is-active{background:#d1fae5!important;color:#065f46!important;border-color:#059669!important}
 .nk-dom-quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
 .nk-dom-quick button{min-height:29px;padding:3px 1px;font-size:10px;border-radius:8px;white-space:nowrap}
 .nk-dom-item-btn{background:var(--dom-ov-item-bg,rgba(30,41,59,.88))!important;border-color:var(--dom-ov-item-bd,rgba(71,85,105,.85))!important;color:var(--dom-ov-item-fg,#fff)!important}
@@ -552,7 +556,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
       </p>
       <div id="naviLockStatusBox" class="bg-slate-950/90 border border-[#03C75A]/40 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div id="naviLockStatusText" class="text-slate-300 font-semibold">
-          💡 각 원의 <strong class="text-[#03C75A]">[🟢 네이버 내비 출발]</strong> 또는 <strong class="text-amber-300">[📌 미니창 고정]</strong>을 누르면 <strong>거리와 상관없이</strong> 해당 원이 내비 위 미니창(PiP)에 고정 표시됩니다.
+          💡 미니창을 열면 <strong>내 위치 기준 가장 가까운 미완료 원</strong>이 자동 표시됩니다. 특정 원의 <strong class="text-[#03C75A]">[길안내 시작]</strong>을 누르면 해당 원이 고정되며, 운전 중 다른 원에 가까워지면 <strong>자동 전환</strong>됩니다.
         </div>
         <button id="clearNaviLockBtn" type="button" class="hidden shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 transition">
           🔓 고정 해제 (가까운 순 자동)
@@ -1422,10 +1426,11 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
         <button type="button" data-dom-kind="delivery" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">납품</button>
         <button type="button" data-dom-kind="return" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">반품·회수</button>
         <button type="button" data-dom-kind="extra" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">추가 납품</button>
-        <button type="button" data-dom-kind="auto" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">자동 표시</button>
+        <button type="button" data-dom-kind="auto" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">📍 가까운 순</button>
       </div>
+      <button id="domOverlayUnlockNearBtn" type="button" class="hidden w-full py-1.5 px-2 rounded-lg text-[11px] font-extrabold border">📍 내 기준 가까운 원으로 전환</button>
       <div class="flex items-center justify-between text-[10px] font-extrabold text-slate-400 pt-0.5">
-        <span>다음 방문처 바로가기</span>
+        <span>다음 방문처 바로가기 (가까운 순)</span>
         <strong id="domOverlayRemLabel" class="text-sky-400"></strong>
       </div>
       <div id="domOverlayQuickList" class="space-y-1"></div>
@@ -1486,6 +1491,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
         <button id="domOverlaySnapBtn" type="button" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">⇄ 좌우 이동</button>
         <button id="domOverlayCalibBtn" type="button" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">📍 좌표 보정</button>
       </div>
+      <button id="domOverlayAutoNearToggle" type="button" class="w-full py-1.5 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">📍 가까운 원 자동전환: 켜짐</button>
       <button id="domOverlayHoldDoneToggle" type="button" class="w-full py-1.5 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">🔒 완료 길게누르기: 꺼짐</button>
     </div>
 
@@ -2807,7 +2813,7 @@ function speakSchoolQuantity(school, opts = {}) {
     const GPS_BTN_ON_CLASS = 'flex-1 sm:flex-initial justify-center whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-500 hover:bg-rose-400 text-white transition shadow-lg shadow-rose-500/20 flex items-center gap-1.5';
     const GPS_BTN_OFF_CLASS = 'flex-1 sm:flex-initial justify-center whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5';
 
-    function setGpsUi(state, text) {
+    function setGpsUi(state, text, opts = {}) {
       gpsUiState = state || 'off';
       const indicator = document.getElementById('gpsIndicator');
       const statusText = document.getElementById('gpsStatusText');
@@ -2826,7 +2832,7 @@ function speakSchoolQuantity(school, opts = {}) {
       const on = gpsActive;
       btnLabel.innerHTML = on ? '<span class="sm:hidden">GPS 중지</span><span class="hidden sm:inline">GPS 추적 중 (중지)</span>' : '<span class="sm:hidden">GPS 켜기</span><span class="hidden sm:inline">실시간 GPS 켜기</span>';
       btn.className = on ? GPS_BTN_ON_CLASS : GPS_BTN_OFF_CLASS;
-      if (typeof syncNativeAndDomOverlays === 'function') {
+      if (!opts.skipOverlaySync && typeof syncNativeAndDomOverlays === 'function') {
         try { syncNativeAndDomOverlays(); } catch (e) {}
       }
     }
@@ -2838,8 +2844,16 @@ function speakSchoolQuantity(school, opts = {}) {
       userLng = lng;
       userAccuracy = null;
       sortMode = 'distance';
-      setGpsUi('manual', `현위치 수동 지정됨: [${label}] · GPS 없이 가장 가까운 원 도착 알림이 작동합니다`);
+      const radius = parseInt(document.getElementById('radiusSelect')?.value, 10) || 300;
+      setGpsUi('manual', `현위치 수동 지정됨: [${label}] · GPS 없이 가장 가까운 원 도착 알림이 작동합니다`, { skipOverlaySync: true });
+      if (typeof nkHandleOverlayProximityOnPositionChange === 'function') {
+        try { nkHandleOverlayProximityOnPositionChange(radius, true); } catch (e) {}
+      }
       renderList();
+      if (typeof updateNaviLockBanner === 'function') updateNaviLockBanner();
+      if (typeof currentView !== 'undefined' && currentView === 'pickup' && typeof renderPickups === 'function') {
+        renderPickups();
+      }
     }
 
     function clearCurrentWatch() {
@@ -2851,28 +2865,51 @@ function speakSchoolQuantity(school, opts = {}) {
       if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
     }
 
-    function applyGpsPosition(pos) {
-      if (!gpsActive || !pos || !pos.coords) return;
-      const acc = Math.round(pos.coords.accuracy || 0);
+    function applyIncomingCoords(lat, lng, accRaw, sourceTag = 'web') {
+      const latNum = Number(lat);
+      const lngNum = Number(lng);
+      if (!gpsActive || !Number.isFinite(latNum) || !Number.isFinite(lngNum)) return false;
+      const acc = (accRaw != null && Number.isFinite(Number(accRaw))) ? Math.round(Number(accRaw)) : 0;
       // 이미 정밀 GPS 좌표를 받은 직후에 부정확한 기지국/Wi-Fi 좌표가 늦게 도착해 덮어쓰는 현상 방지
-      if (gpsHadFix && userAccuracy !== null && userAccuracy <= 80 && acc > 300) return;
+      if (gpsHadFix && userAccuracy !== null && userAccuracy <= 80 && acc > 300) return false;
       gpsErrCount = 0;
       gpsHadFix = true;
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
+      userLat = latNum;
+      userLng = lngNum;
       userAccuracy = acc;
-      const radius = parseInt(document.getElementById('radiusSelect').value, 10) || 300;
+      if (sourceTag === 'bg' && typeof activeQuickLabel !== 'undefined' && activeQuickLabel) {
+        activeQuickLabel = null;
+        if (typeof QUICK_BTN_CLASS === 'string') {
+          document.querySelectorAll('.quick-loc-btn').forEach(b => { b.className = QUICK_BTN_CLASS; });
+        }
+      }
+      const radius = parseInt(document.getElementById('radiusSelect')?.value, 10) || 300;
       const rough = userAccuracy > Math.max(150, radius);
-      setGpsUi(rough ? 'weak' : 'live', rough
-        ? `GPS 수신 중이나 정확도 낮음 (±${userAccuracy}m) · 정밀 위성 신호를 계속 탐색 중입니다`
-        : `실시간 GPS 수신 중 (정확도 ±${userAccuracy}m) · 반경 진입 시 납품수량이 자동 팝업됩니다`);
+      const msg = sourceTag === 'bg'
+        ? (rough
+          ? `안드로이드 백그라운드 GPS 정확도 낮음 (±${userAccuracy}m) · 정밀 신호 탐색 중`
+          : `안드로이드 백그라운드 GPS 수신 중 (±${userAccuracy}m) · 화면이 꺼져도 도착 알림이 울립니다`)
+        : (rough
+          ? `GPS 수신 중이나 정확도 낮음 (±${userAccuracy}m) · 정밀 위성 신호를 계속 탐색 중입니다`
+          : `실시간 GPS 수신 중 (정확도 ±${userAccuracy}m) · 반경 진입 시 납품수량이 자동 팝업됩니다`);
+      setGpsUi(rough ? 'weak' : 'live', msg, { skipOverlaySync: true });
+      if (typeof nkHandleOverlayProximityOnPositionChange === 'function') {
+        try { nkHandleOverlayProximityOnPositionChange(radius, !rough); } catch (e) {}
+      }
       renderList();
+      if (typeof updateNaviLockBanner === 'function') updateNaviLockBanner();
       if (typeof window.nkOnGpsPositionUpdated === 'function') {
         try { window.nkOnGpsPositionUpdated(userLat, userLng, userAccuracy, radius); } catch (e) {}
       }
       if (typeof currentView !== 'undefined' && currentView === 'pickup' && typeof renderPickups === 'function') {
         renderPickups();
       }
+      return true;
+    }
+
+    function applyGpsPosition(pos) {
+      if (!pos || !pos.coords) return;
+      applyIncomingCoords(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, 'web');
     }
 
     function explainGpsPermissionOrEnvIssue(err) {
@@ -7038,15 +7075,67 @@ function speakSchoolQuantity(school, opts = {}) {
     //    - 미완료 납품 원과 미완료 회수·반품 장소 중 가까운 곳을 우선 표시
     //    - 납품할 목록이 없으면 미완료 회수·반품 목록을 자동으로 표시
     var NAVI_LOCK_KEY = 'entercoding_active_navi_v1';
+    var OVERLAY_FOLLOW_NEAREST_KEY = 'nk_overlay_follow_nearest';
     var activeNaviSchoolId = null;
     var activeNaviPickupId = null;
+    var overlayFollowNearest = true;
     try {
       const savedLock = JSON.parse(localStorage.getItem(NAVI_LOCK_KEY) || 'null');
       if (savedLock && typeof savedLock === 'object') {
         activeNaviSchoolId = savedLock.schoolId != null ? Number(savedLock.schoolId) : null;
         activeNaviPickupId = savedLock.pickupId || null;
       }
+      if (localStorage.getItem(OVERLAY_FOLLOW_NEAREST_KEY) === '0') overlayFollowNearest = false;
     } catch (e) {}
+
+    var overlayLockBaseline = null;
+    var lastAutoOverlayKey = '';
+
+    function captureOverlayLockBaseline(key, dist, existingPool) {
+      if (!key) {
+        overlayLockBaseline = null;
+        return;
+      }
+      const baselineDists = new Map();
+      const hasPos = userLat !== null && userLng !== null;
+      if (hasPos) {
+        try {
+          const pools = [];
+          if (Array.isArray(existingPool)) pools.push(existingPool);
+          else if (typeof overlayKindPool === 'function') {
+            pools.push(overlayKindPool('auto'));
+            if (typeof overlayKindChoice === 'string' && overlayKindChoice !== 'auto') {
+              pools.push(overlayKindPool(overlayKindChoice));
+            }
+          }
+          pools.forEach(pool => pool.forEach(t => {
+            const k = typeof overlayTargetKey === 'function' ? overlayTargetKey(t) : '';
+            if (k && t.dist !== null && t.dist !== undefined && Number.isFinite(t.dist)) {
+              baselineDists.set(k, t.dist);
+            }
+          }));
+        } catch (e) {}
+      }
+      const distNum = (dist !== null && dist !== undefined && Number.isFinite(Number(dist))) ? Number(dist) : null;
+      overlayLockBaseline = {
+        key,
+        lockDist: distNum,
+        setAt: Date.now(),
+        hadPos: hasPos,
+        baselineDists
+      };
+    }
+
+    function nkSyncAutoOverlayTrackingKey() {
+      try {
+        if (activeNaviSchoolId !== null || activeNaviPickupId !== null) {
+          lastAutoOverlayKey = '';
+          return;
+        }
+        const t = typeof getOverlayDisplayTarget === 'function' ? getOverlayDisplayTarget() : getBestPipTarget();
+        lastAutoOverlayKey = (t && typeof overlayTargetKey === 'function') ? overlayTargetKey(t) : '';
+      } catch (e) {}
+    }
 
     function saveNaviLockState() {
       try {
@@ -7067,13 +7156,14 @@ function speakSchoolQuantity(school, opts = {}) {
         if (s) {
           const d = distanceToSchool(s);
           const distTxt = d !== null ? ` · 현재 거리 ${formatDistance(d)}` : '';
-          textEl.innerHTML = `🧭 <strong class="text-[#03C75A]">내비 길안내 연동 고정 중 (거리 무관 PiP 표시):</strong> <span class="text-white font-extrabold">${escapeHtml(s.name)}</span> <span class="text-amber-300 font-bold">[${escapeHtml(buildQuantityLabel(s))}]</span><span class="text-sky-300">${distTxt}</span>`;
+          const autoTag = overlayFollowNearest ? ' · 더 가까운 원 접근 시 자동전환' : ' · 자동전환 꺼짐(고정유지)';
+          textEl.innerHTML = `🧭 <strong class="text-[#03C75A]">내비 길안내 선택 고정 중:</strong> <span class="text-white font-extrabold">${escapeHtml(s.name)}</span> <span class="text-amber-300 font-bold">[${escapeHtml(buildQuantityLabel(s))}]</span><span class="text-sky-300">${distTxt}${autoTag}</span>`;
           clearBtn.classList.remove('hidden');
           return;
         }
       }
       // 납품 탭 배너에서는 납품 원 고정 정보만 표시 (회수·추가납품 정보는 표시하지 않음)
-      textEl.innerHTML = `💡 각 원의 <strong class="text-[#03C75A]">[🟢 네이버 내비 출발]</strong> 또는 <strong class="text-amber-300">[📌 PiP고정]</strong>을 누르면 <strong>거리와 상관없이</strong> 해당 원이 내비 위 미니창(PiP)에 고정 표시됩니다.`;
+      textEl.innerHTML = `💡 미니창을 열면 <strong>내 위치 기준 가장 가까운 미완료 원</strong>이 자동 표시됩니다. 특정 원의 <strong class="text-[#03C75A]">[길안내 시작]</strong>을 누르면 해당 원이 고정되며, ${overlayFollowNearest ? '운전 중 다른 원에 가까워지면 <strong>자동 전환</strong>됩니다.' : '현재 <strong>고정 유지(자동전환 꺼짐)</strong> 상태입니다.'}`;
       clearBtn.classList.add('hidden');
     }
 
@@ -7101,6 +7191,19 @@ function speakSchoolQuantity(school, opts = {}) {
       if (overlayRecentToggledSchoolId !== nextId) clearOverlayRecentToggledPickups();
       activeNaviSchoolId = nextId;
       activeNaviPickupId = null;
+      if (nextId !== null) {
+        if (typeof overlayKindChoice === 'string' && overlayKindChoice !== 'auto' && overlayKindChoice !== 'delivery') {
+          overlayKindChoice = 'auto';
+          overlayChoiceId = null;
+        }
+        const sObj = SCHOOLS.find(s => s.id === nextId && !completedMap[s.id]);
+        captureOverlayLockBaseline('d:' + nextId, sObj ? distanceToSchool(sObj) : null);
+        lastAutoOverlayKey = '';
+      } else {
+        if (typeof overlayChoiceId !== 'undefined') overlayChoiceId = null;
+        overlayLockBaseline = null;
+        nkSyncAutoOverlayTrackingKey();
+      }
       saveNaviLockState();
       if (activeNaviSchoolId !== null) {
         const idx = SCHOOLS.findIndex(s => s.id === activeNaviSchoolId);
@@ -7125,6 +7228,26 @@ function speakSchoolQuantity(school, opts = {}) {
       clearOverlayRecentToggledPickups();
       activeNaviPickupId = pickupId || null;
       activeNaviSchoolId = null;
+      if (activeNaviPickupId !== null) {
+        const lockedP = typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => p.id === activeNaviPickupId && !p.done) : null;
+        if (lockedP) {
+          const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(lockedP) : 'return';
+          if (typeof overlayKindChoice === 'string' && overlayKindChoice !== 'auto' && overlayKindChoice !== gMode) {
+            overlayKindChoice = 'auto';
+            overlayChoiceId = null;
+          }
+          const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(lockedP) : null;
+          const grpKey = (s ? ('school_' + s.id) : ('name_' + normName(lockedP.school || lockedP.title))) + '_' + gMode;
+          captureOverlayLockBaseline('p:' + grpKey, typeof pkDistance === 'function' ? pkDistance(lockedP) : null);
+        } else {
+          overlayLockBaseline = null;
+        }
+        lastAutoOverlayKey = '';
+      } else {
+        if (typeof overlayChoiceId !== 'undefined') overlayChoiceId = null;
+        overlayLockBaseline = null;
+        nkSyncAutoOverlayTrackingKey();
+      }
       saveNaviLockState();
       updateNaviLockBanner();
       updateBgMediaAndPip();
@@ -7135,14 +7258,155 @@ function speakSchoolQuantity(school, opts = {}) {
       clearOverlayRecentToggledPickups();
       activeNaviSchoolId = null;
       activeNaviPickupId = null;
+      if (typeof overlayChoiceId !== 'undefined') overlayChoiceId = null;
+      overlayLockBaseline = null;
       saveNaviLockState();
+      nkSyncAutoOverlayTrackingKey();
       updateNaviLockBanner();
       updateBgMediaAndPip();
       renderList();
       if (typeof renderPickups === 'function' && currentView === 'pickup') renderPickups();
       if (!silent) {
-        showToast('🔓 내비·미니창(PiP) 고정을 해제했습니다. 이제 현재 위치에서 가까운 미완료 원이 자동 표시됩니다.');
+        showToast('🔓 고정을 해제했습니다. 이제 내 위치 기준 가까운 미완료 원이 자동 표시됩니다.');
       }
+    }
+
+    function nkHandleOverlayProximityOnPositionChange(radiusMeters, accuracyOk) {
+      const isNativeShowing = typeof hasAndroidNativeOverlay === 'function'
+        && hasAndroidNativeOverlay()
+        && typeof window.AndroidOverlay.isOverlayShowing === 'function'
+        && window.AndroidOverlay.isOverlayShowing();
+      const popupOpen = Boolean((typeof isAnyOverlayActive === 'function' && isAnyOverlayActive()) || mainAppScreenOff || isNativeShowing);
+      if (!popupOpen) {
+        lastAutoOverlayKey = '';
+        return false;
+      }
+      if (userLat === null || userLng === null) return false;
+
+      const hasLock = activeNaviSchoolId !== null || activeNaviPickupId !== null;
+      if (!hasLock) {
+        const cur = typeof getOverlayDisplayTarget === 'function' ? getOverlayDisplayTarget() : getBestPipTarget();
+        const curKey = (cur && typeof overlayTargetKey === 'function') ? overlayTargetKey(cur) : '';
+        if (cur && cur.kind === 'delivery' && cur.school) {
+          const idx = SCHOOLS.findIndex(s => s.id === cur.school.id);
+          if (idx !== -1 && currentCursorIndex !== idx) {
+            currentCursorIndex = idx;
+            updateHudPanel(SCHOOLS[idx]);
+          }
+        }
+        if (lastAutoOverlayKey && curKey && curKey !== lastAutoOverlayKey && cur && cur.dist !== null && cur.dist !== undefined && Number.isFinite(cur.dist)) {
+          const curName = cur.kind === 'delivery' ? (cur.school && cur.school.name) : (cur.pickupGroup && cur.pickupGroup.name);
+          if (curName && accuracyOk) {
+            showToast(`📍 가까운 원 전환: ${curName} (${formatDistance(cur.dist)})`);
+          }
+        }
+        lastAutoOverlayKey = curKey;
+        return false;
+      }
+
+      lastAutoOverlayKey = '';
+      if (!overlayFollowNearest || !accuracyOk) return false;
+
+      let lockKey = '';
+      let lockDist = null;
+      if (activeNaviSchoolId !== null) {
+        const s = SCHOOLS.find(x => x.id === activeNaviSchoolId && !completedMap[x.id]);
+        if (s) {
+          lockKey = 'd:' + s.id;
+          lockDist = distanceToSchool(s);
+        } else {
+          const sDone = SCHOOLS.find(x => x.id === activeNaviSchoolId);
+          const remPickups = sDone && typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(sDone) : [];
+          if (sDone && remPickups.length > 0) {
+            const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(remPickups[0]) : 'return';
+            lockKey = 'p:school_' + sDone.id + '_' + gMode;
+            lockDist = distanceToSchool(sDone);
+          } else {
+            activeNaviSchoolId = null;
+            if (typeof overlayChoiceId !== 'undefined') overlayChoiceId = null;
+            overlayLockBaseline = null;
+            saveNaviLockState();
+            nkSyncAutoOverlayTrackingKey();
+            updateNaviLockBanner();
+            return true;
+          }
+        }
+      } else if (activeNaviPickupId !== null) {
+        const lockedP = typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => p.id === activeNaviPickupId && !p.done) : null;
+        if (!lockedP) {
+          activeNaviPickupId = null;
+          if (typeof overlayChoiceId !== 'undefined') overlayChoiceId = null;
+          overlayLockBaseline = null;
+          saveNaviLockState();
+          nkSyncAutoOverlayTrackingKey();
+          updateNaviLockBanner();
+          return true;
+        }
+        const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(lockedP) : 'return';
+        const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(lockedP) : null;
+        const grpKey = (s ? ('school_' + s.id) : ('name_' + normName(lockedP.school || lockedP.title))) + '_' + gMode;
+        lockKey = 'p:' + grpKey;
+        lockDist = typeof pkDistance === 'function' ? pkDistance(lockedP) : null;
+      }
+
+      const poolMode = (typeof overlayKindChoice === 'string' && overlayKindChoice !== 'auto') ? overlayKindChoice : 'auto';
+      const searchPool = typeof overlayKindPool === 'function' ? overlayKindPool(poolMode) : [];
+      if (!overlayLockBaseline || overlayLockBaseline.key !== lockKey) {
+        captureOverlayLockBaseline(lockKey, lockDist, searchPool);
+        return false;
+      }
+      if (!overlayLockBaseline.hadPos) {
+        searchPool.forEach(t => {
+          const k = typeof overlayTargetKey === 'function' ? overlayTargetKey(t) : '';
+          if (k && t.dist !== null && t.dist !== undefined && Number.isFinite(t.dist)) {
+            overlayLockBaseline.baselineDists.set(k, t.dist);
+          }
+        });
+        overlayLockBaseline.lockDist = lockDist;
+        overlayLockBaseline.hadPos = true;
+        return false;
+      }
+
+      const cand = searchPool[0] || null;
+      if (!cand || cand.dist === null || cand.dist === undefined || !Number.isFinite(cand.dist)) return false;
+      const candKey = typeof overlayTargetKey === 'function' ? overlayTargetKey(cand) : '';
+      if (!candKey || candKey === lockKey) return false;
+
+      const nearThreshold = Math.max(radiusMeters, 500);
+      const approachedZone = Math.max(radiusMeters * 2.5, 800);
+      const baseD = overlayLockBaseline.baselineDists.get(candKey);
+      const wasAlreadyNear = baseD !== undefined && baseD <= nearThreshold;
+      const notMovingAwayFromCand = baseD === undefined || cand.dist <= (baseD + 30);
+
+      const enteredNear = cand.dist <= nearThreshold
+        && (lockDist === null || (cand.dist + 25) < lockDist)
+        && (!wasAlreadyNear || ((baseD - cand.dist) >= 50));
+
+      const approachedMuchCloser =
+        (baseD !== undefined && (baseD - cand.dist) >= 120 && cand.dist <= approachedZone && (lockDist === null || (cand.dist + 50) < lockDist))
+        || (lockDist !== null && cand.dist < (lockDist * 0.5) && (lockDist - cand.dist) >= 200 && notMovingAwayFromCand && (baseD === undefined || (baseD - cand.dist) >= 50));
+
+      if (!enteredNear && !approachedMuchCloser) return false;
+
+      activeNaviSchoolId = null;
+      activeNaviPickupId = null;
+      if (typeof overlayChoiceId !== 'undefined') overlayChoiceId = null;
+      overlayLockBaseline = null;
+      saveNaviLockState();
+      updateNaviLockBanner();
+      lastAutoOverlayKey = candKey;
+      if (cand.kind === 'delivery' && cand.school) {
+        const idx = SCHOOLS.findIndex(s => s.id === cand.school.id);
+        if (idx !== -1) {
+          currentCursorIndex = idx;
+          updateHudPanel(SCHOOLS[idx]);
+        }
+      }
+      const candName = cand.kind === 'delivery' ? (cand.school && cand.school.name) : (cand.pickupGroup && cand.pickupGroup.name);
+      if (candName) {
+        showToast(`📍 더 가까운 원 접근: ${candName} (${formatDistance(cand.dist)})`);
+      }
+      return true;
     }
 
     function getPendingPickupGroupsWithDist(filterMode) {
@@ -7154,8 +7418,8 @@ function speakSchoolQuantity(school, opts = {}) {
         if (filterMode && gMode !== filterMode) return;
         const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(p) : null;
         const key = (s ? ('school_' + s.id) : ('name_' + normName(p.school || p.title))) + '_' + gMode;
+        const dist = typeof pkDistance === 'function' ? pkDistance(p) : null;
         if (!map.has(key)) {
-          const dist = typeof pkDistance === 'function' ? pkDistance(p) : null;
           map.set(key, {
             key,
             groupMode: gMode,
@@ -7167,16 +7431,23 @@ function speakSchoolQuantity(school, opts = {}) {
             dist,
             items: []
           });
+        } else if (map.get(key).dist === null && dist !== null && Number.isFinite(dist)) {
+          map.get(key).dist = dist;
         }
         map.get(key).items.push(p);
       });
       const groups = [...map.values()];
-      groups.sort((a, b) => (a.dist ?? 9999999) - (b.dist ?? 9999999));
+      groups.sort((a, b) => {
+        const ad = (a.dist !== null && a.dist !== undefined && Number.isFinite(a.dist)) ? a.dist : Infinity;
+        const bd = (b.dist !== null && b.dist !== undefined && Number.isFinite(b.dist)) ? b.dist : Infinity;
+        if (ad === bd) return 0;
+        return ad - bd;
+      });
       return groups;
     }
 
     function getBestPipTarget() {
-      // 1. 사용자가 네이버 내비 출발 또는 PiP 고정을 누른 원(activeNaviSchoolId)이 있고 아직 미완료이면 거리 상관없이 최우선 고정
+      // 1. 사용자가 네이버 내비 출발 또는 PiP 고정을 누른 원(activeNaviSchoolId)이 있고 아직 미완료이면 최우선 표시
       if (activeNaviSchoolId !== null) {
         const locked = SCHOOLS.find(s => s.id === activeNaviSchoolId && !completedMap[s.id]);
         if (locked) {
@@ -7193,10 +7464,12 @@ function speakSchoolQuantity(school, opts = {}) {
           const remPickups = sDone && typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(sDone) : [];
           if (sDone && remPickups.length > 0) {
             const d = distanceToSchool(sDone);
+            const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(remPickups[0]) : 'return';
             return {
               kind: 'pickup',
               pickupGroup: {
-                key: 'school_' + sDone.id,
+                key: 'school_' + sDone.id + '_' + gMode,
+                groupMode: gMode,
                 name: sDone.name,
                 subRegion: sDone.subRegion || '',
                 regionGroup: sDone.regionGroup || '',
@@ -7210,12 +7483,13 @@ function speakSchoolQuantity(school, opts = {}) {
             };
           }
           activeNaviSchoolId = null;
+          overlayLockBaseline = null;
           saveNaviLockState();
           setTimeout(updateNaviLockBanner, 0);
         }
       }
 
-      // 1b. 사용자가 회수·반품 또는 추가 납품에서 선택한 항목(activeNaviPickupId)이 있으면 거리 상관없이 최우선 고정
+      // 1b. 사용자가 회수·반품 또는 추가 납품에서 선택한 항목(activeNaviPickupId)이 있으면 최우선 표시
       if (activeNaviPickupId !== null && typeof PICKUPS !== 'undefined') {
         const lockedP = PICKUPS.find(p => p.id === activeNaviPickupId && !p.done);
         if (lockedP) {
@@ -7242,30 +7516,23 @@ function speakSchoolQuantity(school, opts = {}) {
           };
         } else {
           activeNaviPickupId = null;
+          overlayLockBaseline = null;
           saveNaviLockState();
           setTimeout(updateNaviLockBanner, 0);
         }
       }
 
-      const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
-      const pendingDeliveries = enriched.filter(s => !completedMap[s.id]);
-      let orderedDeliveries = [];
-      if (sortMode === 'route' && typeof window.nkGetRouteRank === 'function') {
-        const rank = window.nkGetRouteRank(pendingDeliveries);
-        orderedDeliveries = [...pendingDeliveries].sort((a, b) => (rank.get(a.id) ?? 999999) - (rank.get(b.id) ?? 999999));
-      } else {
-        orderedDeliveries = pendingDeliveries.filter(s => s.dist !== null).sort((a, b) => a.dist - b.dist);
-      }
-      const nearestDelivery = orderedDeliveries[0] || pendingDeliveries.find(s => s.id === (SCHOOLS[currentCursorIndex] && SCHOOLS[currentCursorIndex].id)) || pendingDeliveries[0] || null;
-
-      // 2. 사용자가 '회수·반품' 또는 '추가 납품' 탭을 보고 있을 때 -> 해당 탭의 남은 할 일 우선 표시
-      if (currentView === 'pickup') {
-        const modeGroups = getPendingPickupGroupsWithDist(typeof pkMode !== 'undefined' ? pkMode : null);
-        const fallbackGroups = modeGroups.length ? modeGroups : getPendingPickupGroupsWithDist();
-        if (fallbackGroups[0]) {
-          return { kind: 'pickup', pickupGroup: fallbackGroups[0], dist: fallbackGroups[0].dist, isNaviLocked: false };
-        }
-      }
+      // 2. 미완료 납품 원과 미완료 회수·반품·추가납품을 내 위치 기준 가까운 순으로 비교
+      const orderedDeliveries = typeof orderedOverlayDeliveries === 'function'
+        ? orderedOverlayDeliveries()
+        : SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }))
+            .filter(s => !completedMap[s.id])
+            .sort((a, b) => {
+              const ad = (a.dist !== null && a.dist !== undefined && Number.isFinite(a.dist)) ? a.dist : Infinity;
+              const bd = (b.dist !== null && b.dist !== undefined && Number.isFinite(b.dist)) ? b.dist : Infinity;
+              return ad === bd ? (a.order - b.order) : (ad - bd);
+            });
+      const nearestDelivery = orderedDeliveries[0] || null;
 
       // 미완료 회수·반품·추가납품 그룹 (납품 완료된 원에 남아있는 건 + 단독 처)
       const pickupGroups = getPendingPickupGroupsWithDist().filter(g => !g.schoolId || completedMap[g.schoolId]);
@@ -7317,14 +7584,15 @@ function speakSchoolQuantity(school, opts = {}) {
 
     function updateMediaSessionMetadata() {
       if (!('mediaSession' in navigator)) return;
-      const best = getBestPipTarget();
+      const best = typeof getOverlayDisplayTarget === 'function' ? getOverlayDisplayTarget() : getBestPipTarget();
       if (!best) return;
       try {
         if (best.kind === 'pickup' && best.pickupGroup) {
           const grp = best.pickupGroup;
+          const isExtra = grp.groupMode === 'extra';
           const distStr = grp.dist !== null && grp.dist !== undefined ? ` (${formatDistance(grp.dist)})` : '';
           const itemStr = grp.items.map(p => `[${p.type}] ${p.items || p.title}`).join(' · ');
-          const lockPrefix = best.isNaviLocked ? '🧭 [내비고정] ' : '↩️ [회수·반품] ';
+          const lockPrefix = best.isNaviLocked ? '🧭 [내비고정] ' : (isExtra ? '➕ [추가·가까운순] ' : '↩️ [회수·가까운순] ');
           navigator.mediaSession.metadata = new MediaMetadata({
             title: `${lockPrefix}${grp.name}${distStr}`,
             artist: itemStr.slice(0, 90),
@@ -7338,7 +7606,7 @@ function speakSchoolQuantity(school, opts = {}) {
           const target = best.school;
           const distStr = best.dist !== null && best.dist !== undefined ? ` (${formatDistance(best.dist)})` : '';
           const qtyStr = buildQuantityLabel(target);
-          const lockPrefix = best.isNaviLocked ? '🧭 [내비고정] ' : '📍 ';
+          const lockPrefix = best.isNaviLocked ? '🧭 [내비고정] ' : '📍 [가까운순] ';
           navigator.mediaSession.metadata = new MediaMetadata({
             title: `${lockPrefix}${target.name}${distStr}`,
             artist: `📦 ${qtyStr}`,
@@ -7363,6 +7631,7 @@ function speakSchoolQuantity(school, opts = {}) {
             currentCursorIndex = i;
             if (activeNaviSchoolId !== null) {
               activeNaviSchoolId = SCHOOLS[i].id;
+              captureOverlayLockBaseline('d:' + SCHOOLS[i].id, distanceToSchool(SCHOOLS[i]));
               saveNaviLockState();
               updateNaviLockBanner();
             }
@@ -7377,6 +7646,7 @@ function speakSchoolQuantity(school, opts = {}) {
             currentCursorIndex = i;
             if (activeNaviSchoolId !== null) {
               activeNaviSchoolId = SCHOOLS[i].id;
+              captureOverlayLockBaseline('d:' + SCHOOLS[i].id, distanceToSchool(SCHOOLS[i]));
               saveNaviLockState();
               updateNaviLockBanner();
             }
@@ -7389,8 +7659,8 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-18.1';
-    var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.1';
+    var NK_APP_VERSION = '2026-11-18.2';
+    var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.2';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
       'index.html',
@@ -8192,11 +8462,12 @@ ${school.address || ''}`;
       const ctx = pipCanvasEl.getContext('2d');
       const W = pipCanvasEl.width, H = pipCanvasEl.height;
       const radiusMeters = parseInt(document.getElementById('radiusSelect').value, 10) || 300;
-      const best = getBestPipTarget();
+      const best = typeof getOverlayDisplayTarget === 'function' ? getOverlayDisplayTarget() : getBestPipTarget();
       const dist = best ? best.dist : null;
       const isArrived = dist !== null && dist !== undefined && dist <= radiusMeters;
       const isLocked = !!(best && best.isNaviLocked);
       const isPickupMode = !!(best && best.kind === 'pickup' && best.pickupGroup);
+      const isExtraMode = !!(best && best.kind === 'pickup' && best.pickupGroup && best.pickupGroup.groupMode === 'extra');
 
       // 배경
       ctx.fillStyle = isArrived ? '#451a03' : (isPickupMode ? '#3b071e' : '#0f172a');
@@ -8212,13 +8483,16 @@ ${school.address || ''}`;
       ctx.fillRect(6, 6, W - 12, 42);
       ctx.fillStyle = (isArrived || isLocked) ? '#0f172a' : (isPickupMode ? '#fecdd3' : '#6ee7b7');
       ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
+      const lockStatusMsg = (typeof overlayFollowNearest === 'undefined' || overlayFollowNearest)
+        ? '🧭 선택한 원 길안내 고정 (가까운 원 접근 시 전환)'
+        : '🧭 선택한 원 고정 유지 (자동전환 꺼짐)';
       const statusStr = isArrived
         ? `🚨 반경 ${radiusMeters}m 내 도착! 수량 확인`
         : isLocked
-          ? `🧭 네이버 내비 길안내 고정 중 (거리 무관 표시)`
+          ? lockStatusMsg
           : isPickupMode
-            ? `↩️ 회수·반품 목적지 안내 (가까운 순)`
-            : (gpsActive ? `🟢 실시간 GPS 추적 중 (가까운 순 자동)` : '📍 현재 목적지 납품수량 안내');
+            ? (isExtraMode ? '➕ 추가 납품 안내 (내 기준 가까운 순)' : '↩️ 회수·반품 안내 (내 기준 가까운 순)')
+            : (gpsActive ? '🟢 실시간 GPS (내 기준 가까운 순)' : '📍 내 기준 가까운 원 납품수량 안내');
       ctx.fillText(statusStr, 16, 34);
 
       if (!best) {
@@ -8232,17 +8506,17 @@ ${school.address || ''}`;
         const grp = best.pickupGroup;
         ctx.fillStyle = '#ffffff';
         ctx.font = '900 30px "Noto Sans KR", sans-serif';
-        const nameStr = `↩️ ${grp.name}`;
+        const nameStr = `${isExtraMode ? '➕' : '↩️'} ${grp.name}`;
         ctx.fillText(nameStr.slice(0, 15), 18, 90);
 
         ctx.fillStyle = isArrived ? '#fde68a' : '#fda4af';
         ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
-        const distLabel = dist !== null ? `거리 ${formatDistance(dist)}` : (grp.subRegion || '회수·반품');
+        const distLabel = dist !== null ? `거리 ${formatDistance(dist)}` : (grp.subRegion || (isExtraMode ? '추가 납품' : '회수·반품'));
         ctx.fillText(distLabel, W - ctx.measureText(distLabel).width - 18, 88);
 
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(16, 108, W - 32, 76);
-        ctx.strokeStyle = '#f43f5e';
+        ctx.strokeStyle = isExtraMode ? '#7c3aed' : '#f43f5e';
         ctx.lineWidth = 2;
         ctx.strokeRect(16, 108, W - 32, 76);
 
@@ -8253,7 +8527,7 @@ ${school.address || ''}`;
 
         ctx.fillStyle = '#cbd5e1';
         ctx.font = 'bold 18px "Noto Sans KR", sans-serif';
-        const footerStr = `회수·반품 ${grp.items.length}건 · ${grp.address || (grp.regionGroup + ' ' + grp.subRegion)}`;
+        const footerStr = `${isExtraMode ? '추가 납품' : '회수·반품'} ${grp.items.length}건 · ${grp.address || (grp.regionGroup + ' ' + grp.subRegion)}`;
         ctx.fillText(footerStr.slice(0, 34), 18, 216);
         return;
       }
@@ -8381,11 +8655,23 @@ ${school.address || ''}`;
     function orderedOverlayDeliveries() {
       const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
       const pending = enriched.filter(s => !completedMap[s.id]);
+      if (userLat !== null && userLng !== null) {
+        const rank = (sortMode === 'route' && typeof window.nkGetRouteRank === 'function')
+          ? window.nkGetRouteRank(pending)
+          : null;
+        return [...pending].sort((a, b) => {
+          const ad = (a.dist !== null && a.dist !== undefined && Number.isFinite(a.dist)) ? a.dist : Infinity;
+          const bd = (b.dist !== null && b.dist !== undefined && Number.isFinite(b.dist)) ? b.dist : Infinity;
+          if (ad !== bd) return ad - bd;
+          if (rank) return (rank.get(a.id) ?? 999999) - (rank.get(b.id) ?? 999999);
+          return a.order - b.order;
+        });
+      }
       if (sortMode === 'route' && typeof window.nkGetRouteRank === 'function') {
         const rank = window.nkGetRouteRank(pending);
         return [...pending].sort((a, b) => (rank.get(a.id) ?? 999999) - (rank.get(b.id) ?? 999999));
       }
-      return pending.sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
+      return pending.sort((a, b) => a.order - b.order);
     }
 
     function overlayTargetKey(t) {
@@ -8429,30 +8715,36 @@ ${school.address || ''}`;
           isNaviLocked: !!(activeNaviPickupId && g.items && g.items.some(p => p.id === activeNaviPickupId))
         }));
       const combined = [...deliveries, ...pickups];
-      if (sortMode !== 'route') {
-        combined.sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
-      }
+      combined.sort((a, b) => {
+        const ad = (a.dist !== null && a.dist !== undefined && Number.isFinite(a.dist)) ? a.dist : Infinity;
+        const bd = (b.dist !== null && b.dist !== undefined && Number.isFinite(b.dist)) ? b.dist : Infinity;
+        if (ad === bd) return 0;
+        return ad - bd;
+      });
       return combined;
     }
 
     function getOverlayDisplayTarget() {
       if (overlayKindChoice === 'auto') return getBestPipTarget();
       const pool = overlayKindPool(overlayKindChoice);
-      return pool.find(t => overlayTargetKey(t) === overlayChoiceId) || pool[0] || null;
+      const explicit = overlayChoiceId ? pool.find(t => overlayTargetKey(t) === overlayChoiceId) : null;
+      if (explicit) return explicit;
+      const lockedInPool = pool.find(t => t.isNaviLocked);
+      return lockedInPool || pool[0] || null;
     }
 
     window.onNativeOverlaySelectKind = function(mode) {
       if (!['auto', 'delivery', 'return', 'extra'].includes(mode)) return;
-      const current = getOverlayDisplayTarget();
-      const name = current?.school?.name || current?.pickupGroup?.name;
       overlayKindChoice = mode;
-      if (mode === 'auto') {
-        overlayChoiceId = null;
-      } else {
-        const pool = overlayKindPool(mode);
-        const target = pool.find(t => (t.school?.name || t.pickupGroup?.name) === name) || pool[0];
-        overlayChoiceId = target ? overlayTargetKey(target) : null;
-        if (!target) showToast('선택한 종류의 미완료 업무가 없습니다.');
+      overlayChoiceId = null;
+      activeNaviSchoolId = null;
+      activeNaviPickupId = null;
+      overlayLockBaseline = null;
+      saveNaviLockState();
+      updateNaviLockBanner();
+      nkSyncAutoOverlayTrackingKey();
+      if (mode !== 'auto' && !overlayKindPool(mode).length) {
+        showToast('선택한 종류의 미완료 업무가 없습니다.');
       }
       syncNativeAndDomOverlays();
     };
@@ -8511,6 +8803,8 @@ ${school.address || ''}`;
       const undoLabel = (typeof window.nkGetUndoLabel === 'function') ? window.nkGetUndoLabel() : '';
       const gpsState = typeof gpsUiState === 'string' ? gpsUiState : 'off';
       const gpsAccuracy = userAccuracy != null && isFinite(userAccuracy) ? Math.round(userAccuracy) : null;
+      const autoNearest = !!overlayFollowNearest;
+      const isLocked = Boolean(best && (best.isNaviLocked || (overlayKindChoice !== 'auto' && overlayChoiceId && overlayTargetKey(best) === overlayChoiceId)));
 
       let pool = overlayKindPool(overlayKindChoice);
       const curKey = best ? overlayTargetKey(best) : '';
@@ -8550,6 +8844,8 @@ ${school.address || ''}`;
         return {
           kindChoice: overlayKindChoice,
           targetKind: 'none',
+          isLocked: false,
+          autoNearest,
           modeBadge: overlayKindChoice === 'auto' ? '✅ 완료' : ({ delivery: '납품', return: '반품·회수', extra: '추가 납품' }[overlayKindChoice] + ' ▾'),
           modeColor: '#059669',
           name: overlayKindChoice === 'auto' ? '모든 납품·회수 완료!' : '선택한 종류의 미완료 업무 없음',
@@ -8576,7 +8872,7 @@ ${school.address || ''}`;
           quickList: [],
           nextPreview: null,
           smsBodies: null,
-          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.1',
+          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.2',
           overlayAssetSig: nkLatestOverlayAssetSig || '',
           items: []
         };
@@ -8640,8 +8936,10 @@ ${school.address || ''}`;
         return {
           kindChoice: overlayKindChoice,
           targetKind: 'pickup',
-          modeBadge: isExtra ? (best.isNaviLocked ? '🧭 추가납품·고정' : '➕ 추가 납품') : (best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품'),
-          modeColor: isExtra ? '#7C3AED' : (best.isNaviLocked ? '#059669' : '#E11D48'),
+          isLocked,
+          autoNearest,
+          modeBadge: isExtra ? (isLocked ? '🧭 추가납품·고정' : '📍 추가·가까운순') : (isLocked ? '🧭 회수·내비고정' : '📍 회수·가까운순'),
+          modeColor: isExtra ? '#7C3AED' : (isLocked ? '#059669' : '#E11D48'),
           name: `${isExtra ? '➕' : '↩️'} ${grp.name}`,
           distText: distLabel,
           gpsState,
@@ -8670,7 +8968,7 @@ ${school.address || ''}`;
           smsBodies: buildOverlaySmsBodies(grp.name, totalQty > 0 ? `총 ${totalQty}개` : `${grp.items.length}건`),
           closeOnOpenApp: true,
           autoHideOnAppOpen: true,
-          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.1',
+          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.2',
           overlayAssetSig: nkLatestOverlayAssetSig || '',
           items: overlayItems
         };
@@ -8725,8 +9023,10 @@ ${school.address || ''}`;
       return {
         kindChoice: overlayKindChoice,
         targetKind: 'delivery',
-        modeBadge: overlayKindChoice === 'delivery' ? '납품 ▾' : (best.isNaviLocked ? '🧭 내비고정(거리무관)' : '🏫 최단거리 자동'),
-        modeColor: best.isNaviLocked ? '#059669' : '#2563EB',
+        isLocked,
+        autoNearest,
+        modeBadge: isLocked ? '🧭 내비고정(거리무관)' : (overlayKindChoice === 'delivery' ? '📍 납품·가까운순' : '📍 가까운순 자동'),
+        modeColor: isLocked ? '#059669' : '#2563EB',
         name: `${s.order}. ${s.name}`,
         distText: distLabel,
         gpsState,
@@ -8753,7 +9053,7 @@ ${school.address || ''}`;
         smsBodies: buildOverlaySmsBodies(s.name, totalLabel(s)),
         closeOnOpenApp: true,
         autoHideOnAppOpen: true,
-        latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.1',
+        latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.2',
         overlayAssetSig: nkLatestOverlayAssetSig || '',
         items: mappedItems
       };
@@ -8914,8 +9214,15 @@ ${school.address || ''}`;
       let t = String(raw || '').replace('▾', '').trim();
       const paren = t.indexOf('(');
       if (paren > 0) t = t.slice(0, paren).trim();
-      t = t.replace('최단거리 자동', '자동').replace('회수·내비고정', '회수·고정').replace('추가납품·고정', '추가·고정')
-        .replace('회수·반품', '회수').replace('추가 납품', '추가');
+      t = t.replace('최단거리 자동', '가까운순')
+        .replace('가까운순 자동', '가까운순')
+        .replace('납품·가까운순', '납품순')
+        .replace('회수·가까운순', '회수순')
+        .replace('추가·가까운순', '추가순')
+        .replace('회수·내비고정', '회수·고정')
+        .replace('추가납품·고정', '추가·고정')
+        .replace('회수·반품', '회수')
+        .replace('추가 납품', '추가');
       return t + ' ▾';
     }
 
@@ -8980,6 +9287,10 @@ ${school.address || ''}`;
       document.querySelectorAll('#domOverlayQuickMenu [data-dom-kind]').forEach(btn => {
         btn.classList.toggle('is-active', btn.getAttribute('data-dom-kind') === (payload.kindChoice || overlayKindChoice));
       });
+      const unBtn = document.getElementById('domOverlayUnlockNearBtn');
+      if (unBtn) {
+        unBtn.classList.toggle('hidden', !payload.isLocked);
+      }
       const remEl = document.getElementById('domOverlayRemLabel');
       if (remEl) remEl.textContent = payload.remainingCount ? `남은 ${payload.remainingCount}곳` : '';
       const qListEl = document.getElementById('domOverlayQuickList');
@@ -8995,6 +9306,13 @@ ${school.address || ''}`;
             </button>
           `).join('');
         }
+      }
+
+      const anBtn = document.getElementById('domOverlayAutoNearToggle');
+      if (anBtn) {
+        const autoOn = payload.autoNearest !== false;
+        anBtn.classList.toggle('is-active', autoOn);
+        anBtn.textContent = autoOn ? '📍 가까운 원 자동전환: 켜짐' : '🔒 고정 유지 (자동전환 꺼짐)';
       }
 
       const hdBtn = document.getElementById('domOverlayHoldDoneToggle');
@@ -9396,9 +9714,11 @@ ${school.address || ''}`;
           activeNaviPickupId = null;
           saveNaviLockState();
         }
+        overlayLockBaseline = null;
         if (typeof renderPickups === 'function') renderPickups();
         renderList();
         updateNaviLockBanner();
+        nkSyncAutoOverlayTrackingKey();
         if (!opts.skipSync && typeof window.nkRecordCompletionUndo === 'function') {
           window.nkRecordCompletionUndo({ kind: 'pickupGroup', label: best.pickupGroup.name, items: prevItems });
         }
@@ -9411,11 +9731,32 @@ ${school.address || ''}`;
         markSchoolCompletion(s.id, true, { skipUndo: !!opts.skipUndo });
         renderList();
         updateNaviLockBanner();
+        nkSyncAutoOverlayTrackingKey();
         updateBgMediaAndPip();
         if (!opts.silent) showToast(`✅ [${s.name}] 납품 완료 처리되었습니다!`);
         return true;
       }
       return false;
+    };
+
+    window.onNativeOverlayAutoNearest = function() {
+      clearOverlayRecentToggledPickups();
+      overlayKindChoice = 'auto';
+      overlayChoiceId = null;
+      clearNaviLock(true);
+      nkSyncAutoOverlayTrackingKey();
+      syncNativeAndDomOverlays();
+      showToast('📍 현재 위치에서 가장 가까운 원을 자동 표시합니다.');
+    };
+
+    window.onNativeOverlayToggleAutoNear = function() {
+      overlayFollowNearest = !overlayFollowNearest;
+      try { localStorage.setItem(OVERLAY_FOLLOW_NEAREST_KEY, overlayFollowNearest ? '1' : '0'); } catch (e) {}
+      updateNaviLockBanner();
+      syncNativeAndDomOverlays();
+      showToast(overlayFollowNearest
+        ? '📍 운전 중 다른 원에 가까워지면 자동으로 전환됩니다.'
+        : '🔒 선택한 원 고정을 유지합니다. (자동전환 꺼짐)');
     };
 
     window.nkLaunchNextPendingAfterComplete = function(naviAppArg) {
@@ -9924,7 +10265,7 @@ ${school.address || ''}`;
         pipActive = true;
         updatePipButtons();
         startBgKeepAlive(true);
-        if (!gpsActive && userLat === null) startGpsTracking();
+        if (!gpsActive) startGpsTracking();
         if (pipAnimTimer) clearInterval(pipAnimTimer);
         pipAnimTimer = setInterval(drawPipHudCanvas, 1000);
         showToast('🎬 웹 호환 비디오 PiP 미니창이 켜졌습니다!');
@@ -9933,18 +10274,35 @@ ${school.address || ''}`;
       }
     }
 
-    function openPopupModeWithScreenOff() {
-      // 현재 보고 있는 탭에 맞춰 기본 타겟 자동 정렬
+    function prepareOverlayOpenForView() {
+      activeNaviSchoolId = null;
+      activeNaviPickupId = null;
+      overlayChoiceId = null;
+      overlayLockBaseline = null;
+      clearOverlayRecentToggledPickups();
+      saveNaviLockState();
+      updateNaviLockBanner();
       if (typeof currentView !== 'undefined' && currentView === 'pickup') {
-        activeNaviSchoolId = null;
-        const curLocked = activeNaviPickupId && typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => p.id === activeNaviPickupId && !p.done) : null;
-        if (!curLocked || (typeof pkInMode === 'function' && !pkInMode(curLocked))) {
-          const firstInTab = typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => !p.done && (typeof pkInMode !== 'function' || pkInMode(p))) : null;
-          activeNaviPickupId = firstInTab ? firstInTab.id : null;
+        overlayKindChoice = (typeof pkMode !== 'undefined' && pkMode === 'extra') ? 'extra' : 'return';
+      } else if (overlayKindChoice === 'return' || overlayKindChoice === 'extra') {
+        overlayKindChoice = 'auto';
+      }
+    }
+
+    function openPopupModeWithScreenOff() {
+      // 회수·추가납품 탭일 때 다른 탭 고정값이 남아있지 않도록 정리 (명시적 길안내 클릭은 유지)
+      if (typeof currentView !== 'undefined' && currentView === 'pickup') {
+        if (activeNaviSchoolId !== null) activeNaviSchoolId = null;
+        if (activeNaviPickupId !== null && typeof PICKUPS !== 'undefined') {
+          const curLocked = PICKUPS.find(p => p.id === activeNaviPickupId && !p.done);
+          if (!curLocked || (typeof pkInMode === 'function' && !pkInMode(curLocked))) {
+            activeNaviPickupId = null;
+          }
         }
         saveNaviLockState();
         updateNaviLockBanner();
       }
+      nkSyncAutoOverlayTrackingKey();
       lastOverlayOpenedAt = Date.now();
       appWentBackgroundSinceOverlay = false;
       let usedNativeOverlay = false;
@@ -9970,7 +10328,7 @@ ${school.address || ''}`;
       }
       setMainAppScreenOff(true);
       startBgKeepAlive(true);
-      if (!gpsActive && userLat === null) startGpsTracking();
+      if (!gpsActive) startGpsTracking();
       updatePipButtons();
       showToast('🪟 팝업모드가 켜지고 메인 앱 화면이 꺼졌습니다. [📱 앱열기]를 누르면 복귀합니다.');
     }
@@ -9981,6 +10339,7 @@ ${school.address || ''}`;
         showToast('🪟 팝업모드를 닫고 메인 앱 화면을 켰습니다.');
         return;
       }
+      prepareOverlayOpenForView();
       openPopupModeWithScreenOff();
       return;
       try {
@@ -10007,7 +10366,7 @@ ${school.address || ''}`;
         pipActive = true;
         updatePipButtons();
         startBgKeepAlive(true);
-        if (!gpsActive && userLat === null) startGpsTracking();
+        if (!gpsActive) startGpsTracking();
         if (pipAnimTimer) clearInterval(pipAnimTimer);
         pipAnimTimer = setInterval(drawPipHudCanvas, 1000);
         showToast('🪟 내비 위 미니창이 켜졌습니다! 이제 네이버 내비게이션을 열어도 화면 위에 수량과 남은 거리가 계속 표시됩니다.');
@@ -10088,13 +10447,9 @@ ${school.address || ''}`;
             },
             (location, error) => {
               if (error || !location) return;
+              if (gpsUiState === 'manual' && !isAnyOverlayActive() && !mainAppScreenOff) return;
               gpsActive = true;
-              gpsHadFix = true;
-              userLat = location.latitude;
-              userLng = location.longitude;
-              userAccuracy = Math.round(location.accuracy || 10);
-              setGpsUi('live', `안드로이드 백그라운드 GPS 수신 중 (±${userAccuracy}m) · 화면이 꺼져도 도착 알림이 울립니다`);
-              renderList();
+              applyIncomingCoords(location.latitude, location.longitude, location.accuracy ?? 10, 'bg');
             }
           );
         } catch (e) {}
@@ -10115,16 +10470,8 @@ ${school.address || ''}`;
       else startBgKeepAlive(false);
     });
     document.getElementById('togglePipHudBtn').addEventListener('click', togglePipHud);
-    document.getElementById('bannerPipHudBtn').addEventListener('click', () => {
-      activeNaviPickupId = null;
-      saveNaviLockState();
-      togglePipHud();
-    });
-    document.getElementById('pkPipHudBtn')?.addEventListener('click', () => {
-      activeNaviSchoolId = null;
-      saveNaviLockState();
-      togglePipHud();
-    });
+    document.getElementById('bannerPipHudBtn').addEventListener('click', togglePipHud);
+    document.getElementById('pkPipHudBtn')?.addEventListener('click', togglePipHud);
     document.getElementById('modalPipHudBtn').addEventListener('click', togglePipHud);
     document.getElementById('popupScreenOffWakeBtn')?.addEventListener('click', () => {
       window.onNativeOverlayOpenApp({ silent: false });
@@ -10242,6 +10589,11 @@ ${school.address || ''}`;
       toggleDomSubMenu('domOverlayCfgMenu', 'domOverlayCfgBtn');
     });
     document.getElementById('domOverlayQuickMenu')?.addEventListener('click', (e) => {
+      if (e.target.closest('#domOverlayUnlockNearBtn')) {
+        closeDomPopMenus();
+        window.onNativeOverlayAutoNearest();
+        return;
+      }
       const kb = e.target.closest('[data-dom-kind]');
       if (kb) {
         closeDomPopMenus();
@@ -10317,6 +10669,9 @@ ${school.address || ''}`;
     document.getElementById('domOverlayCalibBtn')?.addEventListener('click', () => {
       closeDomPopMenus();
       window.onNativeOverlayCalibrate();
+    });
+    document.getElementById('domOverlayAutoNearToggle')?.addEventListener('click', () => {
+      window.onNativeOverlayToggleAutoNear();
     });
     document.getElementById('domOverlayHoldDoneToggle')?.addEventListener('click', () => {
       domOvState.holdDone = !domOvState.holdDone;
@@ -10781,11 +11136,26 @@ window.__nkBridge = {
   getFilter: () => currentFilter,
   setFilter: (f) => { currentFilter = f; },
   getUserPos: () => (userLat !== null && userLng !== null ? { lat: userLat, lng: userLng } : null),
+  setUserPos: (lat, lng, acc = 10) => {
+    gpsActive = true;
+    return applyIncomingCoords(lat, lng, acc, 'web');
+  },
   getNaviLock: () => ({ schoolId: activeNaviSchoolId, pickupId: activeNaviPickupId }),
   restoreNaviLock: (schoolId, pickupId) => {
     if (schoolId != null) setNaviLockedSchool(schoolId, { skipRender: true });
     else if (pickupId != null) setNaviLockedPickup(pickupId, { skipRender: true });
-  }
+  },
+  clearNaviLock: (silent = true) => clearNaviLock(silent),
+  setAutoNearest: (on) => {
+    overlayFollowNearest = !!on;
+    try { localStorage.setItem(OVERLAY_FOLLOW_NEAREST_KEY, overlayFollowNearest ? '1' : '0'); } catch (e) {}
+    updateNaviLockBanner();
+    syncNativeAndDomOverlays();
+  },
+  getAutoNearest: () => !!overlayFollowNearest,
+  getOverlayTarget: () => getOverlayDisplayTarget(),
+  getOverlayPayload: () => buildOverlayPayload(),
+  syncOverlay: () => syncNativeAndDomOverlays()
 };
 </script>
   <script src="save-sync-status.js"></script>
