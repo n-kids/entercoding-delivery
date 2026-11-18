@@ -395,6 +395,7 @@
       <button type="button" id="calibBtn">📍 좌표 보정</button>
     </div>
     <button type="button" id="holdDoneToggle" style="width:100%">🔒 완료 길게누르기: 꺼짐</button>
+    <div style="margin-top:6px;text-align:right;font-size:8.5px;opacity:0.68">미니창 v<span id="ovVerLabel"></span></div>
   </div>
 
   <button id="undoBar" type="button" aria-label="방금 완료 되돌리기">↩ 되돌리기</button>
@@ -464,7 +465,7 @@
 <script>
 (function () {
   'use strict';
-  var VERSION = '2026-11-17.3';
+  var VERSION = '2026-11-18.1';
   var H = window.OverlayHost || null;
   var $ = function (id) { return document.getElementById(id); };
   var w = $('w');
@@ -857,6 +858,11 @@
       }
       state.lastNearby = !!p.nearby;
       draw();
+      if (p.latestOverlayVersion && String(p.latestOverlayVersion) !== VERSION) {
+        applyOverlaySelfUpdate('render:' + p.latestOverlayVersion, 'ver:' + p.latestOverlayVersion);
+      } else if (p.overlayAssetSig && ovKnownHeaderSig && p.overlayAssetSig !== ovKnownHeaderSig) {
+        applyOverlaySelfUpdate('render-sig', 'hdr:' + p.overlayAssetSig);
+      }
     } catch (e) { log('render error ' + e); }
   };
   window.nkSetCollapsed = function (c) { setCollapsed(c); };
@@ -1143,6 +1149,161 @@
   $('header').addEventListener('pointerdown', armDrag);
   $('titleRow').addEventListener('pointerdown', armDrag);
 
+  // ---- 미니창 자동 업데이트 (APK 재설치 없이 웹 반영) ----
+  var OV_UPD_GUARD_KEY = 'nk_ov_self_upd_v1';
+  var ovKnownHeaderSig = '';
+  var ovBootLastModMs = (function () {
+    try {
+      var t = Date.parse(document.lastModified || '');
+      return isFinite(t) ? t : 0;
+    } catch (e) { return 0; }
+  })();
+  var ovBootAt = Date.now();
+  var ovCheckInFlight = false;
+  var ovApplying = false;
+  var ovLastCheckAt = 0;
+  var ovPendingReload = null;
+
+  function canReloadOverlayNow() {
+    if (state.menuOpen || state.cfgOpen || state.holdOpen || state.smsOpen) return false;
+    try {
+      if (document.querySelector('.holding')) return false;
+    } catch (e) {}
+    return true;
+  }
+
+  function readOvGuard() {
+    try {
+      var raw = sessionStorage.getItem(OV_UPD_GUARD_KEY);
+      var parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch (e) {}
+    return { lastSig: '', lastAt: 0, count: 0, windowStart: Date.now() };
+  }
+
+  function canAutoReloadOverlay(sig) {
+    if (!sig) return false;
+    var now = Date.now();
+    var rec = readOvGuard();
+    if (!rec.windowStart || (now - rec.windowStart) > 300000) return true;
+    if (rec.count >= 2) return false;
+    if (rec.lastSig === sig && (now - rec.lastAt) < 120000) return false;
+    return true;
+  }
+
+  function markOvReloadGuard(sig) {
+    var now = Date.now();
+    var rec = readOvGuard();
+    var reset = !rec.windowStart || (now - rec.windowStart) > 300000;
+    var next = {
+      lastSig: sig || '',
+      lastAt: now,
+      windowStart: reset ? now : rec.windowStart,
+      count: reset ? 1 : (Number(rec.count || 0) + 1)
+    };
+    try { sessionStorage.setItem(OV_UPD_GUARD_KEY, JSON.stringify(next)); } catch (e) {}
+  }
+
+  function seedOvHeaderBaseline() {
+    if (!/^https?:/.test(location.protocol) || !('caches' in window)) return Promise.resolve();
+    var target = new URL('overlay.html', location.href).href;
+    return caches.match(target, { ignoreSearch: true }).then(function (res) {
+      if (!res) return;
+      var etag = res.headers.get('etag') || '';
+      var lm = res.headers.get('last-modified') || '';
+      var sig = [etag, lm].join('|');
+      if (sig && sig !== '|' && !ovKnownHeaderSig) ovKnownHeaderSig = sig;
+    }).catch(function () {});
+  }
+
+  function applyOverlaySelfUpdate(reason, sig) {
+    if (ovApplying) return;
+    if (!/^https?:/.test(location.protocol)) return;
+    if (/[?&]demo=1/.test(location.search)) return;
+    if (navigator.onLine === false) return;
+    if (!canAutoReloadOverlay(sig)) return;
+
+    if (!canReloadOverlayNow()) {
+      ovPendingReload = { reason: reason, sig: sig };
+      return;
+    }
+
+    ovApplying = true;
+    ovPendingReload = null;
+    try {
+      var nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set('nk_upd', String(Date.now()));
+      var targetHref = nextUrl.toString();
+      fetch(targetHref, { cache: 'reload' }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      }).then(function (html) {
+        if (!html || html.indexOf('WEB_OVERLAY_SHELL_V1') === -1 || html.indexOf('window.nkRender') === -1) {
+          throw new Error('Invalid overlay markup');
+        }
+        if (!canReloadOverlayNow()) {
+          ovPendingReload = { reason: reason, sig: sig };
+          ovApplying = false;
+          return;
+        }
+        markOvReloadGuard(sig);
+        log('overlay self-update: ' + reason);
+        window.location.replace(targetHref);
+      }).catch(function (err) {
+        ovApplying = false;
+        log('overlay self-update deferred: ' + err);
+      });
+    } catch (e) {
+      ovApplying = false;
+    }
+  }
+
+  function checkOverlaySelfUpdate(forceCheck) {
+    if (ovApplying || ovCheckInFlight) return;
+    if (!/^https?:/.test(location.protocol)) return;
+    if (/[?&]demo=1/.test(location.search)) return;
+    if (navigator.onLine === false) return;
+
+    var now = Date.now();
+    if (!forceCheck && (now - ovLastCheckAt < 30000)) return;
+    ovLastCheckAt = now;
+    ovCheckInFlight = true;
+
+    fetch('./version.json?t=' + now, { cache: 'no-store' }).then(function (res) {
+      if (!res.ok) return null;
+      return res.json();
+    }).then(function (meta) {
+      if (meta && meta.overlayVersion && String(meta.overlayVersion) !== VERSION) {
+        ovCheckInFlight = false;
+        applyOverlaySelfUpdate('version.json:' + meta.overlayVersion, 'ver:' + meta.overlayVersion);
+        return null;
+      }
+      return fetch('./overlay.html?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+    }).then(function (headRes) {
+      ovCheckInFlight = false;
+      if (!headRes || !headRes.ok) return;
+      var etag = headRes.headers.get('etag') || '';
+      var lm = headRes.headers.get('last-modified') || '';
+      var sig = [etag, lm].join('|');
+      if (!ovKnownHeaderSig) {
+        ovKnownHeaderSig = (sig && sig !== '|') ? sig : '';
+        if (lm) {
+          var srvMs = Date.parse(lm);
+          if (isFinite(srvMs) && ovBootLastModMs > 0 && Math.abs(ovBootLastModMs - ovBootAt) > 10000 && (srvMs - ovBootLastModMs) > 5000 && srvMs <= (Date.now() + 60000)) {
+            applyOverlaySelfUpdate('lastMod:' + lm, 'hdr:' + (sig || lm));
+          }
+        }
+        return;
+      }
+      if (sig && sig !== '|' && sig !== ovKnownHeaderSig) {
+        applyOverlaySelfUpdate('header:' + sig, 'hdr:' + sig);
+      }
+    }).catch(function () {
+      ovCheckInFlight = false;
+    });
+  }
+
+  if ($('ovVerLabel')) $('ovVerLabel').textContent = VERSION;
   draw();
   if (H && H.ready) {
     H.ready(VERSION);
@@ -1176,6 +1337,25 @@
         { index: 1000, checked: false, label: '↩️ [회수] 2단계 반품 (3개)', qty: 3, deliveredQty: 0, adjustable: false, kind: 'linked-pickup' }
       ]
     });
+  }
+
+  if (/^https?:/.test(location.protocol) && !/[?&]demo=1/.test(location.search)) {
+    seedOvHeaderBaseline().then(function () {
+      setTimeout(function () { checkOverlaySelfUpdate(true); }, 2500);
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) checkOverlaySelfUpdate(false);
+    });
+    setInterval(function () {
+      if (ovPendingReload && canReloadOverlayNow()) {
+        var p = ovPendingReload;
+        ovPendingReload = null;
+        applyOverlaySelfUpdate(p.reason, p.sig);
+      }
+    }, 3000);
+    setInterval(function () {
+      if (!document.hidden) checkOverlaySelfUpdate(false);
+    }, 4 * 60 * 1000);
   }
 })();
 </script>

@@ -294,6 +294,93 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
 #domOverlayMainNaviBtn.nk-navi-kakao{background:#FEE500!important;color:#1e1b06!important;border:1px solid #facc15}
 #domOverlayMainNaviBtn.nk-navi-tmap{background:#0064FF!important;color:#ffffff!important;border:1px solid #60a5fa}
 </style>
+<style id="nk-app-update-css">
+  #headerUpdateDot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: nkUpdPulse 1.6s ease-in-out infinite;
+  }
+  #headerUpdateDot.hidden { display: none; }
+  @keyframes nkUpdPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.7; }
+  }
+  #appUpdateBanner {
+    background: linear-gradient(135deg, rgba(12, 74, 110, 0.92) 0%, rgba(15, 23, 42, 0.96) 100%);
+    border: 1.5px solid rgba(56, 189, 248, 0.55);
+    border-radius: 1rem;
+    padding: 0.75rem 0.9rem;
+    box-shadow: 0 10px 24px -8px rgba(14, 165, 233, 0.35);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+  #appUpdateBanner.hidden { display: none; }
+  #appUpdateBanner .nk-upd-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    min-width: 0;
+    flex: 1 1 200px;
+  }
+  #appUpdateBanner .nk-upd-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #e0f2fe;
+    line-height: 1.35;
+  }
+  #appUpdateBanner .nk-upd-desc {
+    font-size: 11px;
+    color: #bae6fd;
+    line-height: 1.4;
+    margin-top: 2px;
+    word-break: keep-all;
+  }
+  #appUpdateBanner .nk-upd-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-shrink: 0;
+  }
+  #appUpdateApplyBtn {
+    padding: 0.45rem 0.85rem;
+    border-radius: 0.75rem;
+    background: #38bdf8;
+    color: #020617;
+    font-size: 12px;
+    font-weight: 800;
+    border: 1px solid #7dd3fc;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #appUpdateApplyBtn:hover { background: #7dd3fc; }
+  #appUpdateApplyBtn:disabled { opacity: 0.6; cursor: wait; }
+  #appUpdateDismissBtn {
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.75rem;
+    background: rgba(30, 41, 59, 0.9);
+    color: #cbd5e1;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #475569;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #appUpdateDismissBtn:hover { background: #334155; }
+  #checkAppUpdateBtn.has-update {
+    background: rgba(14, 165, 233, 0.25) !important;
+    border-color: rgba(56, 189, 248, 0.7) !important;
+    color: #e0f2fe !important;
+  }
+</style>
 </head>
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
 
@@ -329,7 +416,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
 
         <!-- Menu / All Tools Button -->
         <button id="headerMenuBtn" type="button" aria-expanded="false" aria-controls="headerTools" class="flex-1 sm:flex-initial justify-center px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1 whitespace-nowrap">
-          <span>⚙️</span><span>설정·도구</span>
+          <span>⚙️</span><span>설정·도구</span><span id="headerUpdateDot" class="hidden" title="새 업데이트가 있습니다"></span>
         </button>
       </div>
 
@@ -400,6 +487,13 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
             <button id="downloadStandaloneBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition text-left sm:text-center" title="현재 앱을 단독 HTML 파일로 백업 저장">
               💾 단독 HTML 파일 받기
             </button>
+            <button id="checkAppUpdateBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/30 transition text-left sm:text-center" title="서버 최신 버전 확인 및 즉시 업데이트 (추가 APK 다운로드 불필요)">
+              🔄 업데이트 확인
+            </button>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-slate-400">
+            <span id="appVersionTag">앱 버전 확인 중...</span>
+            <span id="appUpdateStatusTag" class="text-sky-300">자동 업데이트 대기</span>
           </div>
         </div>
       </div>
@@ -407,6 +501,21 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
   </header>
 
   <main class="max-w-4xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 space-y-3 sm:space-y-4">
+
+    <!-- Non-intrusive In-App Update Banner (shown when update ready during active work) -->
+    <div id="appUpdateBanner" class="hidden" role="status" aria-live="polite">
+      <div class="nk-upd-info">
+        <span class="text-lg leading-none" aria-hidden="true">✨</span>
+        <div class="min-w-0">
+          <div id="appUpdateBannerTitle" class="nk-upd-title">새 버전이 준비되었습니다</div>
+          <div id="appUpdateBannerDesc" class="nk-upd-desc">저장된 납품 기록·메모는 유지된 채 화면만 새로고침됩니다.</div>
+        </div>
+      </div>
+      <div class="nk-upd-actions">
+        <button id="appUpdateApplyBtn" type="button">🔄 지금 적용</button>
+        <button id="appUpdateDismissBtn" type="button">나중에</button>
+      </div>
+    </div>
 
     <!-- View tabs: 납품(주문앱) / 회수·반품(웍스) / 추가 납품(웍스) -->
     <nav id="viewTabs" class="grid grid-cols-3 gap-1 bg-slate-900 border border-slate-800 rounded-2xl p-1" aria-label="화면 전환">
@@ -837,8 +946,9 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
           <p class="text-xs text-slate-200 leading-relaxed">
             웹 브라우저(크롬·사파리)는 보안 정책상 동영상(미디어 재생) 방식의 PiP만 허용하지만, <strong>안드로이드 APK로 설치</strong>하시면 배달·콜앱처럼 <strong>'다른 앱 위에 표시' 네이티브 오버레이 위젯</strong>이 작동하여 <strong>재생 아이콘 없이 네이버 내비 위에서 바로 품목 체크(☑)·완료처리·접기/펼치기</strong>를 직접 터치할 수 있습니다.
           </p>
-          <div class="bg-emerald-950/60 border border-emerald-500/40 rounded-xl px-3 py-2 text-[11px] text-emerald-200 flex items-center justify-between gap-2">
-            <span>🔄 <strong>APK & 홈화면 앱 자동 업데이트 켜짐:</strong> 최초 1회만 APK를 설치해 두면, 이후에는 GitHub(<code>n-kids.github.io</code>)에 파일만 올려도 앱을 켤 때 자동으로 최신 화면이 반영됩니다.</span>
+          <div class="bg-emerald-950/60 border border-emerald-500/40 rounded-xl px-3 py-2 text-[11px] text-emerald-200 flex flex-wrap items-center justify-between gap-2">
+            <span>🔄 <strong>추가 다운로드 없이 자동 업데이트:</strong> 최초 1회만 APK를 설치해 두면, 이후 코드 수정 시 GitHub(<code>n-kids.github.io</code>)에서 앱과 미니창이 자동으로 최신 버전을 반영합니다.</span>
+            <span id="modalAppVersionBadge" class="px-2 py-0.5 rounded-full bg-slate-900 text-sky-300 border border-sky-500/30 font-bold shrink-0"></span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button id="modalTestTouchOverlayBtn" type="button" class="py-2.5 px-3 rounded-xl font-extrabold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow">
@@ -856,10 +966,10 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
             <div class="space-y-1">
               <div class="font-bold text-emerald-300">방법 A. 프로그램 설치 없이 GitHub에서 3분 만에 자동 생성 (가장 추천)</div>
               <ol class="list-decimal list-inside space-y-0.5 text-slate-300">
-                <li>첨부된 압축파일(<code>entercoding-delivery-pwa-apk.zip</code>)의 모든 파일(<code>.github/workflows/build-apk.yml</code>, <code>scripts/configure-android.mjs</code>, <code>package.json</code> 포함)을 GitHub 저장소 <code>main</code> 브랜치에 업로드합니다.</li>
-                <li>GitHub 저장소 상단 <strong>[Actions]</strong> 탭 → 좌측 <strong>Build Android APK</strong> 클릭 → 우측 <strong>[Run workflow]</strong>를 누릅니다(업로드 시 자동 실행됨).</li>
-                <li>약 2~3분 뒤 빌드가 완료(✅)되면 클릭 후 하단 <strong>Artifacts</strong>에서 <strong><code>entercoding-delivery-android-apk</code></strong>를 내려받아 압축을 풀면 <strong><code>app-debug.apk</code></strong>가 들어 있습니다.</li>
-                <li>스마트폰에 <code>app-debug.apk</code>를 설치한 뒤 <strong>'다른 앱 위에 표시' 권한</strong>과 <strong>위치 권한(항상 허용)</strong>을 켜면 끝입니다!</li>
+                <li>저장소 <code>main</code> 브랜치에 변경사항이 반영되면 <code>.github/workflows/build-apk.yml</code>이 자동으로 APK를 빌드합니다.</li>
+                <li>GitHub 저장소 상단 <strong>[Actions]</strong> 탭 → 좌측 <strong>Build Signed Android APK</strong> → 우측 <strong>[Run workflow]</strong>로 수동 빌드도 가능합니다.</li>
+                <li>빌드 완료(✅) 후 하단 <strong>Artifacts</strong>에서 <strong><code>entercoding-delivery-signed-apk</code></strong>를 내려받아 압축을 풀면 <strong><code>entercoding-delivery-signed.apk</code></strong>가 들어 있습니다.</li>
+                <li>스마트폰에 1회 설치한 뒤 <strong>'다른 앱 위에 표시' 권한</strong>과 <strong>위치 권한(항상 허용)</strong>을 켜면, 이후 화면·기능 수정은 추가 APK 다운로드 없이 앱 안에서 자동 업데이트됩니다.</li>
               </ol>
             </div>
             <div class="space-y-1 pt-1 border-t border-slate-800">
@@ -2982,6 +3092,7 @@ function speakSchoolQuantity(school, opts = {}) {
     });
 
     document.getElementById('openInstallModalBtn').addEventListener('click', () => {
+      if (typeof nkUpdateModalVersionBadge === 'function') nkUpdateModalVersionBadge();
       document.getElementById('installModal').classList.remove('hidden');
     });
 
@@ -7277,16 +7388,599 @@ function speakSchoolQuantity(school, opts = {}) {
       } catch (e) {}
     }
 
-    // 3) 서비스 워커 등록 & 시스템 상단 배너 도착 알림 (화면 꺼짐 / 네이버 내비 위에서 작동)
+    // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
+    var NK_APP_VERSION = '2026-11-18.1';
+    var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.1';
+    window.NK_APP_VERSION = NK_APP_VERSION;
+    var NK_MAIN_ASSETS = [
+      'index.html',
+      'delivery-convenience.js',
+      'save-sync-status.js',
+      'pickup-extra-ui.js',
+      'return-card-status.js',
+      'return-manual-status.js',
+      'map-view-no-popup.js'
+    ];
+    var NK_CHECK_ASSETS = [...NK_MAIN_ASSETS, 'overlay.html'];
+    var NK_ALL_REFRESH_ASSETS = [...NK_MAIN_ASSETS, 'overlay.html', 'manifest.webmanifest'];
+    var NK_APP_UPD_GUARD_KEY = 'nk_app_auto_upd_guard_v1';
+    var NK_APP_BOOT_AT = Date.now();
+    var nkBootLastModMs = (() => {
+      try {
+        const t = Date.parse(document.lastModified || '');
+        return Number.isFinite(t) ? t : 0;
+      } catch (e) { return 0; }
+    })();
+    var nkKnownAssetSigs = Object.create(null);
+    var nkLatestServerAppVersion = NK_APP_VERSION;
+    var nkLatestOverlayVersion = NK_EXPECTED_OVERLAY_VERSION;
+    var nkLatestOverlayAssetSig = '';
+    var nkUpdatePending = null;
+    var nkDismissedUpdateSig = '';
+    var nkOverlayNotifiedSig = '';
+    var nkCheckInFlight = false;
+    var nkApplyInFlight = false;
+    var nkLastUpdateCheckAt = 0;
+    var nkLastHiddenAt = 0;
+    var nkLastIdleResumeAt = 0;
+    var nkAutoUpdateInitialized = false;
+    var nkUpdateStatusText = /^https?:/.test(location.protocol) ? '자동 업데이트 대기' : '로컬 파일 모드';
+
+    function nkReadAutoUpdGuard() {
+      try {
+        const raw = sessionStorage.getItem(NK_APP_UPD_GUARD_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (e) {}
+      return { lastSig: '', lastAt: 0, count: 0, windowStart: Date.now() };
+    }
+
+    function nkCanAutoReloadForSig(sig) {
+      if (!sig) return false;
+      const now = Date.now();
+      const rec = nkReadAutoUpdGuard();
+      if (!rec.windowStart || (now - rec.windowStart) > 300000) return true;
+      if (Number(rec.count || 0) >= 2) return false;
+      if (rec.lastSig === sig && (now - Number(rec.lastAt || 0)) < 120000) return false;
+      return true;
+    }
+
+    function nkMarkAutoReloadForSig(sig) {
+      const now = Date.now();
+      const rec = nkReadAutoUpdGuard();
+      const reset = !rec.windowStart || (now - rec.windowStart) > 300000;
+      const next = {
+        lastSig: sig || '',
+        lastAt: now,
+        windowStart: reset ? now : rec.windowStart,
+        count: reset ? 1 : (Number(rec.count || 0) + 1)
+      };
+      try { sessionStorage.setItem(NK_APP_UPD_GUARD_KEY, JSON.stringify(next)); } catch (e) {}
+    }
+
+    function isSafeForAutoUpdate() {
+      if (document.hidden) return false;
+      if (mainAppScreenOff || gpsActive || isAnyOverlayActive()) return false;
+      const modalIds = [
+        'arrivalModal', 'editModal', 'installModal', 'importModal',
+        'geoModal', 'itemsModal', 'settingsModal', 'syncModal',
+        'pkDetailModal', 'pkEditModal', 'pkAlertModal',
+        'blackoutOverlay', 'popupScreenOffBackdrop', 'headerTools'
+      ];
+      for (const id of modalIds) {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) return false;
+      }
+      const opsPanel = document.getElementById('opsPanel');
+      if (opsPanel && !opsPanel.hidden) return false;
+      if (document.querySelector('dialog[open]')) return false;
+      const activeEl = document.activeElement;
+      if (activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName)) return false;
+      return true;
+    }
+
+    function nkIsSilentAutoApplyWindow() {
+      if (!isSafeForAutoUpdate()) return false;
+      const now = Date.now();
+      if ((now - NK_APP_BOOT_AT) <= 15000) return true;
+      if (nkLastIdleResumeAt > 0 && (now - nkLastIdleResumeAt) <= 15000) return true;
+      return false;
+    }
+
+    function nkUpdateModalVersionBadge() {
+      const modalBadge = document.getElementById('modalAppVersionBadge');
+      if (!modalBadge) return;
+      const liveOv = (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.getOverlayPageVersion === 'function')
+        ? (window.AndroidOverlay.getOverlayPageVersion() || '')
+        : '';
+      const ovVer = liveOv || nkLatestOverlayVersion || NK_EXPECTED_OVERLAY_VERSION;
+      if (nkUpdatePending) {
+        modalBadge.textContent = `v${NK_APP_VERSION} → ${nkUpdatePending.label} 대기 중`;
+      } else {
+        modalBadge.textContent = `앱 v${NK_APP_VERSION} · 미니창 v${ovVer}`;
+      }
+    }
+
+    function nkUpdateAppVersionUi() {
+      const verTag = document.getElementById('appVersionTag');
+      if (verTag) {
+        const liveOv = (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.getOverlayPageVersion === 'function')
+          ? (window.AndroidOverlay.getOverlayPageVersion() || '')
+          : '';
+        const ovVer = liveOv || nkLatestOverlayVersion || NK_EXPECTED_OVERLAY_VERSION;
+        verTag.textContent = `앱 v${NK_APP_VERSION} · 미니창 v${ovVer}`;
+      }
+      const statusTag = document.getElementById('appUpdateStatusTag');
+      if (statusTag) {
+        statusTag.textContent = nkUpdateStatusText;
+        statusTag.className = nkUpdatePending
+          ? 'text-amber-300 font-bold'
+          : (navigator.onLine === false ? 'text-slate-400' : 'text-sky-300');
+      }
+      const dot = document.getElementById('headerUpdateDot');
+      if (dot) dot.classList.toggle('hidden', !nkUpdatePending);
+
+      const checkBtn = document.getElementById('checkAppUpdateBtn');
+      if (checkBtn) {
+        checkBtn.classList.toggle('has-update', !!nkUpdatePending);
+        if (nkCheckInFlight) checkBtn.textContent = '🔄 확인 중...';
+        else if (nkUpdatePending) checkBtn.textContent = '🔄 새 버전 적용';
+        else checkBtn.textContent = '🔄 업데이트 확인';
+      }
+
+      const banner = document.getElementById('appUpdateBanner');
+      if (banner) {
+        const showBanner = Boolean(nkUpdatePending && nkDismissedUpdateSig !== nkUpdatePending.sig);
+        banner.classList.toggle('hidden', !showBanner);
+        if (nkUpdatePending) {
+          const tEl = document.getElementById('appUpdateBannerTitle');
+          const dEl = document.getElementById('appUpdateBannerDesc');
+          if (tEl) tEl.textContent = `${nkUpdatePending.label} 업데이트가 준비되었습니다`;
+          if (dEl) dEl.textContent = nkUpdatePending.detail || '저장된 납품 기록·메모는 유지된 채 화면만 새로고침됩니다.';
+        }
+      }
+      nkUpdateModalVersionBadge();
+    }
+
+    function nkSwPostMessageWithAck(worker, msg, timeoutMs = 3500) {
+      return new Promise((resolve) => {
+        if (!worker || typeof worker.postMessage !== 'function') {
+          resolve({ ok: false });
+          return;
+        }
+        try {
+          const channel = new MessageChannel();
+          let settled = false;
+          const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            try { channel.port1.close(); } catch (e) {}
+            resolve({ ok: false, timeout: true });
+          }, timeoutMs);
+          channel.port1.onmessage = (ev) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            try { channel.port1.close(); } catch (e) {}
+            resolve(ev.data || { ok: true });
+          };
+          worker.postMessage(msg, [channel.port2]);
+        } catch (e) {
+          try { worker.postMessage(msg); } catch (e2) {}
+          resolve({ ok: false, error: String(e) });
+        }
+      });
+    }
+
+    async function nkSwActivateWaiting(reg) {
+      if (!reg || !reg.waiting || !('serviceWorker' in navigator)) return false;
+      await new Promise((resolve) => {
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(true);
+        };
+        const timer = setTimeout(finish, 2200);
+        navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true });
+        try { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); } catch (e) { finish(); }
+      });
+      return true;
+    }
+
+    async function nkSwRefreshAssets(files) {
+      if (!('serviceWorker' in navigator)) return { ok: false };
+      const worker = navigator.serviceWorker.controller || swRegistration?.active;
+      if (!worker) return { ok: false };
+      return nkSwPostMessageWithAck(worker, { type: 'REFRESH_ASSETS', files }, 3500);
+    }
+
+    async function nkSeedAssetBaselines() {
+      if (!/^https?:/.test(location.protocol) || !('caches' in window)) return;
+      await Promise.allSettled(NK_CHECK_ASSETS.map(async (file) => {
+        try {
+          const absUrl = new URL(file, location.href).href;
+          const res = await caches.match(absUrl, { ignoreSearch: true });
+          if (!res) return;
+          const etag = res.headers.get('etag') || '';
+          const lm = res.headers.get('last-modified') || '';
+          const sig = `${etag}|${lm}`;
+          if (sig !== '|' && !nkKnownAssetSigs[file]) {
+            nkKnownAssetSigs[file] = sig;
+          }
+        } catch (e) {}
+      }));
+      if (nkKnownAssetSigs['overlay.html'] && !nkLatestOverlayAssetSig) {
+        nkLatestOverlayAssetSig = nkKnownAssetSigs['overlay.html'];
+      }
+    }
+
+    async function nkRefreshOverlayOnly({ overlayVersion, overlaySig, silent = false } = {}) {
+      if (overlayVersion) nkLatestOverlayVersion = String(overlayVersion);
+      if (overlaySig) {
+        nkLatestOverlayAssetSig = overlaySig;
+        nkKnownAssetSigs['overlay.html'] = overlaySig;
+      }
+      try {
+        const swRes = await nkSwRefreshAssets(['overlay.html']);
+        if (!swRes || !swRes.ok) {
+          await fetch('./overlay.html?nk_upd=' + Date.now(), { cache: 'reload' }).catch(() => {});
+        }
+      } catch (e) {}
+      if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.refreshOverlayFromServer === 'function') {
+        try { window.AndroidOverlay.refreshOverlayFromServer(); } catch (e) {}
+      }
+      syncNativeAndDomOverlays();
+      nkUpdateAppVersionUi();
+      if (!silent) {
+        showToast('🪟 미니창이 최신 버전으로 자동 업데이트되었습니다.');
+      }
+    }
+
+    async function nkApplyMainAppUpdate({ manual = false, force = false, sig = '' } = {}) {
+      if (nkApplyInFlight) return false;
+      if (!/^https?:/.test(location.protocol)) {
+        if (manual) showToast('로컬 파일 모드입니다. 온라인(https) 주소에서 업데이트가 작동합니다.');
+        return false;
+      }
+      if (navigator.onLine === false) {
+        nkUpdateStatusText = '오프라인 · 연결 후 자동 확인';
+        nkUpdateAppVersionUi();
+        if (manual) showToast('오프라인 상태입니다. 인터넷 연결 후 다시 시도해 주세요.');
+        return false;
+      }
+
+      const effectiveSig = sig || nkUpdatePending?.sig || ('force:' + Date.now());
+      if (!manual && !nkCanAutoReloadForSig(effectiveSig)) return false;
+
+      nkApplyInFlight = true;
+      try {
+        if (manual) showToast('🔄 서버에서 최신 버전을 불러오는 중입니다...');
+        if (swRegistration) {
+          if (force && typeof swRegistration.update === 'function') {
+            try { await swRegistration.update(); } catch (e) {}
+          }
+          await nkSwActivateWaiting(swRegistration);
+        }
+
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.delete('v');
+        nextUrl.searchParams.set('nk_upd', String(Date.now()));
+        const targetHref = nextUrl.toString();
+
+        const htmlRes = await fetch(targetHref, { cache: 'reload' });
+        if (!htmlRes.ok) throw new Error('HTTP ' + htmlRes.status);
+        const html = await htmlRes.text();
+        if (!html || (!html.includes('교재 납품 알리미') && !html.includes('NK_APP_VERSION'))) {
+          throw new Error('Invalid app markup');
+        }
+
+        const swRes = await nkSwRefreshAssets(NK_ALL_REFRESH_ASSETS);
+        if (!swRes || !swRes.ok) {
+          await Promise.allSettled(
+            NK_ALL_REFRESH_ASSETS.filter(f => f !== 'index.html').map(f => fetch('./' + f, { cache: 'reload' }))
+          );
+        }
+
+        if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.refreshOverlayFromServer === 'function') {
+          try { window.AndroidOverlay.refreshOverlayFromServer(); } catch (e) {}
+        }
+        syncNativeAndDomOverlays();
+
+        if (!manual && !isSafeForAutoUpdate()) {
+          nkApplyInFlight = false;
+          nkUpdateAppVersionUi();
+          return false;
+        }
+        if (!manual) nkMarkAutoReloadForSig(effectiveSig);
+
+        setTimeout(() => { nkApplyInFlight = false; }, 5000);
+        if (
+          hasAndroidNativeOverlay() &&
+          typeof window.AndroidOverlay.forceRefreshFromServer === 'function' &&
+          location.hostname === 'n-kids.github.io'
+        ) {
+          window.AndroidOverlay.forceRefreshFromServer();
+          return true;
+        }
+        window.location.replace(targetHref);
+        return true;
+      } catch (err) {
+        nkApplyInFlight = false;
+        nkUpdateStatusText = '업데이트 확인 실패 (재시도 대기)';
+        nkUpdateAppVersionUi();
+        if (manual) showToast('최신 버전을 불러오지 못했습니다. 네트워크 확인 후 다시 시도해 주세요.');
+        return false;
+      }
+    }
+
+    async function nkCheckForAppUpdate({ trigger = 'auto', manual = false, forceCheck = false } = {}) {
+      if (!/^https?:/.test(location.protocol)) {
+        nkUpdateStatusText = '로컬 파일 모드';
+        nkUpdateAppVersionUi();
+        if (manual) showToast('로컬 파일 모드입니다. 온라인(https) 주소에서 업데이트가 작동합니다.');
+        return { status: 'unsupported' };
+      }
+      if (navigator.onLine === false) {
+        nkUpdateStatusText = '오프라인 · 연결 후 자동 확인';
+        nkUpdateAppVersionUi();
+        if (manual) showToast('오프라인 상태입니다. 인터넷 연결 후 다시 시도해 주세요.');
+        return { status: 'offline' };
+      }
+      if (!manual && nkCheckInFlight) return { status: 'busy' };
+      if (!manual && !forceCheck && (Date.now() - nkLastUpdateCheckAt < 25000)) {
+        return { status: 'throttled' };
+      }
+
+      nkCheckInFlight = true;
+      nkLastUpdateCheckAt = Date.now();
+      if (manual) {
+        nkUpdateStatusText = '서버 최신 버전 확인 중...';
+        nkUpdateAppVersionUi();
+      }
+
+      try {
+        if (swRegistration && typeof swRegistration.update === 'function') {
+          try { await swRegistration.update(); } catch (e) {}
+        }
+
+        let meta = null;
+        try {
+          const vRes = await fetch(`./version.json?t=${Date.now()}`, { cache: 'no-store' });
+          if (vRes.ok) meta = await vRes.json();
+        } catch (e) {}
+
+        const nowTs = Date.now();
+        const changedMainAssets = [];
+        let overlayHeaderChanged = false;
+        let latestOverlayHdrSig = nkLatestOverlayAssetSig;
+        let indexNewerByLastMod = false;
+        let latestIndexLm = '';
+        let newlySeededOverlay = false;
+
+        await Promise.allSettled(NK_CHECK_ASSETS.map(async (file) => {
+          const res = await fetch(`./${file}?t=${nowTs}`, { method: 'HEAD', cache: 'no-store' });
+          if (!res.ok) return;
+          const etag = res.headers.get('etag') || '';
+          const lm = res.headers.get('last-modified') || '';
+          const sig = `${etag}|${lm}`;
+          if (file === 'index.html' && lm) latestIndexLm = lm;
+          if (!nkKnownAssetSigs[file]) {
+            if (sig !== '|') {
+              nkKnownAssetSigs[file] = sig;
+              if (file === 'overlay.html' && !nkLatestOverlayAssetSig) {
+                nkLatestOverlayAssetSig = sig;
+                latestOverlayHdrSig = sig;
+                newlySeededOverlay = true;
+              }
+            }
+            if (file === 'index.html' && lm && nkBootLastModMs > 0 && Math.abs(nkBootLastModMs - NK_APP_BOOT_AT) > 10000) {
+              const srvMs = Date.parse(lm);
+              if (Number.isFinite(srvMs) && (srvMs - nkBootLastModMs) > 5000 && srvMs <= (Date.now() + 60000)) {
+                indexNewerByLastMod = true;
+              }
+            }
+            return;
+          }
+          if (sig && sig !== '|' && sig !== nkKnownAssetSigs[file]) {
+            if (file === 'overlay.html') {
+              overlayHeaderChanged = true;
+              latestOverlayHdrSig = sig;
+            } else {
+              changedMainAssets.push(`${file}:${sig}`);
+            }
+          }
+        }));
+
+        if (newlySeededOverlay) syncNativeAndDomOverlays();
+
+        if (meta && meta.appVersion) nkLatestServerAppVersion = String(meta.appVersion);
+        if (meta && meta.overlayVersion) nkLatestOverlayVersion = String(meta.overlayVersion);
+        if (overlayHeaderChanged && latestOverlayHdrSig) nkLatestOverlayAssetSig = latestOverlayHdrSig;
+
+        const swWaiting = !!(swRegistration && (swRegistration.waiting || (swRegistration.installing && swRegistration.installing.state === 'installed')));
+        const versionAppChanged = !!(meta && meta.appVersion && String(meta.appVersion) !== NK_APP_VERSION);
+        const versionOverlayChanged = !!(meta && meta.overlayVersion && String(meta.overlayVersion) !== NK_EXPECTED_OVERLAY_VERSION);
+
+        if (versionAppChanged || changedMainAssets.length > 0 || indexNewerByLastMod || swWaiting) {
+          const sigParts = [];
+          if (versionAppChanged) sigParts.push('v:' + meta.appVersion);
+          if (changedMainAssets.length) sigParts.push(changedMainAssets.join(','));
+          if (indexNewerByLastMod) sigParts.push('lm:' + latestIndexLm);
+          if (swWaiting) sigParts.push('sw:' + (swRegistration?.waiting?.scriptURL || 'waiting'));
+          const sig = sigParts.join('|') || ('sw:' + (meta?.swBuild || 'update'));
+          const label = versionAppChanged ? `v${meta.appVersion}` : '최신 버전';
+          const detail = (meta && meta.notes && versionAppChanged)
+            ? `${meta.notes} · 저장된 납품 기록·메모는 그대로 유지됩니다.`
+            : '저장된 납품 기록·메모는 유지된 채 화면만 새로고침됩니다.';
+
+          nkUpdatePending = { kind: 'main', sig, version: meta?.appVersion || '', label, detail };
+          nkUpdateStatusText = `${label} 준비됨 (터치해 적용)`;
+          nkSwRefreshAssets(NK_ALL_REFRESH_ASSETS).catch(() => {});
+          if (overlayHeaderChanged || versionOverlayChanged) {
+            nkRefreshOverlayOnly({ overlayVersion: meta?.overlayVersion, overlaySig: latestOverlayHdrSig, silent: true }).catch(() => {});
+          }
+          nkUpdateAppVersionUi();
+
+          if (manual) {
+            await nkApplyMainAppUpdate({ manual: true, sig });
+          } else if (nkIsSilentAutoApplyWindow() && nkCanAutoReloadForSig(sig)) {
+            await nkApplyMainAppUpdate({ manual: false, sig });
+          }
+          return { status: 'update-available', sig };
+        }
+
+        if (versionOverlayChanged || overlayHeaderChanged) {
+          const ovSig = (versionOverlayChanged ? 'ovv:' + meta.overlayVersion : '') + '|' + (overlayHeaderChanged ? latestOverlayHdrSig : '');
+          const notifyToast = manual || (nkOverlayNotifiedSig !== ovSig);
+          nkOverlayNotifiedSig = ovSig;
+          await nkRefreshOverlayOnly({
+            overlayVersion: meta?.overlayVersion,
+            overlaySig: latestOverlayHdrSig,
+            silent: !notifyToast
+          });
+          const tStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+          nkUpdateStatusText = `미니창 최신 반영 (${tStr})`;
+          nkUpdateAppVersionUi();
+          return { status: 'overlay-updated' };
+        }
+
+        nkUpdatePending = null;
+        nkDismissedUpdateSig = '';
+        const tStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        nkUpdateStatusText = `최신 버전 (${tStr} 확인)`;
+        nkUpdateAppVersionUi();
+        if (manual) {
+          showToast(`✅ 현재 최신 버전(v${NK_APP_VERSION})을 사용 중입니다.`);
+        }
+        return { status: 'up-to-date' };
+      } finally {
+        nkCheckInFlight = false;
+        nkUpdateAppVersionUi();
+      }
+    }
+
+    function nkOnSwUpdateReady(reg) {
+      if (!reg) return;
+      if (reg.waiting || (reg.installing && reg.installing.state === 'installed')) {
+        nkCheckForAppUpdate({ trigger: 'sw', manual: false, forceCheck: true });
+      }
+    }
+
+    async function nkHandleCheckUpdateButtonClick() {
+      if (nkUpdatePending) {
+        await nkApplyMainAppUpdate({ manual: true, sig: nkUpdatePending.sig });
+        return;
+      }
+      await nkCheckForAppUpdate({ trigger: 'manual', manual: true, forceCheck: true });
+    }
+
+    async function nkForceCheckAndRefresh() {
+      if (!/^https?:/.test(location.protocol)) {
+        showToast('로컬 파일 모드입니다. 온라인(https) 주소에서 업데이트가 작동합니다.');
+        return;
+      }
+      if (navigator.onLine === false) {
+        showToast('오프라인 상태입니다. 인터넷 연결 후 다시 시도해 주세요.');
+        return;
+      }
+      await nkApplyMainAppUpdate({ manual: true, force: true, sig: 'manual-force' });
+    }
+
+    function nkDismissUpdateBanner() {
+      nkDismissedUpdateSig = nkUpdatePending?.sig || 'dismissed';
+      nkUpdateAppVersionUi();
+      showToast('업데이트 배너를 숨겼습니다. [⚙️ 설정·도구]에서 언제든 적용할 수 있습니다.');
+    }
+
+    function nkMarkAppHidden() {
+      if (!nkLastHiddenAt) nkLastHiddenAt = Date.now();
+    }
+
+    function nkMarkAppVisibleAndCheck(trigger) {
+      if (nkLastHiddenAt > 0) {
+        if ((Date.now() - nkLastHiddenAt) >= 30 * 60 * 1000) {
+          nkLastIdleResumeAt = Date.now();
+        }
+        nkLastHiddenAt = 0;
+      }
+      if (/^https?:/.test(location.protocol)) {
+        nkCheckForAppUpdate({ trigger: trigger || 'resume', manual: false });
+      }
+    }
+
     async function registerServiceWorker() {
       if (!('serviceWorker' in navigator)) return null;
       if (!/^https?:/.test(location.protocol)) return null;
       try {
         swRegistration = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
+        if (swRegistration && !swRegistration.__nkUpdateBound) {
+          swRegistration.__nkUpdateBound = true;
+          if (swRegistration.waiting) {
+            nkOnSwUpdateReady(swRegistration);
+          }
+          swRegistration.addEventListener('updatefound', () => {
+            const worker = swRegistration.installing;
+            if (!worker) return;
+            worker.addEventListener('statechange', () => {
+              if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                nkOnSwUpdateReady(swRegistration);
+              }
+            });
+          });
+        }
         return swRegistration;
       } catch (e) {
         return null;
       }
+    }
+
+    function initAutoUpdateManager() {
+      if (nkAutoUpdateInitialized) return;
+      nkAutoUpdateInitialized = true;
+
+      try {
+        const curUrl = new URL(window.location.href);
+        if (curUrl.searchParams.has('nk_upd') || curUrl.searchParams.has('v')) {
+          curUrl.searchParams.delete('nk_upd');
+          curUrl.searchParams.delete('v');
+          const clean = curUrl.pathname + (curUrl.search ? curUrl.search : '') + curUrl.hash;
+          history.replaceState(null, '', clean);
+          setTimeout(() => {
+            showToast(`✅ 최신 앱 버전(v${NK_APP_VERSION})으로 업데이트되었습니다.`);
+          }, 900);
+        }
+      } catch (e) {}
+
+      nkUpdateAppVersionUi();
+      registerServiceWorker();
+
+      if (!/^https?:/.test(location.protocol)) return;
+
+      nkSeedAssetBaselines().then(() => {
+        setTimeout(() => {
+          nkCheckForAppUpdate({ trigger: 'boot', manual: false, forceCheck: true });
+        }, 1500);
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          nkMarkAppHidden();
+        } else {
+          nkMarkAppVisibleAndCheck('visibility');
+        }
+      });
+
+      window.addEventListener('online', () => {
+        nkCheckForAppUpdate({ trigger: 'online', manual: false, forceCheck: true });
+      });
+
+      setInterval(() => {
+        if (!document.hidden && navigator.onLine !== false) {
+          nkCheckForAppUpdate({ trigger: 'interval', manual: false });
+        }
+      }, 4 * 60 * 1000);
     }
 
     async function handleSwIncomingMessage(data) {
@@ -7882,6 +8576,8 @@ ${school.address || ''}`;
           quickList: [],
           nextPreview: null,
           smsBodies: null,
+          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.1',
+          overlayAssetSig: nkLatestOverlayAssetSig || '',
           items: []
         };
       }
@@ -7974,6 +8670,8 @@ ${school.address || ''}`;
           smsBodies: buildOverlaySmsBodies(grp.name, totalQty > 0 ? `총 ${totalQty}개` : `${grp.items.length}건`),
           closeOnOpenApp: true,
           autoHideOnAppOpen: true,
+          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.1',
+          overlayAssetSig: nkLatestOverlayAssetSig || '',
           items: overlayItems
         };
       }
@@ -8055,6 +8753,8 @@ ${school.address || ''}`;
         smsBodies: buildOverlaySmsBodies(s.name, totalLabel(s)),
         closeOnOpenApp: true,
         autoHideOnAppOpen: true,
+        latestOverlayVersion: nkLatestOverlayVersion || '2026-11-18.1',
+        overlayAssetSig: nkLatestOverlayAssetSig || '',
         items: mappedItems
       };
     }
@@ -9356,6 +10056,17 @@ ${school.address || ''}`;
     async function initCapacitorNativeBridge() {
       if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
       const Plugins = window.Capacitor.Plugins || {};
+      if (Plugins.App) {
+        try {
+          Plugins.App.addListener('appStateChange', (state) => {
+            if (state && state.isActive) nkMarkAppVisibleAndCheck('capacitor-resume');
+            else if (state && !state.isActive) nkMarkAppHidden();
+          });
+          Plugins.App.addListener('resume', () => {
+            nkMarkAppVisibleAndCheck('capacitor-resume');
+          });
+        } catch (e) {}
+      }
       if (Plugins.LocalNotifications) {
         try {
           await Plugins.LocalNotifications.requestPermissions();
@@ -9835,29 +10546,25 @@ ${school.address || ''}`;
         showToast('이 버튼은 안드로이드 APK 앱으로 설치해 실행했을 때 안드로이드 [다른 앱 위에 표시] 권한 설정 창을 바로 열어줍니다.');
       }
     });
-    document.getElementById('modalForceUpdateAppBtn')?.addEventListener('click', async () => {
-      showToast('🔄 서버에서 최신 앱 버전을 확인하고 새로고침합니다...');
-      try {
-        if (swRegistration && typeof swRegistration.update === 'function') {
-          await swRegistration.update();
-        }
-        if ('caches' in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map(k => caches.delete(k)));
-        }
-      } catch (e) {}
-      if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.forceRefreshFromServer === 'function') {
-        window.AndroidOverlay.forceRefreshFromServer();
-        return;
-      }
-      const url = new URL(window.location.href);
-      url.searchParams.set('v', String(Date.now()));
-      window.location.replace(url.toString());
+    document.getElementById('modalForceUpdateAppBtn')?.addEventListener('click', () => {
+      nkForceCheckAndRefresh();
     });
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && swRegistration && typeof swRegistration.update === 'function') {
-        try { swRegistration.update(); } catch (e) {}
+    document.getElementById('checkAppUpdateBtn')?.addEventListener('click', async () => {
+      if (typeof nkHandleCheckUpdateButtonClick === 'function') {
+        await nkHandleCheckUpdateButtonClick();
       }
+    });
+    document.getElementById('appUpdateApplyBtn')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      if (btn) { btn.disabled = true; btn.textContent = '적용 중...'; }
+      try {
+        await nkApplyMainAppUpdate({ manual: true, sig: nkUpdatePending?.sig || 'banner' });
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🔄 지금 적용'; }
+      }
+    });
+    document.getElementById('appUpdateDismissBtn')?.addEventListener('click', () => {
+      if (typeof nkDismissUpdateBanner === 'function') nkDismissUpdateBanner();
     });
 
     (function initDomOverlayDrag() {
@@ -9916,7 +10623,7 @@ ${school.address || ''}`;
     })();
 
     window.addEventListener('DOMContentLoaded', () => {
-      registerServiceWorker();
+      initAutoUpdateManager();
       updateSysNotifButtons();
       updateBgKeepAliveButtons();
       updatePwaInstallUi();
@@ -10057,23 +10764,6 @@ setTimeout(()=>{
  ['sw_mode','schoolId','pickupId'].forEach(k=>url.searchParams.delete(k));
  history.replaceState(null,'',url.pathname+url.search+url.hash);
 },700);
-(function setupServiceWorkerUpdate(){
- if(!('serviceWorker' in navigator))return;
- let reloadRequested=false;
- navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloadRequested)location.reload();});
- function inspect(registration){
-  if(!registration)return;
-  function offer(){
-   if(!registration.waiting)return;
-   let b=document.getElementById('applyWorkerUpdate');
-   if(!b){b=document.createElement('button');b.id='applyWorkerUpdate';b.type='button';b.textContent='새 버전 적용';Object.assign(b.style,{position:'fixed',right:'16px',bottom:'100px',zIndex:'100',padding:'12px 16px',borderRadius:'12px',background:'#4c68c6',color:'#ffffff',border:'1px solid #8299ec'});document.body.append(b);}
-   b.onclick=()=>{if(!confirm('입력 중인 내용이 있다면 먼저 저장하세요. 새 버전을 적용하고 앱을 새로고침할까요?'))return;reloadRequested=true;registration.waiting?.postMessage({type:'SKIP_WAITING'});};
-  }
-  offer();registration.addEventListener('updatefound',()=>registration.installing?.addEventListener('statechange',offer));
- }
- navigator.serviceWorker.getRegistration().then(inspect);
- window.addEventListener('load',()=>navigator.serviceWorker.getRegistration().then(inspect));
-})();
 
 (function setupDeliveryTools(){
  const ids=['itemsModal','importModal','editModal'];let focusBack=null;

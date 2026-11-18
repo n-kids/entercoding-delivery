@@ -8,6 +8,7 @@ const required = [
 ];
 
 const optional = [
+  'version.json',
   'overlay.html',
   'icon.svg',
   'icon-192.png',
