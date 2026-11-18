@@ -70,6 +70,8 @@ if (fs.existsSync(path.dirname(mainActivityPath))) {
   const overlayJavaCode = `package ${pkgName};
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -91,6 +93,7 @@ import android.webkit.WebView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -258,16 +261,16 @@ public class FloatingOverlayManager {
                 return;
             }
         } catch (Exception e) {
-            try {
-                if (webUrl != null && webUrl.length() > 0) {
-                    Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl));
-                    fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    appContext.startActivity(fallback);
-                    return;
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            e.printStackTrace();
+        }
+        try {
+            if (webUrl != null && webUrl.length() > 0) {
+                Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl));
+                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                appContext.startActivity(fallback);
             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -337,6 +340,80 @@ public class FloatingOverlayManager {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void launchNaviUrl(final String naviUrl, final String webUrl) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (webOverlay != null && webOverlay.isShowing()) webOverlay.setCollapsed(true);
+                if (rootContainer != null) applyCollapsed(true, true);
+                else prefs().edit().putBoolean("collapsed", true).apply();
+                launchNaviIntent(naviUrl, webUrl);
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void sendSms(final String rawPhone, final String body) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                String cleaned = rawPhone != null ? rawPhone.replaceAll("[^0-9+*#,]", "") : "";
+                if (cleaned.isEmpty()) return;
+                try {
+                    Intent i = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + cleaned));
+                    if (body != null && body.length() > 0) i.putExtra("sms_body", body);
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    appContext.startActivity(i);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void copyText(final String text) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (text == null || text.isEmpty()) return;
+                try {
+                    ClipboardManager cm = (ClipboardManager) appContext.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(ClipData.newPlainText("entercoding", text));
+                        Toast.makeText(appContext, "주소가 복사되었습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void snapEdge(final String side) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (webOverlay != null && webOverlay.isShowing()) {
+                    webOverlay.snapEdge(side);
+                    return;
+                }
+                if (layoutParams == null) return;
+                int leftX = dp(4);
+                int w = layoutParams.width > 0 ? layoutParams.width : dp(EXPANDED_W_DP);
+                int rightX = Math.max(0, screenW() - w - dp(4));
+                if ("left".equalsIgnoreCase(side)) layoutParams.x = leftX;
+                else if ("right".equalsIgnoreCase(side)) layoutParams.x = rightX;
+                else layoutParams.x = (layoutParams.x + w / 2 > screenW() / 2) ? leftX : rightX;
+                clampPosition();
+                refreshLayout();
+                savePosition();
             }
         });
     }
