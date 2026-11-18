@@ -181,6 +181,10 @@
     flex: 1; min-width: 0; height: 22px; accent-color: #38BDF8; cursor: pointer; margin: 0;
   }
   #holdDoneToggle.on { background: #B45309 !important; border: 1px solid #FBBF24 !important; color: #FEF3C7 !important; }
+  #unlockNearBtn { background: #065F46 !important; border: 1px solid #10B981 !important; color: #A7F3D0 !important; }
+  #w.theme-light #unlockNearBtn { background: #D1FAE5 !important; border: 1px solid #059669 !important; color: #065F46 !important; }
+  #autoNearToggle.on { background: #065F46 !important; border: 1px solid #10B981 !important; color: #A7F3D0 !important; }
+  #w.theme-light #autoNearToggle.on { background: #D1FAE5 !important; border: 1px solid #059669 !important; color: #065F46 !important; }
 
   #undoBar {
     display: none; width: 100%; margin-top: 4px; padding: 4px 6px; font-size: 10px; font-weight: 800;
@@ -339,9 +343,10 @@
       <button type="button" data-kind="delivery">납품</button>
       <button type="button" data-kind="return">반품·회수</button>
       <button type="button" data-kind="extra">추가 납품</button>
-      <button type="button" data-kind="auto">자동 표시</button>
+      <button type="button" data-kind="auto">📍 가까운 순</button>
     </div>
-    <div class="menu-sec-label"><span>다음 방문처 바로가기</span><strong id="remCountLabel"></strong></div>
+    <button type="button" id="unlockNearBtn" style="display:none;width:100%;margin-top:4px;background:#065F46;border:1px solid #10B981;color:#A7F3D0">📍 내 기준 가까운 원으로 전환</button>
+    <div class="menu-sec-label"><span>다음 방문처 바로가기 (가까운 순)</span><strong id="remCountLabel"></strong></div>
     <div id="quickList"></div>
   </div>
 
@@ -394,6 +399,7 @@
       <button type="button" id="snapEdgeBtn">⇄ 좌우 이동</button>
       <button type="button" id="calibBtn">📍 좌표 보정</button>
     </div>
+    <button type="button" id="autoNearToggle" style="width:100%;margin-bottom:4px">📍 가까운 원 자동전환: 켜짐</button>
     <button type="button" id="holdDoneToggle" style="width:100%">🔒 완료 길게누르기: 꺼짐</button>
     <div style="margin-top:6px;text-align:right;font-size:8.5px;opacity:0.68">미니창 v<span id="ovVerLabel"></span></div>
   </div>
@@ -465,7 +471,7 @@
 <script>
 (function () {
   'use strict';
-  var VERSION = '2026-11-18.1';
+  var VERSION = '2026-11-18.2';
   var H = window.OverlayHost || null;
   var $ = function (id) { return document.getElementById(id); };
   var w = $('w');
@@ -612,8 +618,15 @@
     var t = String(raw || '').replace('▾', '').trim();
     var paren = t.indexOf('(');
     if (paren > 0) t = t.slice(0, paren).trim();
-    t = t.replace('최단거리 자동', '자동').replace('회수·내비고정', '회수·고정').replace('추가납품·고정', '추가·고정')
-      .replace('회수·반품', '회수').replace('추가 납품', '추가');
+    t = t.replace('최단거리 자동', '가까운순')
+      .replace('가까운순 자동', '가까운순')
+      .replace('납품·가까운순', '납품순')
+      .replace('회수·가까운순', '회수순')
+      .replace('추가·가까운순', '추가순')
+      .replace('회수·내비고정', '회수·고정')
+      .replace('추가납품·고정', '추가·고정')
+      .replace('회수·반품', '회수')
+      .replace('추가 납품', '추가');
     return t + ' ▾';
   }
 
@@ -650,7 +663,7 @@
 
     $('collapse').textContent = state.collapsed ? '➕' : '➖';
     $('collapse').setAttribute('aria-label', state.collapsed ? '펼치기' : '접기');
-    $('badge').textContent = compactBadge(p.modeBadge || '🧭 내비고정');
+    $('badge').textContent = compactBadge(p.modeBadge || '📍 가까운순');
     $('badge').style.background = p.modeColor || '#059669';
     $('badge').setAttribute('aria-expanded', String(state.menuOpen));
     $('alphaBtn').setAttribute('aria-expanded', String(state.cfgOpen));
@@ -675,6 +688,17 @@
     var naviButtons = $('cfgMenu').querySelectorAll('button[data-navi]');
     for (var nv = 0; nv < naviButtons.length; nv++) {
       naviButtons[nv].classList.toggle('on', naviButtons[nv].getAttribute('data-navi') === state.naviApp);
+    }
+
+    var anBtn = $('autoNearToggle');
+    if (anBtn) {
+      var autoOn = p.autoNearest !== false;
+      anBtn.classList.toggle('on', autoOn);
+      anBtn.textContent = autoOn ? '📍 가까운 원 자동전환: 켜짐' : '🔒 고정 유지 (자동전환 꺼짐)';
+    }
+    var unBtn = $('unlockNearBtn');
+    if (unBtn) {
+      unBtn.style.display = p.isLocked ? 'block' : 'none';
     }
 
     var hdBtn = $('holdDoneToggle');
@@ -882,6 +906,13 @@
   });
 
   $('menu').addEventListener('click', function (e) {
+    if (e.target.closest('#unlockNearBtn')) {
+      state.kind = 'auto';
+      state.menuOpen = false;
+      draw();
+      callMain('onNativeOverlayAutoNearest');
+      return;
+    }
     var kb = e.target.closest('button[data-kind]');
     if (kb) {
       state.kind = kb.getAttribute('data-kind');
@@ -968,6 +999,9 @@
     state.cfgOpen = false;
     draw();
     callMain('onNativeOverlayCalibrate');
+  });
+  $('autoNearToggle').addEventListener('click', function () {
+    callMain('onNativeOverlayToggleAutoNear');
   });
   $('holdDoneToggle').addEventListener('click', function () {
     state.holdDone = !state.holdDone;

@@ -1,7 +1,7 @@
 {
-  "appVersion": "2026-11-18.1",
-  "overlayVersion": "2026-11-18.1",
-  "swBuild": "integrated-20261118-autoupdate1",
-  "updatedAt": "2026-11-18T00:00:00Z",
-  "notes": "앱 내 자동 업데이트 및 미니창 실시간 반영 지원"
+  "appVersion": "2026-11-18.2",
+  "overlayVersion": "2026-11-18.2",
+  "swBuild": "integrated-20261118-autoupdate2",
+  "updatedAt": "2026-11-18T12:00:00Z",
+  "notes": "팝업창/미니창 실행 중 내 위치 기준 가까워진 원 자동 표시 및 자동 전환"
 }
