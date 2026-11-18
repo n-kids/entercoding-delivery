@@ -6,141 +6,456 @@
 <title>납품알리미 미니창</title>
 <!--
   WEB_OVERLAY_SHELL_V1
-  Android 미니창(네이버 내비 위에 뜨는 창)의 화면입니다.
+  Android 미니창(내비 위 플로팅 창)의 화면입니다.
   APK 의 WebOverlayController 가 이 페이지를 불러와 창 안에 표시합니다.
-  이 파일을 GitHub 에 올리면 APK 재설치 없이 다음 미니창부터 바로 반영됩니다.
+  이 파일을 GitHub 에 올리면 웹 반영만으로 즉시 최신 미니창 UI가 적용됩니다.
 
   네이티브 → 페이지 : window.nkRender(payload), window.nkSetCollapsed(bool)
-  페이지 → 네이티브 : OverlayHost.ready / setSize / beginDrag / callMain / startNavi / callPhone / openApp / close / log
-  ?demo=1 을 붙이면 브라우저에서 미리보기할 수 있습니다.
+  페이지 → 네이티브 : OverlayHost.ready / setSize / beginDrag / snapEdge / callMain / startNavi / launchNaviUrl / callPhone / sendSms / copyText / openApp / close / log
+  ?demo=1 을 붙이면 브라우저에서 모든 기능을 미리보기·조작할 수 있습니다.
 -->
 <style>
-  :root { color-scheme: dark; --ov-bg-alpha: 0.88; }
+  :root {
+    color-scheme: dark;
+    --ov-win-opacity: 1;
+    --ov-w-bg: rgba(15, 23, 42, 0.86);
+    --ov-col-bg: rgba(15, 23, 42, 0.78);
+    --ov-border: rgba(16, 185, 129, 0.92);
+    --ov-item-bg: rgba(30, 41, 59, 0.84);
+    --ov-item-bd: rgba(71, 85, 105, 0.82);
+    --ov-item-on-bg: rgba(6, 78, 59, 0.88);
+    --ov-item-on-bd: rgba(16, 185, 129, 0.92);
+    --ov-card-bg: rgba(12, 27, 46, 0.82);
+    --ov-card-bd: rgba(30, 58, 95, 0.85);
+    --ov-menu-bg: rgba(15, 23, 42, 0.95);
+    --ov-btn-bg: rgba(51, 65, 85, 0.88);
+    --ov-btn-bd: rgba(100, 116, 139, 0.82);
+    --ov-text-shadow: none;
+  }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden;
-    font-family: system-ui, -apple-system, "Noto Sans KR", sans-serif; user-select: none; -webkit-user-select: none; }
-  #w { width: 234px; padding: 5px 7px 6px; border-radius: 14px; border: 2px solid #10B981;
-    background: rgba(15, 23, 42, var(--ov-bg-alpha)); color: #F8FAFC; }
-  #w.sz-sm { width: 206px; padding: 4px 6px 5px; }
-  #w.sz-lg { width: 266px; padding: 6px 8px 7px; }
-  #w.collapsed { width: 168px !important; padding: 3px 4px 3px 6px; border-width: 1px; background: rgba(15, 23, 42, 0.74); }
-  .row { display: flex; align-items: center; gap: 4px; }
+  html, body {
+    margin: 0; padding: 0; background: transparent; overflow: hidden;
+    font-family: system-ui, -apple-system, "Noto Sans KR", sans-serif;
+    user-select: none; -webkit-user-select: none;
+  }
+  #w {
+    width: 240px; padding: 5px 7px 6px; border-radius: 14px;
+    border: 2px solid var(--ov-border);
+    background: var(--ov-w-bg); color: #F8FAFC;
+    opacity: var(--ov-win-opacity);
+    text-shadow: var(--ov-text-shadow);
+    transition: border-color .15s ease;
+  }
+  #w.sz-sm { width: 210px; padding: 4px 6px 5px; }
+  #w.sz-lg { width: 274px; padding: 6px 8px 7px; }
+  #w.collapsed {
+    width: 204px !important; padding: 3px 5px 3px 7px; border-width: 1.5px;
+    background: var(--ov-col-bg);
+  }
+  #w.sz-sm.collapsed { width: 186px !important; }
+  #w.sz-lg.collapsed { width: 230px !important; }
+
+  #w.arrived { border-color: #F59E0B !important; box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45); }
+  #w.ready-complete #done, #w.ready-complete #doneNext {
+    box-shadow: 0 0 0 1.5px #86EFAC, 0 0 10px rgba(34, 197, 94, 0.5);
+  }
+
+  /* Day Light Theme */
+  #w.theme-light {
+    color-scheme: light;
+    color: #0F172A;
+  }
+  #w.theme-light #dist { color: #0369A1; }
+  #w.theme-light.collapsed #dist { color: #0F172A; }
+  #w.theme-light #title { color: #0F172A; }
+  #w.theme-light #progress { color: #B45309; }
+  #w.theme-light #memoBtn { color: #0369A1; }
+  #w.theme-light #addrBar { color: #1E293B; }
+  #w.theme-light #addrBtn { color: #0369A1; background: rgba(186, 230, 253, 0.72); border-color: #38BDF8; }
+  #w.theme-light .item { color: #0F172A; }
+  #w.theme-light .item.on { color: #065F46; }
+  #w.theme-light .step-btn { color: #0F172A; background: rgba(203, 213, 225, 0.85); border-color: #94A3B8; }
+  #w.theme-light .empty { color: #475569; }
+  #w.theme-light #nextPreview { color: #1E3A8A; background: rgba(219, 234, 254, 0.78); border-color: #60A5FA; }
+  #w.theme-light #collapse, #w.theme-light #alphaBtn, #w.theme-light #colSpeak {
+    color: #1E293B; background: rgba(226, 232, 240, 0.88); border-color: #94A3B8;
+  }
+  #w.theme-light #close { color: #B91C1C; background: rgba(254, 226, 226, 0.9); border-color: #F87171; }
+  #w.theme-light #app { color: #1E293B; background: rgba(226, 232, 240, 0.9); border-color: #94A3B8; }
+  #w.theme-light #checkAllBtn { color: #065F46; background: rgba(167, 243, 208, 0.88); border-color: #10B981; }
+  #w.theme-light #menu, #w.theme-light #cfgMenu, #w.theme-light #holdMenu, #w.theme-light #smsMenu {
+    color: #0F172A; border-color: #CBD5E1;
+  }
+  #w.theme-light #menu .menu-sec-label, #w.theme-light #cfgMenu .menu-sec-label { color: #475569; }
+  #w.theme-light #menu button, #w.theme-light #cfgMenu button, #w.theme-light #holdMenu button, #w.theme-light #smsMenu button {
+    color: #0F172A; background: #E2E8F0;
+  }
+  #w.theme-light #menu button.on, #w.theme-light #cfgMenu button.on {
+    color: #FFFFFF; background: #2563EB; border-color: #1D4ED8;
+  }
+  #w.theme-light .memo-chip { color: #0369A1; background: rgba(224, 242, 254, 0.85); border-color: #7DD3FC; }
+  #w.theme-light #holdHint { color: #92400E; background: rgba(254, 243, 199, 0.92); border-color: #F59E0B; }
+
+  .row { display: flex; align-items: center; gap: 3px; }
   button { font: inherit; font-weight: 700; color: inherit; border: 0; border-radius: 8px; cursor: pointer; padding: 0; }
-  button:active { filter: brightness(1.25); }
-  button:disabled { opacity: 0.42; cursor: default; filter: none; }
-  #badge { flex: none; max-width: 90px; min-height: 25px; padding: 3px 6px; font-size: 9px; color: #fff;
-    background: #059669; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #dist { flex: 1; min-width: 0; font-size: 11px; font-weight: 700; color: #38BDF8;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 5px 2px; touch-action: none; }
+  button:active { filter: brightness(1.2); }
+  button:disabled { opacity: 0.4; cursor: default; filter: none; }
+
+  /* GPS Status Dot */
+  #gpsDot {
+    flex: none; width: 7px; height: 7px; border-radius: 999px;
+    background: #64748B; box-shadow: 0 0 0 1px rgba(255,255,255,0.28);
+  }
+  #gpsDot.live { background: #10B981; box-shadow: 0 0 6px #10B981; }
+  #gpsDot.weak { background: #F59E0B; box-shadow: 0 0 5px #F59E0B; }
+  #gpsDot.searching { background: #FBBF24; animation: ovPulse 1.1s infinite; }
+  #gpsDot.manual { background: #38BDF8; }
+  #gpsDot.denied { background: #EF4444; }
+  @keyframes ovPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(0.82); } }
+
+  #badge {
+    flex: none; max-width: 82px; min-height: 24px; padding: 3px 5px; font-size: 9px; color: #fff;
+    background: #059669; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #w.sz-lg #badge { max-width: 96px; font-size: 9.5px; }
+  #dist {
+    flex: 1; min-width: 0; font-size: 11px; font-weight: 800; color: #38BDF8;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px 2px; touch-action: none;
+  }
+  #w.sz-sm #dist { font-size: 10px; }
   #w.sz-lg #dist { font-size: 12px; }
-  #w.collapsed #dist { color: #F8FAFC; }
-  #collapse { flex: none; font-size: 10px; padding: 5px 7px; color: #E2E8F0; background: #334155; border: 1px solid #475569; }
-  #close { flex: none; font-size: 10px; padding: 5px 7px; color: #FCA5A5; background: #450A0A; border: 1px solid #DC2626; }
-  #w.collapsed #badge, #w.collapsed #title, #w.collapsed #body, #w.collapsed #menu, #w.collapsed #undoBar { display: none !important; }
+  #w.collapsed #dist { color: #F8FAFC; font-size: 10.5px; }
 
-  #menu, #holdMenu { display: none; margin: 4px 0 2px; padding: 5px;
-    background: #152238; border: 1px solid #334155; border-radius: 10px; }
-  #menu.open { display: block; }
-  #holdMenu.open { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  #alphaBtn, #collapse, #close, #colSpeak {
+    flex: none; font-size: 10px; padding: 4px 6px; min-height: 24px;
+    color: #E2E8F0; background: var(--ov-btn-bg); border: 1px solid var(--ov-btn-bd);
+  }
+  #alphaBtn { padding: 4px 5px; font-size: 11px; }
+  #close { color: #FCA5A5; background: rgba(69, 10, 10, 0.88); border: 1px solid #DC2626; }
+  #colSpeak { display: none; padding: 4px 5px; }
+  #w.collapsed #colSpeak { display: inline-flex; align-items: center; justify-content: center; }
+
+  #w.collapsed #badge,
+  #w.collapsed #alphaBtn,
+  #w.collapsed #titleRow,
+  #w.collapsed #body,
+  #w.collapsed #menu,
+  #w.collapsed #cfgMenu,
+  #w.collapsed #undoBar { display: none !important; }
+
+  #menu, #cfgMenu, #holdMenu, #smsMenu {
+    display: none; margin: 4px 0 2px; padding: 5px;
+    background: var(--ov-menu-bg); border: 1px solid #334155; border-radius: 10px;
+  }
+  #menu.open, #cfgMenu.open { display: block; max-height: 280px; overflow-y: auto; overscroll-behavior: contain; }
+  #holdMenu.open, #smsMenu.open { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
   .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-  .menu-sec-label { font-size: 9px; color: #94A3B8; margin: 5px 0 3px; font-weight: 700; }
+  .menu-sec-label {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 9px; color: #94A3B8; margin: 6px 0 3px; font-weight: 800;
+  }
+  .menu-sec-label strong { color: #38BDF8; font-weight: 800; }
   .menu-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
-  #menu button, #holdMenu button { min-height: 28px; font-size: 10px; color: #fff; background: #334155; padding: 2px 4px; }
-  #menu button.on { background: #2563EB; border: 1px solid #93C5FD; }
+  .menu-row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+  #menu button, #cfgMenu button, #holdMenu button, #smsMenu button {
+    min-height: 26px; font-size: 10px; color: #fff; background: #334155; padding: 2px 4px;
+  }
+  #menu button.on, #cfgMenu button.on { background: #2563EB; border: 1px solid #93C5FD; }
 
-  #undoBar { display: none; width: 100%; margin-top: 4px; padding: 5px 7px; font-size: 10px; font-weight: 800;
-    color: #FEF3C7; background: #78350F; border: 1px solid #F59E0B; border-radius: 8px; text-align: center;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Quick switcher target list in #menu */
+  #quickList { display: flex; flex-direction: column; gap: 3px; }
+  .quick-target-btn {
+    display: flex !important; align-items: center; justify-content: space-between; gap: 4px;
+    width: 100%; text-align: left; padding: 4px 6px !important; min-height: 26px !important; font-size: 9.5px !important;
+  }
+  .quick-target-btn .qt-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .quick-target-btn .qt-meta { flex: none; font-size: 9px; opacity: 0.85; white-space: nowrap; }
+
+  /* Transparency Slider controls */
+  .slider-row { display: flex; align-items: center; gap: 4px; }
+  .slider-row .adj-btn {
+    flex: none; width: 24px; min-height: 24px !important; font-size: 12px !important; line-height: 1;
+    border-radius: 6px; padding: 0 !important;
+  }
+  .slider-row input[type=range] {
+    flex: 1; min-width: 0; height: 22px; accent-color: #38BDF8; cursor: pointer; margin: 0;
+  }
+  #holdDoneToggle.on { background: #B45309 !important; border: 1px solid #FBBF24 !important; color: #FEF3C7 !important; }
+
+  #undoBar {
+    display: none; width: 100%; margin-top: 4px; padding: 4px 6px; font-size: 10px; font-weight: 800;
+    color: #FEF3C7; background: rgba(120, 53, 15, 0.92); border: 1px solid #F59E0B; border-radius: 8px;
+    text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
   #undoBar.open { display: block; }
 
-  #title { font-size: 13px; font-weight: 800; padding-top: 3px; white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; touch-action: none; }
+  #titleRow { display: flex; align-items: center; gap: 4px; padding-top: 3px; touch-action: none; }
+  #title {
+    flex: 1; min-width: 0; font-size: 13px; font-weight: 800;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; touch-action: none;
+  }
   #w.sz-sm #title { font-size: 12px; }
   #w.sz-lg #title { font-size: 15px; }
+  #addrBtn {
+    flex: none; font-size: 9px; padding: 2px 5px; min-height: 20px; border-radius: 6px;
+    color: #BAE6FD; background: rgba(30, 58, 95, 0.72); border: 1px solid rgba(56, 189, 248, 0.45);
+  }
+  #addrBtn.hidden { display: none; }
+  #addrBar {
+    display: none; margin-top: 3px; padding: 4px 6px; border-radius: 7px; font-size: 9.5px; line-height: 1.35;
+    color: #E2E8F0; background: var(--ov-card-bg); border: 1px solid var(--ov-card-bd);
+    align-items: center; justify-content: space-between; gap: 4px;
+  }
+  #addrBar.open { display: flex; }
+  #addrText { flex: 1; min-width: 0; word-break: keep-all; }
+  #copyAddrBtn {
+    flex: none; font-size: 9px; padding: 3px 6px; min-height: 22px; border-radius: 6px;
+    color: #EFF6FF; background: #2563EB; border: 1px solid #60A5FA;
+  }
 
-  #memo { margin-top: 3px; padding: 3px 6px; border-radius: 7px; font-size: 10px; line-height: 1.35;
-    color: #BAE6FD; background: rgba(12, 27, 46, 0.9); border: 1px solid #1E3A5F;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  #w.sz-lg #memo { font-size: 11px; }
-  #memo.hidden { display: none !important; }
+  /* Memo Box + Expandable Quick Chips */
+  #memoBtn {
+    display: block; width: 100%; text-align: left; margin-top: 3px; padding: 3px 6px; border-radius: 7px;
+    font-size: 10px; line-height: 1.35; font-weight: 700;
+    color: #BAE6FD; background: var(--ov-card-bg); border: 1px solid var(--ov-card-bd);
+  }
+  #memoBtn.empty-memo { opacity: 0.78; font-size: 9.5px; }
+  #memoText {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  #memoBtn.expanded #memoText {
+    display: block; -webkit-line-clamp: unset; overflow: visible; white-space: pre-wrap; word-break: break-word;
+  }
+  #w.sz-lg #memoBtn { font-size: 11px; }
+  #memoBtn.hidden { display: none !important; }
+  #memoChips {
+    display: none; flex-wrap: wrap; gap: 3px; margin-top: 3px;
+  }
+  #memoChips.open { display: flex; }
+  .memo-chip {
+    font-size: 9px; font-weight: 700; padding: 2px 5px; min-height: 22px; border-radius: 6px;
+    color: #BAE6FD; background: rgba(30, 58, 95, 0.78); border: 1px solid rgba(56, 189, 248, 0.4);
+  }
+  .memo-chip.edit-chip { color: #FDE68A; background: rgba(120, 53, 15, 0.78); border-color: rgba(245, 158, 11, 0.55); }
 
-  #progress { font-size: 10px; font-weight: 700; color: #FCD34D; padding: 2px 0 3px; }
+  #progressRow { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 3px 0; }
+  #progress { flex: 1; min-width: 0; font-size: 10px; font-weight: 700; color: #FCD34D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #w.sz-lg #progress { font-size: 11px; }
-  #items { max-height: 92px; overflow-y: auto; overscroll-behavior: contain; }
-  #w.sz-sm #items { max-height: 68px; }
-  #w.sz-lg #items { max-height: 128px; }
-  .item { display: block; width: 100%; text-align: left; font-size: 11px; padding: 4px 6px; margin: 0 0 3px;
-    background: rgba(30, 41, 59, 0.92); border: 1px solid #475569; color: #F8FAFC; }
+  #checkAllBtn {
+    flex: none; font-size: 9px; padding: 2px 6px; min-height: 20px; border-radius: 6px;
+    color: #A7F3D0; background: rgba(6, 78, 59, 0.85); border: 1px solid #10B981;
+  }
+  #checkAllBtn.hidden { display: none; }
+
+  #items { max-height: 98px; overflow-y: auto; overscroll-behavior: contain; }
+  #w.sz-sm #items { max-height: 72px; }
+  #w.sz-lg #items { max-height: 136px; }
+  .item-row { display: flex; align-items: stretch; gap: 3px; margin: 0 0 3px; }
+  .item {
+    flex: 1; min-width: 0; display: block; text-align: left; font-size: 11px; padding: 4px 6px;
+    background: var(--ov-item-bg); border: 1px solid var(--ov-item-bd); color: #F8FAFC;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
   #w.sz-sm .item { font-size: 10px; padding: 3px 5px; }
   #w.sz-lg .item { font-size: 12px; padding: 5px 7px; }
-  .item.on { background: #064E3B; border-color: #10B981; color: #6EE7B7; }
+  .item.on {
+    background: var(--ov-item-on-bg); border-color: var(--ov-item-on-bd); color: #6EE7B7;
+  }
+  .item.linked { border-left: 3px solid #F43F5E; }
+  .item.linked-extra { border-left: 3px solid #A855F7; }
+  .step-wrap { flex: none; display: flex; gap: 2px; }
+  .step-btn {
+    width: 22px; min-height: 22px; font-size: 12px; font-weight: 900; border-radius: 6px;
+    color: #E2E8F0; background: var(--ov-btn-bg); border: 1px solid var(--ov-btn-bd);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  #w.sz-sm .step-btn { width: 20px; font-size: 11px; }
+  #w.sz-lg .step-btn { width: 25px; font-size: 13px; }
   .empty { font-size: 11px; color: #94A3B8; padding: 4px 2px; }
 
-  #quickTools { margin-top: 4px; gap: 3px; }
-  #quickTools button { flex: 1; min-height: 29px; font-size: 10px; border-radius: 8px; padding: 3px 3px; white-space: nowrap; }
-  #w.sz-lg #quickTools button { min-height: 33px; font-size: 11px; }
-  #callBtn { color: #A7F3D0; background: #064E3B; border: 1px solid #10B981; }
-  #speakBtn { color: #C7D2FE; background: #1E1B4B; border: 1px solid #6366F1; }
-  #holdBtn { color: #FDE68A; background: #422006; border: 1px solid #D97706; }
+  #quickTools { margin-top: 4px; gap: 2.5px; }
+  #quickTools button {
+    flex: 1; min-width: 0; min-height: 28px; font-size: 9.5px; border-radius: 7px; padding: 2px 1px; white-space: nowrap;
+  }
+  #w.sz-sm #quickTools button { font-size: 9px; min-height: 26px; }
+  #w.sz-lg #quickTools button { min-height: 32px; font-size: 10.5px; }
+  #callBtn { color: #A7F3D0; background: rgba(6, 78, 59, 0.88); border: 1px solid #10B981; }
+  #smsBtn { color: #BAE6FD; background: rgba(12, 74, 110, 0.88); border: 1px solid #38BDF8; }
+  #speakBtn { color: #C7D2FE; background: rgba(30, 27, 75, 0.88); border: 1px solid #6366F1; }
+  #holdBtn { color: #FDE68A; background: rgba(66, 32, 6, 0.88); border: 1px solid #D97706; }
   #naviBtn { flex: 1.05; color: #052E16; background: #03C75A; border: 1px solid #6EE7B7; }
+  #naviBtn.navi-kakao { color: #1E1B06; background: #FEE500; border-color: #FACC15; }
+  #naviBtn.navi-tmap { color: #FFFFFF; background: #0064FF; border-color: #60A5FA; }
+
+  #nextPreview {
+    display: none; width: 100%; margin-top: 3px; padding: 3px 6px; border-radius: 7px;
+    font-size: 9.5px; font-weight: 700; text-align: left;
+    color: #BFDBFE; background: rgba(30, 58, 138, 0.45); border: 1px solid rgba(59, 130, 246, 0.45);
+    align-items: center; justify-content: space-between; gap: 4px;
+  }
+  #nextPreview.open { display: flex; }
+  #nextPrevName { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #nextPrevMeta { flex: none; font-size: 9px; opacity: 0.9; white-space: nowrap; }
+
+  #holdHint {
+    display: none; margin-top: 3px; padding: 2px 6px; border-radius: 6px; text-align: center;
+    font-size: 9px; font-weight: 800; color: #FEF3C7; background: rgba(120, 53, 15, 0.88); border: 1px solid #F59E0B;
+  }
+  #holdHint.open { display: block; }
 
   #actions { margin-top: 4px; gap: 3px; }
-  #actions button { min-height: 32px; font-size: 10px; border-radius: 9px; white-space: nowrap; }
-  #w.sz-lg #actions button { min-height: 36px; font-size: 11px; }
+  #actions button {
+    position: relative; overflow: hidden;
+    min-height: 31px; font-size: 10px; border-radius: 9px; white-space: nowrap;
+  }
+  #w.sz-lg #actions button { min-height: 35px; font-size: 11px; }
   #done { flex: 1; color: #E2E8F0; background: #0F766E; border: 1px solid #2DD4BF; }
   #doneNext { flex: 1.25; color: #052E16; background: #4ADE80; border: 1px solid #BBF7D0; font-weight: 900; }
   #next { flex: 0.9; color: #fff; background: #2563EB; border: 1px solid #60A5FA; }
-  #app { flex: none; padding: 0 7px; font-size: 10px !important; color: #E2E8F0; background: #334155; border: 1px solid #64748B; }
+  #app { flex: none; padding: 0 7px; font-size: 10px !important; color: #E2E8F0; background: var(--ov-btn-bg); border: 1px solid var(--ov-btn-bd); }
+
+  .hold-fill {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+    background: rgba(255, 255, 255, 0.34); pointer-events: none;
+  }
+  .holding .hold-fill { width: 100%; transition: width 0.55s linear; }
 </style>
 </head>
 <body>
 <div id="w">
   <div class="row" id="header">
-    <button id="badge" type="button" aria-haspopup="true" aria-expanded="false" aria-label="표시할 업무 종류 및 창 설정">🧭 내비고정 ▾</button>
+    <span id="gpsDot" title="GPS 상태"></span>
+    <button id="badge" type="button" aria-haspopup="true" aria-expanded="false" aria-label="업무 종류 및 다음 원 빠른 이동">🧭 내비고정 ▾</button>
     <div id="dist">거리 계산중</div>
+    <button id="colSpeak" type="button" title="수량 음성 듣기" aria-label="음성 읽기">🔊</button>
+    <button id="alphaBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="투명도 및 화면 설정" title="투명도·테마·기능 설정">◐</button>
     <button id="collapse" type="button" aria-label="접기">➖</button>
     <button id="close" type="button" aria-label="닫기">✕</button>
   </div>
-  <div id="menu" role="group" aria-label="표시할 업무 및 창 설정">
+
+  <!-- 업무 종류 & 정거장 빠른 이동 메뉴 -->
+  <div id="menu" role="group" aria-label="업무 종류 및 빠른 전환">
     <div class="menu-grid">
       <button type="button" data-kind="delivery">납품</button>
       <button type="button" data-kind="return">반품·회수</button>
       <button type="button" data-kind="extra">추가 납품</button>
       <button type="button" data-kind="auto">자동 표시</button>
     </div>
-    <div class="menu-sec-label">미니창 크기</div>
+    <div class="menu-sec-label"><span>다음 방문처 바로가기</span><strong id="remCountLabel"></strong></div>
+    <div id="quickList"></div>
+  </div>
+
+  <!-- 투명도·화면·편의 설정 메뉴 -->
+  <div id="cfgMenu" role="group" aria-label="투명도 및 창 설정">
+    <div class="menu-sec-label" style="margin-top:1px"><span>배경 투명도</span><strong id="bgAlphaVal">86%</strong></div>
+    <div class="slider-row">
+      <button type="button" class="adj-btn" data-bg-step="-6" aria-label="배경 투명하게">−</button>
+      <input id="bgAlphaRange" type="range" min="10" max="98" step="2" value="86" aria-label="배경 투명도 비율">
+      <button type="button" class="adj-btn" data-bg-step="6" aria-label="배경 진하게">+</button>
+    </div>
+
+    <div class="menu-sec-label"><span>전체 창 투명도</span><strong id="winAlphaVal">100%</strong></div>
+    <div class="slider-row">
+      <button type="button" class="adj-btn" data-win-step="-5" aria-label="창 전체 투명하게">−</button>
+      <input id="winAlphaRange" type="range" min="35" max="100" step="1" value="100" aria-label="전체 창 투명도 비율">
+      <button type="button" class="adj-btn" data-win-step="5" aria-label="창 전체 진하게">+</button>
+    </div>
+
+    <div class="menu-sec-label"><span>빠른 투명도</span></div>
+    <div class="menu-row4">
+      <button type="button" data-preset="solid">진함</button>
+      <button type="button" data-preset="mid">반투명</button>
+      <button type="button" data-preset="light">투명</button>
+      <button type="button" data-preset="ghost">초투명</button>
+    </div>
+
+    <div class="menu-sec-label"><span>화면 테마</span></div>
+    <div class="menu-grid">
+      <button type="button" data-theme="dark">🌙 야간</button>
+      <button type="button" data-theme="light">☀️ 주간</button>
+    </div>
+
+    <div class="menu-sec-label"><span>창 크기</span></div>
     <div class="menu-row3">
       <button type="button" data-size="sm">작게</button>
       <button type="button" data-size="md">보통</button>
       <button type="button" data-size="lg">크게</button>
     </div>
-    <div class="menu-sec-label">배경 투명도</div>
+
+    <div class="menu-sec-label"><span>기본 내비 앱</span></div>
     <div class="menu-row3">
-      <button type="button" data-alpha="solid">진함</button>
-      <button type="button" data-alpha="mid">반투명</button>
-      <button type="button" data-alpha="light">투명</button>
+      <button type="button" data-navi="naver">네이버</button>
+      <button type="button" data-navi="kakao">카카오</button>
+      <button type="button" data-navi="tmap">티맵</button>
     </div>
+
+    <div class="menu-sec-label"><span>위치 · 안전 조작</span></div>
+    <div class="menu-grid" style="margin-bottom:4px">
+      <button type="button" id="snapEdgeBtn">⇄ 좌우 이동</button>
+      <button type="button" id="calibBtn">📍 좌표 보정</button>
+    </div>
+    <button type="button" id="holdDoneToggle" style="width:100%">🔒 완료 길게누르기: 꺼짐</button>
   </div>
+
   <button id="undoBar" type="button" aria-label="방금 완료 되돌리기">↩ 되돌리기</button>
-  <div id="title">목적지 준비중</div>
+
+  <div id="titleRow">
+    <div id="title">목적지 준비중</div>
+    <button id="addrBtn" type="button" class="hidden" aria-expanded="false">📍주소</button>
+  </div>
+
   <div id="body">
-    <div id="memo" class="hidden"></div>
-    <div id="progress">품목 터치 시 즉시 체크</div>
-    <div id="items"></div>
-    <div class="row" id="quickTools">
-      <button id="callBtn" type="button" title="원 전화 걸기">📞 전화</button>
-      <button id="speakBtn" type="button" title="수량 음성 다시 듣기">🔊 읽기</button>
-      <button id="holdBtn" type="button" title="보류 또는 재방문 상태 표시">⏸ 보류</button>
-      <button id="naviBtn" type="button" title="네이버 내비 길안내 출발">🟢 내비</button>
+    <div id="addrBar">
+      <span id="addrText"></span>
+      <button id="copyAddrBtn" type="button">📋 복사</button>
     </div>
+
+    <button id="memoBtn" type="button" class="hidden" aria-expanded="false"><span id="memoText"></span></button>
+    <div id="memoChips" role="group" aria-label="빠른 현장 메모">
+      <button type="button" class="memo-chip" data-chip="정문 앞 주차">+정문주차</button>
+      <button type="button" class="memo-chip" data-chip="지하주차장 이용">+지하주차</button>
+      <button type="button" class="memo-chip" data-chip="2층 교무실 전달">+교무실</button>
+      <button type="button" class="memo-chip" data-chip="경비실 맡김">+경비실</button>
+      <button type="button" class="memo-chip" data-chip="원내 부재중">+부재중</button>
+      <button type="button" class="memo-chip edit-chip" data-chip="__EDIT__">✏️ 편집</button>
+    </div>
+
+    <div id="progressRow">
+      <div id="progress">품목 터치 시 즉시 체크</div>
+      <button id="checkAllBtn" type="button" class="hidden">✓ 전체체크</button>
+    </div>
+    <div id="items"></div>
+
+    <div class="row" id="quickTools">
+      <button id="callBtn" type="button" title="원 전화 걸기">📞전화</button>
+      <button id="smsBtn" type="button" title="도착·완료 문자 보내기">📩문자</button>
+      <button id="speakBtn" type="button" title="수량 음성 다시 듣기">🔊읽기</button>
+      <button id="holdBtn" type="button" title="보류·재방문 상태 표시">⏸보류</button>
+      <button id="naviBtn" type="button" title="내비 길안내 출발">🟢내비</button>
+    </div>
+
     <div id="holdMenu" role="group" aria-label="빠른 상태 기록">
       <button type="button" data-status="보류">⏸ 보류</button>
       <button type="button" data-status="재방문">🔁 재방문</button>
       <button type="button" data-status="연락필요">📞 연락</button>
     </div>
+
+    <div id="smsMenu" role="group" aria-label="문자 템플릿">
+      <button type="button" data-sms="arriving">🚚 곧 도착</button>
+      <button type="button" data-sms="delivered">✅ 전달완료</button>
+      <button type="button" data-sms="absent">🚪 부재연락</button>
+    </div>
+
+    <button id="nextPreview" type="button" title="터치하면 다음 정거장으로 이동">
+      <span id="nextPrevName"></span>
+      <span id="nextPrevMeta"></span>
+    </button>
+
+    <div id="holdHint">완료 오작동 방지: 버튼을 0.6초 길게 누르세요</div>
+
     <div class="row" id="actions">
-      <button id="done" type="button">✓ 완료</button>
-      <button id="doneNext" type="button">완료▶내비</button>
+      <button id="done" type="button"><span class="hold-fill"></span>✓ 완료</button>
+      <button id="doneNext" type="button"><span class="hold-fill"></span>완료▶내비</button>
       <button id="next" type="button">다음▶</button>
       <button id="app" type="button">앱</button>
     </div>
@@ -149,28 +464,72 @@
 <script>
 (function () {
   'use strict';
-  var VERSION = '2026-11-17.2';
+  var VERSION = '2026-11-17.3';
   var H = window.OverlayHost || null;
   var $ = function (id) { return document.getElementById(id); };
   var w = $('w');
-  var ALPHA_MAP = { solid: '0.96', mid: '0.88', light: '0.68' };
+
+  var PRESETS = {
+    solid: { bg: 0.96, win: 1.00 },
+    mid:   { bg: 0.82, win: 1.00 },
+    light: { bg: 0.48, win: 0.96 },
+    ghost: { bg: 0.18, win: 0.90 }
+  };
+  var NAVI_META = {
+    naver: { text: '🟢내비', title: '네이버 내비 길안내 출발', cls: '' },
+    kakao: { text: '🟡카카오', title: '카카오내비 길안내 출발', cls: 'navi-kakao' },
+    tmap:  { text: '🔵티맵', title: '티맵 길안내 출발', cls: 'navi-tmap' }
+  };
+
+  function clampNum(v, lo, hi, fallback) {
+    var n = parseFloat(v);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(lo, Math.min(hi, n));
+  }
+
   var state = {
     p: {},
     kind: 'auto',
     size: 'md',
-    alpha: 'mid',
+    theme: 'dark',
+    bgAlpha: 0.86,
+    winAlpha: 1.0,
+    naviApp: 'naver',
+    holdDone: false,
     collapsed: false,
     menuOpen: false,
+    cfgOpen: false,
     holdOpen: false,
+    smsOpen: false,
+    addrOpen: false,
+    memoExpanded: false,
     lastNearby: false,
     autoExpandSuppressUntil: 0
   };
+
   try { state.collapsed = localStorage.getItem('nk_overlay_collapsed') === '1'; } catch (e) {}
   try {
     var svSz = localStorage.getItem('nk_overlay_size');
     if (svSz === 'sm' || svSz === 'md' || svSz === 'lg') state.size = svSz;
-    var svAl = localStorage.getItem('nk_overlay_alpha');
-    if (svAl && ALPHA_MAP[svAl]) state.alpha = svAl;
+    var svTh = localStorage.getItem('nk_overlay_theme');
+    if (svTh === 'light' || svTh === 'dark') state.theme = svTh;
+    var svNv = localStorage.getItem('nk_overlay_navi_app');
+    if (svNv && NAVI_META[svNv]) state.naviApp = svNv;
+    state.holdDone = localStorage.getItem('nk_overlay_hold_done') === '1';
+
+    var svBg = localStorage.getItem('nk_overlay_bg_alpha');
+    if (svBg !== null) {
+      state.bgAlpha = clampNum(svBg, 0.10, 0.98, 0.86);
+    } else {
+      var legacyAl = localStorage.getItem('nk_overlay_alpha');
+      if (legacyAl === 'solid') state.bgAlpha = 0.96;
+      else if (legacyAl === 'mid') state.bgAlpha = 0.86;
+      else if (legacyAl === 'light') state.bgAlpha = 0.58;
+    }
+    var svWin = localStorage.getItem('nk_overlay_win_alpha');
+    if (svWin !== null) {
+      state.winAlpha = clampNum(svWin, 0.35, 1.00, 1.00);
+    }
   } catch (e) {}
 
   function log(m) { try { if (H && H.log) H.log(String(m)); else console.log('[overlay]', m); } catch (e) {} }
@@ -178,8 +537,76 @@
     if (H && H.callMain) H.callMain(fn, arg === undefined ? '' : JSON.stringify(arg));
     else log('callMain ' + fn + ' ' + JSON.stringify(arg));
   }
+  function savePref(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
 
-  // 배지가 길면 거리 표시가 밀려나므로 짧게 줄이고 ▾ 를 붙임
+  function closePopMenus() {
+    state.menuOpen = false;
+    state.cfgOpen = false;
+    state.holdOpen = false;
+    state.smsOpen = false;
+  }
+
+  function applyVisualStyles() {
+    var bg = clampNum(state.bgAlpha, 0.10, 0.98, 0.86);
+    var win = clampNum(state.winAlpha, 0.35, 1.00, 1.00);
+    var light = state.theme === 'light';
+
+    var itemAlpha = Math.max(0.08, Math.min(0.95, bg * 0.96)).toFixed(3);
+    var itemOnAlpha = Math.max(0.16, Math.min(0.96, 0.08 + bg * 0.88)).toFixed(3);
+    var cardAlpha = Math.max(0.08, Math.min(0.92, bg * 0.90)).toFixed(3);
+    var btnAlpha = Math.max(0.20, Math.min(0.96, 0.14 + bg * 0.84)).toFixed(3);
+    var colAlpha = Math.max(0.14, Math.min(0.94, bg * 0.90)).toFixed(3);
+    var bdAlpha = Math.max(0.28, Math.min(1.00, 0.25 + bg * 0.75)).toFixed(3);
+    var menuAlpha = Math.max(0.84, Math.min(0.98, 0.78 + bg * 0.20)).toFixed(3);
+
+    var rootStyle = document.documentElement.style;
+    rootStyle.setProperty('--ov-win-opacity', win.toFixed(2));
+    if (light) {
+      rootStyle.setProperty('--ov-w-bg', 'rgba(248, 250, 252, ' + bg.toFixed(3) + ')');
+      rootStyle.setProperty('--ov-col-bg', 'rgba(248, 250, 252, ' + colAlpha + ')');
+      rootStyle.setProperty('--ov-border', 'rgba(5, 150, 105, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-item-bg', 'rgba(226, 232, 240, ' + itemAlpha + ')');
+      rootStyle.setProperty('--ov-item-bd', 'rgba(148, 163, 184, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-item-on-bg', 'rgba(167, 243, 208, ' + itemOnAlpha + ')');
+      rootStyle.setProperty('--ov-item-on-bd', 'rgba(5, 150, 105, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-card-bg', 'rgba(241, 245, 249, ' + cardAlpha + ')');
+      rootStyle.setProperty('--ov-card-bd', 'rgba(148, 163, 184, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-menu-bg', 'rgba(248, 250, 252, ' + menuAlpha + ')');
+      rootStyle.setProperty('--ov-btn-bg', 'rgba(226, 232, 240, ' + btnAlpha + ')');
+      rootStyle.setProperty('--ov-btn-bd', 'rgba(148, 163, 184, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-text-shadow', bg < 0.65 ? '0 1px 2px rgba(255,255,255,0.96), 0 0 6px rgba(255,255,255,0.9)' : 'none');
+    } else {
+      rootStyle.setProperty('--ov-w-bg', 'rgba(15, 23, 42, ' + bg.toFixed(3) + ')');
+      rootStyle.setProperty('--ov-col-bg', 'rgba(15, 23, 42, ' + colAlpha + ')');
+      rootStyle.setProperty('--ov-border', 'rgba(16, 185, 129, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-item-bg', 'rgba(30, 41, 59, ' + itemAlpha + ')');
+      rootStyle.setProperty('--ov-item-bd', 'rgba(71, 85, 105, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-item-on-bg', 'rgba(6, 78, 59, ' + itemOnAlpha + ')');
+      rootStyle.setProperty('--ov-item-on-bd', 'rgba(16, 185, 129, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-card-bg', 'rgba(12, 27, 46, ' + cardAlpha + ')');
+      rootStyle.setProperty('--ov-card-bd', 'rgba(30, 58, 95, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-menu-bg', 'rgba(21, 34, 56, ' + menuAlpha + ')');
+      rootStyle.setProperty('--ov-btn-bg', 'rgba(51, 65, 85, ' + btnAlpha + ')');
+      rootStyle.setProperty('--ov-btn-bd', 'rgba(100, 116, 139, ' + bdAlpha + ')');
+      rootStyle.setProperty('--ov-text-shadow', bg < 0.65 ? '0 1px 2px rgba(2,6,23,0.95), 0 0 6px rgba(2,6,23,0.85)' : 'none');
+    }
+
+    var bgPct = Math.round(bg * 100);
+    var winPct = Math.round(win * 100);
+    $('bgAlphaVal').textContent = bgPct + '%';
+    $('winAlphaVal').textContent = winPct + '%';
+    if (Number($('bgAlphaRange').value) !== bgPct) $('bgAlphaRange').value = bgPct;
+    if (Number($('winAlphaRange').value) !== winPct) $('winAlphaRange').value = winPct;
+
+    var presetBtns = $('cfgMenu').querySelectorAll('button[data-preset]');
+    for (var i = 0; i < presetBtns.length; i++) {
+      var key = presetBtns[i].getAttribute('data-preset');
+      var pr = PRESETS[key];
+      var match = pr && Math.abs(bg - pr.bg) <= 0.03 && Math.abs(win - pr.win) <= 0.03;
+      presetBtns[i].classList.toggle('on', !!match);
+    }
+  }
+
   function compactBadge(raw) {
     var t = String(raw || '').replace('▾', '').trim();
     var paren = t.indexOf('(');
@@ -191,11 +618,8 @@
 
   function setCollapsed(c) {
     state.collapsed = !!c;
-    if (state.collapsed) {
-      state.menuOpen = false;
-      state.holdOpen = false;
-    }
-    try { localStorage.setItem('nk_overlay_collapsed', state.collapsed ? '1' : '0'); } catch (e) {}
+    if (state.collapsed) closePopMenus();
+    savePref('nk_overlay_collapsed', state.collapsed ? '1' : '0');
     draw();
   }
 
@@ -207,57 +631,141 @@
     w.classList.toggle('collapsed', state.collapsed);
     w.classList.toggle('sz-sm', state.size === 'sm');
     w.classList.toggle('sz-lg', state.size === 'lg');
-    document.documentElement.style.setProperty('--ov-bg-alpha', ALPHA_MAP[state.alpha] || '0.88');
+    w.classList.toggle('theme-light', state.theme === 'light');
+    w.classList.toggle('arrived', !!p.arrived);
+    w.classList.toggle('ready-complete', !!p.allChecked);
+
+    applyVisualStyles();
+
+    // GPS dot
+    var gpsState = p.gpsState || 'off';
+    var gpsDot = $('gpsDot');
+    gpsDot.className = gpsState;
+    gpsDot.title = gpsState === 'live' ? 'GPS 수신 양호'
+      : gpsState === 'weak' ? 'GPS 약함'
+      : gpsState === 'searching' ? 'GPS 탐색 중'
+      : gpsState === 'manual' ? '수동 위치'
+      : gpsState === 'denied' ? 'GPS 권한 필요' : 'GPS 꺼짐';
 
     $('collapse').textContent = state.collapsed ? '➕' : '➖';
     $('collapse').setAttribute('aria-label', state.collapsed ? '펼치기' : '접기');
     $('badge').textContent = compactBadge(p.modeBadge || '🧭 내비고정');
     $('badge').style.background = p.modeColor || '#059669';
     $('badge').setAttribute('aria-expanded', String(state.menuOpen));
+    $('alphaBtn').setAttribute('aria-expanded', String(state.cfgOpen));
     $('menu').classList.toggle('open', state.menuOpen && !state.collapsed);
+    $('cfgMenu').classList.toggle('open', state.cfgOpen && !state.collapsed);
     $('holdMenu').classList.toggle('open', state.holdOpen && !state.collapsed);
+    $('smsMenu').classList.toggle('open', state.smsOpen && !state.collapsed);
 
+    // Config & Kind active buttons
     var kindButtons = $('menu').querySelectorAll('button[data-kind]');
     for (var k = 0; k < kindButtons.length; k++) {
       kindButtons[k].classList.toggle('on', kindButtons[k].getAttribute('data-kind') === state.kind);
     }
-    var sizeButtons = $('menu').querySelectorAll('button[data-size]');
+    var themeButtons = $('cfgMenu').querySelectorAll('button[data-theme]');
+    for (var th = 0; th < themeButtons.length; th++) {
+      themeButtons[th].classList.toggle('on', themeButtons[th].getAttribute('data-theme') === state.theme);
+    }
+    var sizeButtons = $('cfgMenu').querySelectorAll('button[data-size]');
     for (var sIdx = 0; sIdx < sizeButtons.length; sIdx++) {
       sizeButtons[sIdx].classList.toggle('on', sizeButtons[sIdx].getAttribute('data-size') === state.size);
     }
-    var alphaButtons = $('menu').querySelectorAll('button[data-alpha]');
-    for (var aIdx = 0; aIdx < alphaButtons.length; aIdx++) {
-      alphaButtons[aIdx].classList.toggle('on', alphaButtons[aIdx].getAttribute('data-alpha') === state.alpha);
+    var naviButtons = $('cfgMenu').querySelectorAll('button[data-navi]');
+    for (var nv = 0; nv < naviButtons.length; nv++) {
+      naviButtons[nv].classList.toggle('on', naviButtons[nv].getAttribute('data-navi') === state.naviApp);
+    }
+
+    var hdBtn = $('holdDoneToggle');
+    hdBtn.classList.toggle('on', state.holdDone);
+    hdBtn.textContent = state.holdDone ? '🔒 완료 길게누르기: 켜짐 (0.6초)' : '🔒 완료 길게누르기: 꺼짐';
+
+    // Quick target switcher list inside #menu
+    var remCount = typeof p.remainingCount === 'number' ? p.remainingCount : 0;
+    $('remCountLabel').textContent = remCount ? ('남은 ' + remCount + '곳') : '';
+    var qlBox = $('quickList');
+    qlBox.textContent = '';
+    var qList = Array.isArray(p.quickList) ? p.quickList : [];
+    if (!qList.length) {
+      var qEmpty = document.createElement('div');
+      qEmpty.className = 'empty';
+      qEmpty.style.fontSize = '9.5px';
+      qEmpty.textContent = '남은 정거장이 없습니다.';
+      qlBox.appendChild(qEmpty);
+    } else {
+      qList.forEach(function (qt) {
+        var qb = document.createElement('button');
+        qb.type = 'button';
+        qb.className = 'quick-target-btn' + (qt.active ? ' on' : '');
+        qb.setAttribute('data-target-key', String(qt.key || ''));
+        var spName = document.createElement('span');
+        spName.className = 'qt-name';
+        spName.textContent = (qt.active ? '✓ ' : '') + (qt.name || '');
+        var spMeta = document.createElement('span');
+        spMeta.className = 'qt-meta';
+        spMeta.textContent = [qt.distText, qt.summary].filter(Boolean).join(' · ');
+        qb.appendChild(spName);
+        qb.appendChild(spMeta);
+        qlBox.appendChild(qb);
+      });
     }
 
     var undoText = String(p.undoLabel || '').trim();
     $('undoBar').classList.toggle('open', !!undoText && !state.collapsed);
     if (undoText) $('undoBar').textContent = '↩ ' + undoText + ' 완료 취소(되돌리기)';
 
-    $('dist').textContent = state.collapsed ? (name ? name + ' · ' + distText : distText) : distText;
+    var weakAcc = (gpsState === 'weak' && p.gpsAccuracy) ? (' (±' + p.gpsAccuracy + 'm)') : '';
+    if (state.collapsed) {
+      $('dist').textContent = p.collapsedSummary || (name ? name + ' · ' + distText : distText);
+    } else {
+      $('dist').textContent = (p.arrived ? '🚨 ' : '') + distText + weakAcc;
+    }
+
     $('title').textContent = name;
 
+    // Address toggle
+    var addr = String(p.address || '').trim();
+    $('addrBtn').classList.toggle('hidden', !addr);
+    $('addrBtn').setAttribute('aria-expanded', String(state.addrOpen && !!addr));
+    $('addrBar').classList.toggle('open', state.addrOpen && !!addr && !state.collapsed);
+    if (addr) $('addrText').textContent = addr;
+
+    // Expandable memo & quick memo chips
     var memoParts = [];
     if (p.memo) memoParts.push('📝 ' + String(p.memo));
     if (p.pickupNote) memoParts.push(String(p.pickupNote));
-    var memoEl = $('memo');
-    if (memoParts.length) {
-      memoEl.textContent = memoParts.join(' · ');
-      memoEl.classList.remove('hidden');
+    var memoBtn = $('memoBtn');
+    var hasTarget = p.targetKind !== 'none' && name !== '모든 납품·회수 완료!' && name !== '선택한 종류의 미완료 업무 없음' && name !== '목적지 준비중';
+    if (hasTarget) {
+      memoBtn.classList.remove('hidden');
+      memoBtn.classList.toggle('empty-memo', !memoParts.length);
+      memoBtn.classList.toggle('expanded', state.memoExpanded);
+      memoBtn.setAttribute('aria-expanded', String(state.memoExpanded));
+      $('memoText').textContent = memoParts.length ? memoParts.join(' · ') : '📝 + 현장 메모 추가';
+      $('memoChips').classList.toggle('open', state.memoExpanded && !state.collapsed);
     } else {
-      memoEl.textContent = '';
-      memoEl.classList.add('hidden');
+      memoBtn.classList.add('hidden');
+      $('memoChips').classList.remove('open');
     }
 
     var hasPhone = !!String(p.phone || '').replace(/[^0-9+*#]/g, '');
     $('callBtn').disabled = !hasPhone;
-    $('callBtn').textContent = hasPhone ? '📞 전화' : '📞 없음';
+    $('callBtn').textContent = hasPhone ? '📞전화' : '📞없음';
+    $('smsBtn').disabled = !hasPhone;
+    $('smsBtn').textContent = hasPhone ? '📩문자' : '📩없음';
+
+    var nm = NAVI_META[state.naviApp] || NAVI_META.naver;
+    $('naviBtn').textContent = nm.text;
+    $('naviBtn').title = nm.title;
+    $('naviBtn').className = nm.cls;
 
     $('progress').textContent = p.progressText || '품목 터치 시 즉시 체크';
+    var items = Array.isArray(p.items) ? p.items : [];
+    var hasUncheckedCheckable = items.some(function (it) { return (typeof it.index !== 'number' || it.index < 1000) && !it.checked; });
+    $('checkAllBtn').classList.toggle('hidden', !hasUncheckedCheckable);
 
     var box = $('items');
     box.textContent = '';
-    var items = Array.isArray(p.items) ? p.items : [];
     if (!items.length) {
       var empty = document.createElement('div');
       empty.className = 'empty';
@@ -265,14 +773,64 @@
       box.appendChild(empty);
     }
     items.forEach(function (it, i) {
+      var idx = typeof it.index === 'number' ? it.index : i;
+      var row = document.createElement('div');
+      row.className = 'item-row';
+
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'item' + (it.checked ? ' on' : '');
+      var kindCls = it.kind === 'linked-pickup' ? ' linked' : (it.kind === 'linked-extra' ? ' linked-extra' : '');
+      b.className = 'item' + (it.checked ? ' on' : '') + kindCls;
       b.textContent = (it.checked ? '☑ ' : '☐ ') + (it.label || '');
-      var idx = typeof it.index === 'number' ? it.index : i;
       b.addEventListener('click', function () { callMain('onNativeOverlayToggleItem', idx); });
-      box.appendChild(b);
+      row.appendChild(b);
+
+      if (it.adjustable && Number(it.qty || 0) > 1) {
+        var sw = document.createElement('div');
+        sw.className = 'step-wrap';
+        var curDelivered = Number(it.deliveredQty || 0);
+
+        var minus = document.createElement('button');
+        minus.type = 'button';
+        minus.className = 'step-btn';
+        minus.textContent = '−';
+        minus.disabled = curDelivered <= 0;
+        minus.setAttribute('aria-label', (it.label || '') + ' 수량 1 감소');
+        minus.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          callMain('onNativeOverlayStepItem', idx + ':-1');
+        });
+
+        var plus = document.createElement('button');
+        plus.type = 'button';
+        plus.className = 'step-btn';
+        plus.textContent = '+';
+        plus.disabled = curDelivered >= Number(it.qty);
+        plus.setAttribute('aria-label', (it.label || '') + ' 수량 1 증가');
+        plus.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          callMain('onNativeOverlayStepItem', idx + ':1');
+        });
+
+        sw.appendChild(minus);
+        sw.appendChild(plus);
+        row.appendChild(sw);
+      }
+
+      box.appendChild(row);
     });
+
+    // Next stop preview
+    var np = p.nextPreview;
+    var npEl = $('nextPreview');
+    if (np && np.name) {
+      npEl.classList.add('open');
+      $('nextPrevName').textContent = '다음▶ ' + np.name + (np.summary ? ' · ' + np.summary : '');
+      $('nextPrevMeta').textContent = [np.distText, remCount > 1 ? (remCount + '곳') : ''].filter(Boolean).join(' · ');
+    } else {
+      npEl.classList.remove('open');
+    }
+
     reportSize();
   }
 
@@ -294,7 +852,6 @@
       var p = payload || {};
       state.p = p;
       if (typeof p.kindChoice === 'string') state.kind = p.kindChoice;
-      // 도착 근처면 품목 체크를 위해 자동으로 펼침 (단, 내비 출발/완료▶내비 직후 2.5초간은 자동 펼침 억제)
       if (p.nearby && !state.lastNearby && state.collapsed && Date.now() >= state.autoExpandSuppressUntil) {
         state.collapsed = false;
       }
@@ -304,12 +861,20 @@
   };
   window.nkSetCollapsed = function (c) { setCollapsed(c); };
 
-  // ---- 버튼 ----
+  // ---- 헤더 · 메뉴 ----
   $('badge').addEventListener('click', function () {
-    state.menuOpen = !state.menuOpen;
-    if (state.menuOpen) state.holdOpen = false;
+    var next = !state.menuOpen;
+    closePopMenus();
+    state.menuOpen = next;
     draw();
   });
+  $('alphaBtn').addEventListener('click', function () {
+    var next = !state.cfgOpen;
+    closePopMenus();
+    state.cfgOpen = next;
+    draw();
+  });
+
   $('menu').addEventListener('click', function (e) {
     var kb = e.target.closest('button[data-kind]');
     if (kb) {
@@ -319,35 +884,155 @@
       callMain('onNativeOverlaySelectKind', state.kind);
       return;
     }
-    var sb = e.target.closest('button[data-size]');
-    if (sb) {
-      state.size = sb.getAttribute('data-size');
-      try { localStorage.setItem('nk_overlay_size', state.size); } catch (err) {}
+    var qt = e.target.closest('button[data-target-key]');
+    if (qt) {
+      var key = qt.getAttribute('data-target-key');
+      state.menuOpen = false;
+      draw();
+      callMain('onNativeOverlaySelectTarget', key);
+    }
+  });
+
+  // Transparency & visual settings listeners
+  function setBgAlpha(v) {
+    state.bgAlpha = Math.round(clampNum(v, 0.10, 0.98, 0.86) * 100) / 100;
+    savePref('nk_overlay_bg_alpha', state.bgAlpha);
+    applyVisualStyles();
+  }
+  function setWinAlpha(v) {
+    state.winAlpha = Math.round(clampNum(v, 0.35, 1.00, 1.00) * 100) / 100;
+    savePref('nk_overlay_win_alpha', state.winAlpha);
+    applyVisualStyles();
+  }
+
+  $('bgAlphaRange').addEventListener('input', function (e) { setBgAlpha(Number(e.target.value) / 100); });
+  $('winAlphaRange').addEventListener('input', function (e) { setWinAlpha(Number(e.target.value) / 100); });
+
+  $('cfgMenu').addEventListener('click', function (e) {
+    var bgStep = e.target.closest('button[data-bg-step]');
+    if (bgStep) {
+      setBgAlpha(state.bgAlpha + parseInt(bgStep.getAttribute('data-bg-step'), 10) / 100);
+      return;
+    }
+    var winStep = e.target.closest('button[data-win-step]');
+    if (winStep) {
+      setWinAlpha(state.winAlpha + parseInt(winStep.getAttribute('data-win-step'), 10) / 100);
+      return;
+    }
+    var pb = e.target.closest('button[data-preset]');
+    if (pb) {
+      var pr = PRESETS[pb.getAttribute('data-preset')];
+      if (pr) {
+        state.bgAlpha = pr.bg;
+        state.winAlpha = pr.win;
+        savePref('nk_overlay_bg_alpha', state.bgAlpha);
+        savePref('nk_overlay_win_alpha', state.winAlpha);
+        applyVisualStyles();
+      }
+      return;
+    }
+    var tb = e.target.closest('button[data-theme]');
+    if (tb) {
+      state.theme = tb.getAttribute('data-theme');
+      savePref('nk_overlay_theme', state.theme);
       draw();
       return;
     }
-    var ab = e.target.closest('button[data-alpha]');
-    if (ab) {
-      state.alpha = ab.getAttribute('data-alpha');
-      try { localStorage.setItem('nk_overlay_alpha', state.alpha); } catch (err) {}
+    var sb = e.target.closest('button[data-size]');
+    if (sb) {
+      state.size = sb.getAttribute('data-size');
+      savePref('nk_overlay_size', state.size);
       draw();
+      return;
+    }
+    var nb = e.target.closest('button[data-navi]');
+    if (nb) {
+      state.naviApp = nb.getAttribute('data-navi');
+      savePref('nk_overlay_navi_app', state.naviApp);
+      draw();
+      return;
     }
   });
-  $('undoBar').addEventListener('click', function () {
-    callMain('onNativeOverlayUndoComplete');
+
+  $('snapEdgeBtn').addEventListener('click', function () {
+    if (H && H.snapEdge) H.snapEdge('toggle');
+    else callMain('onNativeOverlaySnapEdge');
   });
+  $('calibBtn').addEventListener('click', function () {
+    state.cfgOpen = false;
+    draw();
+    callMain('onNativeOverlayCalibrate');
+  });
+  $('holdDoneToggle').addEventListener('click', function () {
+    state.holdDone = !state.holdDone;
+    savePref('nk_overlay_hold_done', state.holdDone ? '1' : '0');
+    draw();
+  });
+
+  // ---- 주소 · 메모 · 전체체크 ----
+  $('undoBar').addEventListener('click', function () { callMain('onNativeOverlayUndoComplete'); });
+  $('addrBtn').addEventListener('click', function () {
+    state.addrOpen = !state.addrOpen;
+    draw();
+  });
+  $('copyAddrBtn').addEventListener('click', function () {
+    var addr = String((state.p && state.p.address) || '').trim();
+    if (!addr) return;
+    if (H && H.copyText) H.copyText(addr);
+    else callMain('onNativeOverlayCopyAddress', addr);
+  });
+  $('memoBtn').addEventListener('click', function () {
+    state.memoExpanded = !state.memoExpanded;
+    draw();
+  });
+  $('memoChips').addEventListener('click', function (e) {
+    var cb = e.target.closest('button[data-chip]');
+    if (!cb) return;
+    var chip = cb.getAttribute('data-chip');
+    if (chip === '__EDIT__') {
+      callMain('onNativeOverlayEditMemo');
+      if (H && H.openApp) H.openApp();
+    } else {
+      callMain('onNativeOverlayAppendMemo', chip);
+    }
+  });
+  $('checkAllBtn').addEventListener('click', function () {
+    callMain('onNativeOverlayCheckAll');
+  });
+
+  // ---- 빠른 도구 ----
   $('callBtn').addEventListener('click', function () {
     var phone = String((state.p && state.p.phone) || '');
     if (!phone) return;
     if (H && H.callPhone) H.callPhone(phone);
     else callMain('onNativeOverlayCallPhone', phone);
   });
-  $('speakBtn').addEventListener('click', function () {
-    callMain('onNativeOverlaySpeakTarget');
+  $('smsBtn').addEventListener('click', function () {
+    if ($('smsBtn').disabled) return;
+    var next = !state.smsOpen;
+    closePopMenus();
+    state.smsOpen = next;
+    draw();
   });
+  $('smsMenu').addEventListener('click', function (e) {
+    var sb = e.target.closest('button[data-sms]');
+    if (!sb) return;
+    var tpl = sb.getAttribute('data-sms');
+    state.smsOpen = false;
+    draw();
+    var p = state.p || {};
+    var body = (p.smsBodies && p.smsBodies[tpl]) || '';
+    if (H && H.sendSms && p.phone) H.sendSms(p.phone, body);
+    else callMain('onNativeOverlaySendSms', tpl);
+  });
+  function triggerSpeak() { callMain('onNativeOverlaySpeakTarget'); }
+  $('speakBtn').addEventListener('click', triggerSpeak);
+  $('colSpeak').addEventListener('click', triggerSpeak);
+
   $('holdBtn').addEventListener('click', function () {
-    state.holdOpen = !state.holdOpen;
-    if (state.holdOpen) state.menuOpen = false;
+    var next = !state.holdOpen;
+    closePopMenus();
+    state.holdOpen = next;
     draw();
   });
   $('holdMenu').addEventListener('click', function (e) {
@@ -357,20 +1042,93 @@
     draw();
     callMain('onNativeOverlayQuickStatus', b.getAttribute('data-status'));
   });
+
   function startNavi() {
     state.autoExpandSuppressUntil = Date.now() + 2500;
     setCollapsed(true);
+    var p = state.p || {};
+    if (state.naviApp === 'kakao') {
+      if (H && H.launchNaviUrl) H.launchNaviUrl(p.kakaoUrl || '', p.kakaoWebUrl || p.webNaviUrl || '');
+      else callMain('onNativeOverlayStartCustomNavi', 'kakao');
+      return;
+    }
+    if (state.naviApp === 'tmap') {
+      if (H && H.launchNaviUrl) H.launchNaviUrl(p.tmapUrl || '', p.tmapWebUrl || p.webNaviUrl || '');
+      else callMain('onNativeOverlayStartCustomNavi', 'tmap');
+      return;
+    }
     if (H && H.startNavi) H.startNavi(); else log('startNavi');
   }
   $('naviBtn').addEventListener('click', startNavi);
+
+  $('nextPreview').addEventListener('click', function () {
+    var np = state.p && state.p.nextPreview;
+    if (np && np.key) callMain('onNativeOverlaySelectTarget', String(np.key));
+  });
+
   $('collapse').addEventListener('click', function () { setCollapsed(!state.collapsed); });
   $('close').addEventListener('click', function () { if (H && H.close) H.close(); else log('close'); });
-  $('done').addEventListener('click', function () { callMain('onNativeOverlayCompleteTarget'); });
-  $('doneNext').addEventListener('click', function () {
+
+  // Hold-to-complete binding on #done and #doneNext
+  var hintTimer = null;
+  function showHoldHint() {
+    clearTimeout(hintTimer);
+    $('holdHint').classList.add('open');
+    reportSize();
+    hintTimer = setTimeout(function () {
+      $('holdHint').classList.remove('open');
+      reportSize();
+    }, 1800);
+  }
+  function bindHoldAction(btn, actionFn) {
+    var timer = null;
+    var fired = false;
+    btn.addEventListener('pointerdown', function (e) {
+      if (!state.holdDone || e.button > 0) return;
+      fired = false;
+      btn.classList.add('holding');
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        timer = null;
+        fired = true;
+        btn.classList.remove('holding');
+        actionFn();
+      }, 550);
+    });
+    function cancelHold() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+        btn.classList.remove('holding');
+        if (state.holdDone && !fired) showHoldHint();
+      } else {
+        btn.classList.remove('holding');
+      }
+    }
+    btn.addEventListener('pointerup', cancelHold);
+    btn.addEventListener('pointercancel', cancelHold);
+    btn.addEventListener('pointerleave', function () {
+      if (timer) { clearTimeout(timer); timer = null; }
+      btn.classList.remove('holding');
+    });
+    btn.addEventListener('click', function (e) {
+      if (state.holdDone) {
+        if (fired) { fired = false; e.preventDefault(); return; }
+        // Accessibility: keyboard click (detail === 0) allowed when no pointer down happened
+        if (e.detail === 0) { actionFn(); return; }
+        e.preventDefault();
+        return;
+      }
+      actionFn();
+    });
+  }
+  bindHoldAction($('done'), function () { callMain('onNativeOverlayCompleteTarget'); });
+  bindHoldAction($('doneNext'), function () {
     state.autoExpandSuppressUntil = Date.now() + 2500;
     setCollapsed(true);
-    callMain('onNativeOverlayCompleteAndNext');
+    callMain('onNativeOverlayCompleteAndNext', state.naviApp);
   });
+
   $('next').addEventListener('click', function () { callMain('onNativeOverlayNextTarget'); });
   $('app').addEventListener('click', function () { if (H && H.openApp) H.openApp(); else log('openApp'); });
 
@@ -383,22 +1141,39 @@
     if (H && H.beginDrag) H.beginDrag();
   }
   $('header').addEventListener('pointerdown', armDrag);
-  $('title').addEventListener('pointerdown', armDrag);
+  $('titleRow').addEventListener('pointerdown', armDrag);
 
   draw();
   if (H && H.ready) {
     H.ready(VERSION);
   } else if (/[?&]demo=1/.test(location.search)) {
-    document.body.style.background = '#475569';
+    document.body.style.background = 'linear-gradient(135deg, #cbd5e1 0%, #94a3b8 50%, #475569 100%)';
+    document.body.style.minHeight = '100vh';
     document.body.style.padding = '12px';
     window.nkRender({
-      modeBadge: '🧭 회수·내비고정', modeColor: '#059669', name: '1. 달빛유치원', distText: '거리 1.2km',
+      modeBadge: '🧭 회수·내비고정', modeColor: '#059669', name: '1. 달빛유치원',
+      distText: '거리 240m', gpsState: 'live', gpsAccuracy: 12,
+      address: '경기도 김포시 고촌읍 태리로 261-6',
       phone: '031-987-2730', memo: '정문 옆 주차 · 2층 교무실', pickupNote: '↩️ 회수·반품 1건',
-      progressText: '품목체크 1/3 · 총 12개', kindChoice: 'auto', nearby: false,
+      progressText: '품목체크 1/4 · 총 12개 · 회수/추가 1건', kindChoice: 'auto', nearby: true, arrived: true, allChecked: false,
+      remainingCount: 4,
+      collapsedSummary: '달빛유치원 · 240m · 12개',
+      nextPreview: { key: '2', name: '2. 한강리버시티어린이집', distText: '1.15km', summary: '10개' },
+      quickList: [
+        { key: '1', name: '1. 달빛유치원', distText: '240m', summary: '12개', kind: 'delivery', active: true },
+        { key: '2', name: '2. 시립한강리버시티어린이집', distText: '1.15km', summary: '10개', kind: 'delivery', active: false },
+        { key: '3', name: '3. 고촌어린이집', distText: '1.80km', summary: '24개', kind: 'delivery', active: false }
+      ],
+      smsBodies: {
+        arriving: '[엔터코딩] 안녕하세요, 달빛유치원입니다. 잠시 후 교재 납품 방문 예정입니다.',
+        delivered: '[엔터코딩] 달빛유치원 교재(총 12개) 전달 완료했습니다. 감사합니다.',
+        absent: '[엔터코딩] 달빛유치원 방문드렸으나 부재중이셔서 문자 남깁니다.'
+      },
       items: [
-        { index: 0, checked: true, label: '교재 3단계 (학생용) : 8개' },
-        { index: 1, checked: false, label: '교재 3단계 (교사용) : 2개' },
-        { index: 2, checked: false, label: '교구 세트 : 2개' }
+        { index: 0, checked: true, label: '교재 3단계 (학생용) : 8개', qty: 8, deliveredQty: 8, adjustable: true, kind: 'delivery' },
+        { index: 1, checked: false, label: '교재 3단계 (교사용) : 1/2개', qty: 2, deliveredQty: 1, adjustable: true, kind: 'delivery' },
+        { index: 2, checked: false, label: '교구 세트 : 2개', qty: 2, deliveredQty: 2, adjustable: true, kind: 'delivery' },
+        { index: 1000, checked: false, label: '↩️ [회수] 2단계 반품 (3개)', qty: 3, deliveredQty: 0, adjustable: false, kind: 'linked-pickup' }
       ]
     });
   }

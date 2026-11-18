@@ -205,15 +205,94 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
 @media(prefers-reduced-motion:reduce){#schoolList *,#pkList *{animation:none!important;transition:none!important}}
 .nk-modal-footer{display:grid;grid-template-columns:1fr 1.15fr auto;gap:8px;padding-top:8px;padding-bottom:2px}
 .nk-modal-footer button{min-height:44px;padding:10px 8px;border-radius:14px;font-size:13px;line-height:1.25}
-#domFloatingOverlay{width:min(266px,84vw)!important;padding:10px!important}
-#domFloatingOverlay.nk-dom-collapsed{width:194px!important;padding:6px 8px!important;background:rgba(15,23,42,.82)!important;border-width:1px!important}
+#domFloatingOverlay{width:min(270px,86vw)!important;padding:9px!important;background:var(--dom-ov-w-bg,rgba(15,23,42,0.88))!important;border-color:var(--dom-ov-border,rgba(16,185,129,0.92))!important;opacity:var(--dom-ov-win-opacity,1);text-shadow:var(--dom-ov-text-shadow,none);transition:border-color .15s ease}
+#domFloatingOverlay.nk-dom-sm{width:min(230px,78vw)!important;padding:7px!important}
+#domFloatingOverlay.nk-dom-lg{width:min(308px,92vw)!important;padding:11px!important}
+#domFloatingOverlay.nk-dom-collapsed{width:222px!important;padding:5px 7px!important;background:var(--dom-ov-col-bg,rgba(15,23,42,0.8))!important;border-width:1.5px!important}
+#domFloatingOverlay.nk-dom-sm.nk-dom-collapsed{width:198px!important}
+#domFloatingOverlay.nk-dom-lg.nk-dom-collapsed{width:248px!important}
 #domFloatingOverlay.nk-dom-collapsed #domOverlayDragHeader{padding-bottom:0!important;border-bottom:0!important}
-#domFloatingOverlay.nk-dom-collapsed #domOverlayBadge,#domFloatingOverlay.nk-dom-collapsed #domOverlayOpenAppBtn,#domFloatingOverlay.nk-dom-collapsed #domOverlayWebPipBtn,#domFloatingOverlay.nk-dom-collapsed #domOverlayUndoBtn,#domFloatingOverlay.nk-dom-collapsed #domOverlayTitle,#domFloatingOverlay.nk-dom-collapsed #domOverlayBody{display:none!important}
-#domFloatingOverlay.nk-dom-collapsed #domOverlayDist{color:#f8fafc!important;font-size:12px!important;padding-left:2px!important}
-.nk-dom-quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
-.nk-dom-quick button{min-height:30px;padding:4px 2px;font-size:10.5px;border-radius:8px;white-space:nowrap}
-#domOverlayCompleteBtn{background:#0f766e!important;border:1px solid #2dd4bf;color:#e2e8f0!important}
-#domOverlayCompleteNextBtn{background:#4ade80!important;border:1px solid #bbf7d0;color:#052e16!important;font-weight:900!important}
+#domFloatingOverlay.nk-dom-collapsed #domOverlayBadge,#domFloatingOverlay.nk-dom-collapsed #domOverlayCfgBtn,#domFloatingOverlay.nk-dom-collapsed #domOverlayOpenAppBtn,#domFloatingOverlay.nk-dom-collapsed #domOverlayWebPipBtn,#domFloatingOverlay.nk-dom-collapsed #domOverlayQuickMenu,#domFloatingOverlay.nk-dom-collapsed #domOverlayCfgMenu,#domFloatingOverlay.nk-dom-collapsed #domOverlayUndoBtn,#domFloatingOverlay.nk-dom-collapsed #domOverlayTitleRow,#domFloatingOverlay.nk-dom-collapsed #domOverlayBody{display:none!important}
+#domFloatingOverlay.nk-dom-collapsed #domOverlayColSpeakBtn{display:inline-flex!important}
+#domFloatingOverlay.nk-dom-collapsed #domOverlayDist{color:inherit!important;font-size:11.5px!important;padding-left:2px!important}
+#domFloatingOverlay.nk-dom-arrived{border-color:#f59e0b!important;box-shadow:0 0 0 1px rgba(245,158,11,.45),0 18px 40px rgba(2,6,23,.55)!important}
+#domFloatingOverlay.nk-dom-ready #domOverlayCompleteBtn,#domFloatingOverlay.nk-dom-ready #domOverlayCompleteNextBtn{box-shadow:0 0 0 2px #86efac,0 0 12px rgba(34,197,94,.5)}
+#domFloatingOverlay.nk-dom-light{color:#0f172a!important}
+#domFloatingOverlay.nk-dom-light #domOverlayTitle,#domFloatingOverlay.nk-dom-light #domOverlayDist{color:#0f172a!important}
+#domFloatingOverlay.nk-dom-light #domOverlayProgress{color:#b45309!important}
+#domFloatingOverlay.nk-dom-light #domOverlayMemoBtn{color:#0369a1!important;background:var(--dom-ov-card-bg,rgba(241,245,249,.85))!important;border-color:rgba(148,163,184,.75)!important}
+#domFloatingOverlay.nk-dom-light #domOverlayAddrBtn{color:#0369a1!important;background:rgba(186,230,253,.8)!important;border-color:#38bdf8!important}
+#domFloatingOverlay.nk-dom-light #domOverlayAddrBar{color:#1e293b!important;background:var(--dom-ov-card-bg,rgba(241,245,249,.85))!important;border-color:rgba(148,163,184,.75)!important}
+#domFloatingOverlay.nk-dom-light #domOverlayQuickMenu,#domFloatingOverlay.nk-dom-light #domOverlayCfgMenu,#domFloatingOverlay.nk-dom-light #domOverlayHoldMenu,#domFloatingOverlay.nk-dom-light #domOverlaySmsMenu{background:rgba(248,250,252,.97)!important;color:#0f172a!important;border-color:#cbd5e1!important}
+#domFloatingOverlay.nk-dom-light #domOverlayQuickMenu button,#domFloatingOverlay.nk-dom-light #domOverlayCfgMenu button,#domFloatingOverlay.nk-dom-light #domOverlayHoldMenu button,#domFloatingOverlay.nk-dom-light #domOverlaySmsMenu button{background:#e2e8f0!important;color:#0f172a!important;border-color:#cbd5e1!important}
+#domFloatingOverlay.nk-dom-light #domOverlayQuickMenu button.is-active,#domFloatingOverlay.nk-dom-light #domOverlayCfgMenu button.is-active{background:#2563eb!important;color:#ffffff!important;border-color:#1d4ed8!important}
+#domFloatingOverlay.nk-dom-light #domOverlayCfgMenu .dom-ov-sec{color:#475569!important}
+#domFloatingOverlay.nk-dom-light #domOverlayCfgBtn,#domFloatingOverlay.nk-dom-light #domOverlayCollapseBtn,#domFloatingOverlay.nk-dom-light #domOverlayColSpeakBtn{background:rgba(226,232,240,.9)!important;color:#0f172a!important;border-color:#94a3b8!important}
+#domFloatingOverlay.nk-dom-light #domOverlayCheckAllBtn{color:#065f46!important;background:rgba(167,243,208,.88)!important;border-color:#10b981!important}
+#domFloatingOverlay.nk-dom-light #domOverlayNextPreview{background:rgba(219,234,254,.84)!important;color:#1e3a8a!important;border-color:#60a5fa!important}
+#domFloatingOverlay.nk-dom-light #domOverlayHoldHint{color:#92400e!important;background:rgba(254,243,199,.92)!important;border-color:#f59e0b!important}
+#domFloatingOverlay.nk-dom-light .nk-dom-memo-chip{color:#0369a1!important;background:rgba(224,242,254,.85)!important;border-color:#7dd3fc!important}
+#domFloatingOverlay.nk-dom-light .nk-dom-memo-chip.is-edit{color:#92400e!important;background:rgba(254,243,199,.9)!important;border-color:#f59e0b!important}
+#domFloatingOverlay.nk-dom-light #domOverlayUndoBtn{color:#92400e!important;background:rgba(254,243,199,.92)!important;border-color:#f59e0b!important}
+#domFloatingOverlay.nk-dom-light #domOverlayCallBtn{background:rgba(167,243,208,.85)!important;color:#065f46!important;border-color:#10b981!important}
+#domFloatingOverlay.nk-dom-light #domOverlaySmsBtn{background:rgba(186,230,253,.85)!important;color:#075985!important;border-color:#0ea5e9!important}
+#domFloatingOverlay.nk-dom-light #domOverlaySpeakBtn{background:rgba(224,231,255,.88)!important;color:#3730a3!important;border-color:#6366f1!important}
+#domFloatingOverlay.nk-dom-light #domOverlayHoldBtn{background:rgba(254,243,199,.88)!important;color:#92400e!important;border-color:#f59e0b!important}
+#domOverlayGpsDot{width:8px;height:8px;border-radius:999px;flex:none;background:#64748b;box-shadow:0 0 0 1px rgba(255,255,255,.28)}
+#domOverlayGpsDot.live{background:#10b981;box-shadow:0 0 6px #10b981}
+#domOverlayGpsDot.weak{background:#f59e0b;box-shadow:0 0 5px #f59e0b}
+#domOverlayGpsDot.searching{background:#fbbf24;animation:pulseRing 1.1s infinite}
+#domOverlayGpsDot.manual{background:#38bdf8}
+#domOverlayGpsDot.denied{background:#ef4444}
+#domOverlayQuickMenu button.is-active,#domOverlayCfgMenu button.is-active{background:#2563eb!important;color:#fff!important;border-color:#93c5fd!important}
+#domOverlayHoldDoneToggle.is-active{background:#b45309!important;color:#fef3c7!important;border-color:#fbbf24!important}
+.nk-dom-quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+.nk-dom-quick button{min-height:29px;padding:3px 1px;font-size:10px;border-radius:8px;white-space:nowrap}
+.nk-dom-item-btn{background:var(--dom-ov-item-bg,rgba(30,41,59,.88))!important;border-color:var(--dom-ov-item-bd,rgba(71,85,105,.85))!important;color:var(--dom-ov-item-fg,#fff)!important}
+.nk-dom-item-btn.is-checked{background:var(--dom-ov-item-on-bg,rgba(6,78,59,.88))!important;border-color:var(--dom-ov-item-on-bd,#10b981)!important;color:var(--dom-ov-item-on-fg,#6ee7b7)!important}
+.nk-dom-item-btn.is-linked{border-left:3px solid #f43f5e!important}
+.nk-dom-item-btn.is-linked-extra{border-left:3px solid #a855f7!important}
+.nk-dom-step-btn{width:24px;min-height:28px;border-radius:7px;font-size:13px;font-weight:900;background:var(--dom-ov-btn-bg,rgba(51,65,85,.88));border:1px solid var(--dom-ov-btn-bd,#64748b);color:var(--dom-ov-item-fg,#f8fafc);display:inline-flex;align-items:center;justify-content:center}
+.nk-dom-step-btn:disabled{opacity:.35;cursor:default}
+#domOverlayCompleteBtn{position:relative;overflow:hidden;background:#0f766e!important;border:1px solid #2dd4bf;color:#e2e8f0!important}
+#domOverlayCompleteNextBtn{position:relative;overflow:hidden;background:#4ade80!important;border:1px solid #bbf7d0;color:#052e16!important;font-weight:900!important}
+.nk-dom-hold-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:rgba(255,255,255,.34);pointer-events:none}
+.nk-dom-holding .nk-dom-hold-fill{width:100%;transition:width .55s linear}
+#domFloatingOverlay .cursor-move{cursor:move}
+#domFloatingOverlay .pb-1\.5{padding-bottom:.375rem}
+#domFloatingOverlay .pt-0\.5{padding-top:.125rem}
+#domFloatingOverlay .max-w-\[82px\]{max-width:82px}
+#domFloatingOverlay .max-h-64{max-height:16rem}
+#domFloatingOverlay .max-h-72{max-height:18rem}
+#domFloatingOverlay .opacity-85{opacity:.85}
+#domFloatingOverlay .accent-sky-400{accent-color:#38bdf8}
+#domFloatingOverlay .space-y-1>:not([hidden])~:not([hidden]){margin-top:.25rem}
+#domFloatingOverlay .space-y-1\.5>:not([hidden])~:not([hidden]){margin-top:.375rem}
+#domFloatingOverlay .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#domOverlayMemoBtn.expanded #domOverlayMemoText{display:block;-webkit-line-clamp:unset;overflow:visible;white-space:pre-wrap;word-break:break-word}
+#domOverlayDragHeader{border-color:rgba(51,65,85,.5)}
+#domOverlayBadge{background:#059669;color:#fff}
+#domOverlayWebPipBtn{background:rgba(99,102,241,.28);border-color:rgba(129,140,248,.42);color:#e0e7ff}
+#domOverlayWebPipBtn:hover{background:rgba(99,102,241,.48)}
+#domOverlayCloseBtn{background:rgba(69,10,10,.9);border-color:#dc2626;color:#fca5a5}
+#domOverlayCloseBtn:hover{background:#7f1d1d}
+#domFloatingOverlay.nk-dom-light #domOverlayCloseBtn{background:rgba(254,226,226,.92)!important;color:#b91c1c!important;border-color:#f87171!important}
+#domFloatingOverlay.nk-dom-light #domOverlayWebPipBtn{background:rgba(224,231,255,.92)!important;color:#3730a3!important;border-color:#818cf8!important}
+#domOverlayQuickMenu,#domOverlayCfgMenu{background:var(--dom-ov-menu-bg,rgba(15,23,42,.96))}
+#domOverlayAddrBtn{background:rgba(12,74,110,.78);border-color:rgba(56,189,248,.45)}
+#domOverlayAddrBar,#domOverlayMemoBtn{background:var(--dom-ov-card-bg,rgba(2,6,23,.85))}
+#domOverlayCopyAddrBtn,#domOverlayNextBtn{background:#2563eb;color:#fff;border:1px solid #60a5fa}
+#domOverlayNextBtn:hover{background:#3b82f6}
+#domOverlayCheckAllBtn{background:rgba(6,78,59,.88);border-color:#10b981;color:#a7f3d0}
+#domOverlayNextPreview{background:rgba(30,58,138,.48);color:#bfdbfe;border-color:rgba(59,130,246,.45)}
+#domOverlayHoldHint{background:rgba(120,53,15,.9);color:#fef3c7;border-color:#f59e0b}
+.nk-dom-memo-chip{background:rgba(12,74,110,.78);color:#bae6fd;border-color:rgba(56,189,248,.4)}
+.nk-dom-memo-chip.is-edit{background:rgba(120,53,15,.82);color:#fde68a;border-color:rgba(245,158,11,.55)}
+.nk-dom-quick-target-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;text-align:left;padding:5px 7px;border-radius:8px;font-size:10.5px;font-weight:700;background:#1e293b;color:#f8fafc;border:1px solid #334155}
+#domOverlayMainNaviBtn{background:#03C75A;color:#020617;border:1px solid #10b981}
+#domOverlayMainNaviBtn:hover{background:#34d399}
+#domOverlayMainNaviBtn.nk-navi-kakao{background:#FEE500!important;color:#1e1b06!important;border:1px solid #facc15}
+#domOverlayMainNaviBtn.nk-navi-tmap{background:#0064FF!important;color:#ffffff!important;border:1px solid #60a5fa}
 </style>
 </head>
 <body class="min-h-screen pb-28 sm:pb-24 selection:bg-amber-500 selection:text-slate-950">
@@ -1214,36 +1293,154 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
   </div>
 
   <!-- Interactive Touch Floating Overlay (APK Native Overlay Preview & In-App Floating Widget without Media Controls) -->
-  <div id="domFloatingOverlay" class="hidden fixed z-[90] top-20 right-3 w-[305px] bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 rounded-2xl shadow-2xl p-3 text-slate-100 select-none">
-    <div id="domOverlayDragHeader" class="flex items-center justify-between gap-1 cursor-move pb-1.5 border-b border-slate-800">
-      <span id="domOverlayBadge" class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-600 text-white">🧭 내비고정</span>
-      <span id="domOverlayDist" class="flex-1 text-xs font-extrabold text-sky-400 truncate pl-1">거리 계산중</span>
-      <button id="domOverlayOpenAppBtn" type="button" class="px-2 py-0.5 rounded text-[11px] font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow" title="앱 본 화면을 열고 팝업창을 닫습니다">📱 앱</button>
-      <button id="domOverlayWebPipBtn" type="button" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/30 hover:bg-indigo-500/50 text-indigo-200 border border-indigo-400/40" title="웹 브라우저에서 네이버 내비로 화면을 전환할 때 쓰는 비디오 PiP 창으로 전환">웹PiP</button>
-      <button id="domOverlayCollapseBtn" type="button" class="px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600">➖</button>
-      <button id="domOverlayCloseBtn" type="button" class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-700">✕</button>
+  <div id="domFloatingOverlay" class="hidden fixed z-[90] top-20 right-3 backdrop-blur-md border-2 border-emerald-500 rounded-2xl shadow-2xl text-slate-100 select-none">
+    <div id="domOverlayDragHeader" class="flex items-center justify-between gap-1 cursor-move pb-1.5 border-b border-slate-800/70">
+      <span id="domOverlayGpsDot" title="GPS 상태"></span>
+      <button id="domOverlayBadge" type="button" aria-haspopup="true" aria-expanded="false" aria-label="표시할 업무 종류 및 원 선택" class="px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-600 text-white shrink-0 truncate max-w-[82px]">🧭 내비고정 ▾</button>
+      <span id="domOverlayDist" class="flex-1 text-xs font-extrabold text-sky-400 truncate pl-1 cursor-move">거리 계산중</span>
+      <button id="domOverlayColSpeakBtn" type="button" class="hidden px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 shrink-0" title="수량 음성 읽기" aria-label="음성 읽기">🔊</button>
+      <button id="domOverlayCfgBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="투명도 및 화면 설정" title="투명도·테마·기능 설정" class="px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 shrink-0">◐</button>
+      <button id="domOverlayOpenAppBtn" type="button" class="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow shrink-0" title="앱 본 화면을 열고 팝업창을 닫습니다">📱 앱</button>
+      <button id="domOverlayWebPipBtn" type="button" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/30 hover:bg-indigo-500/50 text-indigo-200 border border-indigo-400/40 shrink-0" title="웹 브라우저에서 내비로 전환할 때 쓰는 비디오 PiP 창으로 전환">PiP</button>
+      <button id="domOverlayCollapseBtn" type="button" class="px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 shrink-0">➖</button>
+      <button id="domOverlayCloseBtn" type="button" class="px-1.5 py-0.5 rounded text-[11px] font-bold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-700 shrink-0">✕</button>
     </div>
+
+    <!-- 업무 종류 & 정거장 빠른 이동 메뉴 -->
+    <div id="domOverlayQuickMenu" class="hidden mt-1.5 p-2 rounded-xl bg-slate-950/95 border border-slate-700 space-y-1.5 max-h-64 overflow-y-auto">
+      <div class="grid grid-cols-2 gap-1">
+        <button type="button" data-dom-kind="delivery" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">납품</button>
+        <button type="button" data-dom-kind="return" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">반품·회수</button>
+        <button type="button" data-dom-kind="extra" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">추가 납품</button>
+        <button type="button" data-dom-kind="auto" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-slate-800 text-white border border-slate-700">자동 표시</button>
+      </div>
+      <div class="flex items-center justify-between text-[10px] font-extrabold text-slate-400 pt-0.5">
+        <span>다음 방문처 바로가기</span>
+        <strong id="domOverlayRemLabel" class="text-sky-400"></strong>
+      </div>
+      <div id="domOverlayQuickList" class="space-y-1"></div>
+    </div>
+
+    <!-- 투명도 · 화면 · 기능 설정 메뉴 -->
+    <div id="domOverlayCfgMenu" class="hidden mt-1.5 p-2 rounded-xl bg-slate-950/95 border border-slate-700 space-y-1.5 max-h-72 overflow-y-auto">
+      <div class="dom-ov-sec flex items-center justify-between text-[10px] font-extrabold text-slate-400">
+        <span>배경 투명도</span>
+        <strong id="domOverlayBgAlphaVal" class="text-sky-400">88%</strong>
+      </div>
+      <div class="flex items-center gap-1">
+        <button type="button" data-dom-bg-step="-6" class="w-6 h-6 rounded bg-slate-800 text-white font-black text-xs border border-slate-700">−</button>
+        <input id="domOverlayBgAlphaRange" type="range" min="10" max="98" step="2" value="88" class="flex-1 h-4 accent-sky-400 cursor-pointer" aria-label="배경 투명도 비율">
+        <button type="button" data-dom-bg-step="6" class="w-6 h-6 rounded bg-slate-800 text-white font-black text-xs border border-slate-700">+</button>
+      </div>
+
+      <div class="dom-ov-sec flex items-center justify-between text-[10px] font-extrabold text-slate-400">
+        <span>전체 창 투명도</span>
+        <strong id="domOverlayWinAlphaVal" class="text-sky-400">100%</strong>
+      </div>
+      <div class="flex items-center gap-1">
+        <button type="button" data-dom-win-step="-5" class="w-6 h-6 rounded bg-slate-800 text-white font-black text-xs border border-slate-700">−</button>
+        <input id="domOverlayWinAlphaRange" type="range" min="35" max="100" step="1" value="100" class="flex-1 h-4 accent-sky-400 cursor-pointer" aria-label="전체 창 투명도 비율">
+        <button type="button" data-dom-win-step="5" class="w-6 h-6 rounded bg-slate-800 text-white font-black text-xs border border-slate-700">+</button>
+      </div>
+
+      <div class="dom-ov-sec text-[10px] font-extrabold text-slate-400">빠른 투명도</div>
+      <div class="grid grid-cols-4 gap-1">
+        <button type="button" data-dom-preset="solid" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">진함</button>
+        <button type="button" data-dom-preset="mid" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">반투명</button>
+        <button type="button" data-dom-preset="light" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">투명</button>
+        <button type="button" data-dom-preset="ghost" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">초투명</button>
+      </div>
+
+      <div class="dom-ov-sec text-[10px] font-extrabold text-slate-400">화면 테마</div>
+      <div class="grid grid-cols-2 gap-1">
+        <button type="button" data-dom-theme="dark" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">🌙 야간</button>
+        <button type="button" data-dom-theme="light" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">☀️ 주간</button>
+      </div>
+
+      <div class="dom-ov-sec text-[10px] font-extrabold text-slate-400">창 크기</div>
+      <div class="grid grid-cols-3 gap-1">
+        <button type="button" data-dom-size="sm" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">작게</button>
+        <button type="button" data-dom-size="md" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">보통</button>
+        <button type="button" data-dom-size="lg" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">크게</button>
+      </div>
+
+      <div class="dom-ov-sec text-[10px] font-extrabold text-slate-400">기본 내비 앱</div>
+      <div class="grid grid-cols-3 gap-1">
+        <button type="button" data-dom-navi="naver" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">네이버</button>
+        <button type="button" data-dom-navi="kakao" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">카카오</button>
+        <button type="button" data-dom-navi="tmap" class="py-1 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">티맵</button>
+      </div>
+
+      <div class="dom-ov-sec text-[10px] font-extrabold text-slate-400">위치 · 안전 조작</div>
+      <div class="grid grid-cols-2 gap-1">
+        <button id="domOverlaySnapBtn" type="button" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">⇄ 좌우 이동</button>
+        <button id="domOverlayCalibBtn" type="button" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">📍 좌표 보정</button>
+      </div>
+      <button id="domOverlayHoldDoneToggle" type="button" class="w-full py-1.5 rounded text-[10px] font-bold bg-slate-800 text-white border border-slate-700">🔒 완료 길게누르기: 꺼짐</button>
+    </div>
+
     <button id="domOverlayUndoBtn" type="button" class="hidden w-full mt-1.5 px-2 py-1 rounded-lg text-[11px] font-extrabold bg-amber-500/20 text-amber-200 border border-amber-500/40 truncate">↩ 방금 완료 되돌리기</button>
-    <div id="domOverlayTitle" class="pt-1.5 font-black text-base text-white truncate cursor-move">목적지 준비중</div>
+
+    <div id="domOverlayTitleRow" class="flex items-center justify-between gap-1.5 pt-1.5 cursor-move">
+      <div id="domOverlayTitle" class="flex-1 min-w-0 font-black text-[15px] text-white truncate">목적지 준비중</div>
+      <button id="domOverlayAddrBtn" type="button" aria-expanded="false" class="hidden shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-950/80 text-sky-200 border border-sky-500/40">📍주소</button>
+    </div>
+
     <div id="domOverlayBody" class="space-y-1.5 pt-1">
-      <div id="domOverlayMemo" class="hidden text-[11px] text-sky-200 bg-slate-950/90 border border-sky-500/30 rounded-lg px-2 py-1 leading-snug"></div>
-      <div id="domOverlayProgress" class="text-[11px] font-bold text-amber-300">품목 터치 시 즉시 체크됩니다 (미디어 재생바 없음)</div>
+      <div id="domOverlayAddrBar" class="hidden flex items-center justify-between gap-1.5 rounded-lg px-2 py-1 text-[11px] bg-slate-950/85 border border-slate-700 text-slate-200">
+        <span id="domOverlayAddrText" class="flex-1 min-w-0 leading-snug"></span>
+        <button id="domOverlayCopyAddrBtn" type="button" class="shrink-0 px-2 py-1 rounded text-[10px] font-bold bg-blue-600 text-white">📋 복사</button>
+      </div>
+
+      <button id="domOverlayMemoBtn" type="button" aria-expanded="false" class="hidden w-full text-left text-[11px] text-sky-200 bg-slate-950/85 border border-sky-500/30 rounded-lg px-2 py-1 leading-snug">
+        <span id="domOverlayMemoText" class="line-clamp-2 block"></span>
+      </button>
+      <div id="domOverlayMemoChips" class="hidden flex-wrap gap-1">
+        <button type="button" data-dom-chip="정문 앞 주차" class="nk-dom-memo-chip px-1.5 py-1 rounded text-[10px] font-bold bg-sky-950/80 text-sky-200 border border-sky-500/40">+정문주차</button>
+        <button type="button" data-dom-chip="지하주차장 이용" class="nk-dom-memo-chip px-1.5 py-1 rounded text-[10px] font-bold bg-sky-950/80 text-sky-200 border border-sky-500/40">+지하주차</button>
+        <button type="button" data-dom-chip="2층 교무실 전달" class="nk-dom-memo-chip px-1.5 py-1 rounded text-[10px] font-bold bg-sky-950/80 text-sky-200 border border-sky-500/40">+교무실</button>
+        <button type="button" data-dom-chip="경비실 맡김" class="nk-dom-memo-chip px-1.5 py-1 rounded text-[10px] font-bold bg-sky-950/80 text-sky-200 border border-sky-500/40">+경비실</button>
+        <button type="button" data-dom-chip="원내 부재중" class="nk-dom-memo-chip px-1.5 py-1 rounded text-[10px] font-bold bg-sky-950/80 text-sky-200 border border-sky-500/40">+부재중</button>
+        <button type="button" data-dom-chip="__EDIT__" class="nk-dom-memo-chip is-edit px-1.5 py-1 rounded text-[10px] font-bold bg-amber-950/80 text-amber-200 border border-amber-500/50">✏️ 편집</button>
+      </div>
+
+      <div id="domOverlayProgressRow" class="flex items-center justify-between gap-1.5">
+        <div id="domOverlayProgress" class="flex-1 min-w-0 text-[11px] font-bold text-amber-300 truncate">품목 터치 시 즉시 체크됩니다</div>
+        <button id="domOverlayCheckAllBtn" type="button" class="hidden shrink-0 px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-500/60">✓ 전체체크</button>
+      </div>
       <div id="domOverlayItems" class="max-h-36 overflow-y-auto space-y-1 pr-0.5"></div>
+
       <div class="nk-dom-quick">
-        <button id="domOverlayCallBtn" type="button" class="font-extrabold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 disabled:opacity-40">📞 전화</button>
-        <button id="domOverlaySpeakBtn" type="button" class="font-extrabold bg-indigo-500/20 text-indigo-200 border border-indigo-500/40">🔊 읽기</button>
-        <button id="domOverlayHoldBtn" type="button" class="font-extrabold bg-amber-500/20 text-amber-200 border border-amber-500/40">⏸ 보류</button>
-        <button id="domOverlayMainNaviBtn" type="button" class="font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 shadow">🟢 내비</button>
+        <button id="domOverlayCallBtn" type="button" class="font-extrabold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 disabled:opacity-40">📞전화</button>
+        <button id="domOverlaySmsBtn" type="button" class="font-extrabold bg-sky-500/20 text-sky-200 border border-sky-500/40 disabled:opacity-40">📩문자</button>
+        <button id="domOverlaySpeakBtn" type="button" class="font-extrabold bg-indigo-500/20 text-indigo-200 border border-indigo-500/40">🔊읽기</button>
+        <button id="domOverlayHoldBtn" type="button" class="font-extrabold bg-amber-500/20 text-amber-200 border border-amber-500/40">⏸보류</button>
+        <button id="domOverlayMainNaviBtn" type="button" class="font-black bg-[#03C75A] hover:bg-emerald-400 text-slate-950 shadow">🟢내비</button>
       </div>
+
       <div id="domOverlayHoldMenu" class="hidden grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-700">
-        <button type="button" data-dom-status="보류" class="py-1.5 rounded text-[11px] font-bold bg-slate-800 text-amber-200">⏸ 보류</button>
-        <button type="button" data-dom-status="재방문" class="py-1.5 rounded text-[11px] font-bold bg-slate-800 text-rose-200">🔁 재방문</button>
-        <button type="button" data-dom-status="연락필요" class="py-1.5 rounded text-[11px] font-bold bg-slate-800 text-sky-200">📞 연락</button>
+        <button type="button" data-dom-status="보류" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-amber-200">⏸ 보류</button>
+        <button type="button" data-dom-status="재방문" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-rose-200">🔁 재방문</button>
+        <button type="button" data-dom-status="연락필요" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-sky-200">📞 연락</button>
       </div>
+
+      <div id="domOverlaySmsMenu" class="hidden grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-700">
+        <button type="button" data-dom-sms="arriving" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-sky-200">🚚 곧 도착</button>
+        <button type="button" data-dom-sms="delivered" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-emerald-200">✅ 전달완료</button>
+        <button type="button" data-dom-sms="absent" class="py-1.5 rounded text-[10px] font-bold bg-slate-800 text-amber-200">🚪 부재연락</button>
+      </div>
+
+      <button id="domOverlayNextPreview" type="button" class="hidden w-full flex items-center justify-between gap-2 px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-950/60 text-blue-200 border border-blue-500/40 text-left">
+        <span id="domOverlayNextName" class="flex-1 min-w-0 truncate"></span>
+        <span id="domOverlayNextMeta" class="shrink-0 opacity-90"></span>
+      </button>
+
+      <div id="domOverlayHoldHint" class="hidden px-2 py-1 rounded-lg text-[10px] font-extrabold text-center bg-amber-950/90 text-amber-200 border border-amber-500">완료 오작동 방지: 버튼을 0.6초 길게 누르세요</div>
+
       <button id="domOverlayBodyOpenAppBtn" type="button" class="hidden">📱 앱열기</button>
       <div class="grid grid-cols-3 gap-1.5">
-        <button id="domOverlayCompleteBtn" type="button" class="py-2 px-1.5 rounded-xl text-xs font-extrabold shadow">✓ 완료</button>
-        <button id="domOverlayCompleteNextBtn" type="button" class="py-2 px-1.5 rounded-xl text-xs font-extrabold shadow">완료▶내비</button>
+        <button id="domOverlayCompleteBtn" type="button" class="py-2 px-1.5 rounded-xl text-xs font-extrabold shadow"><span class="nk-dom-hold-fill"></span>✓ 완료</button>
+        <button id="domOverlayCompleteNextBtn" type="button" class="py-2 px-1.5 rounded-xl text-xs font-extrabold shadow"><span class="nk-dom-hold-fill"></span>완료▶내비</button>
         <button id="domOverlayNextBtn" type="button" class="py-2 px-1.5 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-500 text-white shadow">다음▶</button>
       </div>
     </div>
@@ -1463,6 +1660,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
     let audioCtx = null;
     // GPS state
     let gpsActive = false;
+    let gpsUiState = 'off';
     let watchGen = 0;
     let gpsErrCount = 0;
     let gpsHadFix = false;
@@ -1640,6 +1838,92 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
     function buildNaverWebUrl(school) {
       const query = school.address || school.name;
       return `https://map.naver.com/p/search/${encodeURIComponent(query)}`;
+    }
+
+    function resolveNaviCoords(target) {
+      if (!target) return null;
+      if (typeof target.id === 'number' && customCoords && customCoords[target.id]) {
+        return customCoords[target.id];
+      }
+      if (typeof target.lat === 'number' && typeof target.lng === 'number' && isFinite(target.lat) && isFinite(target.lng)) {
+        return { lat: target.lat, lng: target.lng };
+      }
+      return typeof getSchoolCoords === 'function' ? getSchoolCoords(target) : null;
+    }
+
+    function buildKakaoNaviUrl(target) {
+      const name = String((target && target.name) || '').trim();
+      const addr = String((target && target.address) || '').trim();
+      const c = resolveNaviCoords(target);
+      if (hasCoords(c)) {
+        return `kakaomap://route?ep=${c.lat},${c.lng}&by=CAR`;
+      }
+      return `kakaomap://search?q=${encodeURIComponent(addr || name)}`;
+    }
+
+    function buildKakaoWebUrl(target) {
+      const name = String((target && (target.name || target.address)) || '목적지').trim();
+      const addr = String((target && target.address) || '').trim();
+      const c = resolveNaviCoords(target);
+      if (hasCoords(c)) {
+        return `https://map.kakao.com/link/to/${encodeURIComponent(name)},${c.lat},${c.lng}`;
+      }
+      return `https://map.kakao.com/link/search/${encodeURIComponent(addr || name)}`;
+    }
+
+    function buildTmapNaviUrl(target) {
+      const name = String((target && (target.name || target.address)) || '목적지').trim();
+      const addr = String((target && target.address) || '').trim();
+      const c = resolveNaviCoords(target);
+      if (hasCoords(c)) {
+        return `tmap://route?goalname=${encodeURIComponent(name)}&goalx=${c.lng}&goaly=${c.lat}`;
+      }
+      return `tmap://search?name=${encodeURIComponent(addr || name)}`;
+    }
+
+    function openCustomNaviApp(appType, appUrl, webUrl) {
+      if (window.AndroidOverlay && typeof window.AndroidOverlay.launchNaviUrl === 'function') {
+        try {
+          window.AndroidOverlay.launchNaviUrl(String(appUrl || ''), String(webUrl || ''));
+          return;
+        } catch (e) {}
+      }
+      if (window.AndroidOverlay && typeof window.AndroidOverlay.launchNaverNavi === 'function') {
+        try {
+          window.AndroidOverlay.launchNaverNavi(String(appUrl || ''), String(webUrl || ''));
+          return;
+        } catch (e) {}
+      }
+      if (appType === 'naver') {
+        openNaverMapApp(appUrl, webUrl);
+        return;
+      }
+      if (IS_ANDROID && appUrl) {
+        if (appUrl.startsWith('kakaomap://')) {
+          const rest = appUrl.slice('kakaomap://'.length);
+          window.location.href = `intent://${rest}#Intent;scheme=kakaomap;package=net.daum.android.map;S.browser_fallback_url=${encodeURIComponent(webUrl || '')};end`;
+          return;
+        }
+        if (appUrl.startsWith('tmap://')) {
+          const rest = appUrl.slice('tmap://'.length);
+          window.location.href = `intent://${rest}#Intent;scheme=tmap;package=com.skt.tmap.ku;S.browser_fallback_url=${encodeURIComponent(webUrl || '')};end`;
+          return;
+        }
+      }
+      if (IS_IOS && appUrl) {
+        let left = false;
+        const onHide = () => { if (document.hidden) left = true; };
+        document.addEventListener('visibilitychange', onHide);
+        window.addEventListener('pagehide', onHide);
+        window.location.href = appUrl;
+        setTimeout(() => {
+          document.removeEventListener('visibilitychange', onHide);
+          window.removeEventListener('pagehide', onHide);
+          if (!left && !document.hidden && webUrl) window.location.href = webUrl;
+        }, 1600);
+        return;
+      }
+      if (webUrl) window.open(webUrl, '_blank', 'noopener');
     }
 
     // 네이버 지도 '앱'으로 열기 (설치 안 됐거나 PC면 웹으로)
@@ -2414,6 +2698,7 @@ function speakSchoolQuantity(school, opts = {}) {
     const GPS_BTN_OFF_CLASS = 'flex-1 sm:flex-initial justify-center whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5';
 
     function setGpsUi(state, text) {
+      gpsUiState = state || 'off';
       const indicator = document.getElementById('gpsIndicator');
       const statusText = document.getElementById('gpsStatusText');
       const btnLabel = document.getElementById('gpsBtnLabel');
@@ -2431,6 +2716,9 @@ function speakSchoolQuantity(school, opts = {}) {
       const on = gpsActive;
       btnLabel.innerHTML = on ? '<span class="sm:hidden">GPS 중지</span><span class="hidden sm:inline">GPS 추적 중 (중지)</span>' : '<span class="sm:hidden">GPS 켜기</span><span class="hidden sm:inline">실시간 GPS 켜기</span>';
       btn.className = on ? GPS_BTN_ON_CLASS : GPS_BTN_OFF_CLASS;
+      if (typeof syncNativeAndDomOverlays === 'function') {
+        try { syncNativeAndDomOverlays(); } catch (e) {}
+      }
     }
 
     function applyManualAreaLocation(lat, lng, label) {
@@ -6678,8 +6966,29 @@ function speakSchoolQuantity(school, opts = {}) {
       clearBtn.classList.add('hidden');
     }
 
+    let overlayRecentToggledSchoolId = null;
+    const overlayRecentToggledPickupIds = new Set();
+
+    function clearOverlayRecentToggledPickups() {
+      overlayRecentToggledSchoolId = null;
+      overlayRecentToggledPickupIds.clear();
+    }
+
+    function overlayPickupsForSchool(school) {
+      if (!school || typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return [];
+      const pending = typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(school) : [];
+      if (overlayRecentToggledSchoolId !== school.id || overlayRecentToggledPickupIds.size === 0) return pending;
+      const seen = new Set(pending.map(p => String(p.id)));
+      const recent = PICKUPS.filter(p => p && !seen.has(String(p.id))
+        && overlayRecentToggledPickupIds.has(String(p.id))
+        && (p.schoolId === school.id || (!p.schoolId && typeof nameScore === 'function' && nameScore(p.school, school.name) >= 0.9)));
+      return [...pending, ...recent];
+    }
+
     function setNaviLockedSchool(schoolId, opts = {}) {
-      activeNaviSchoolId = schoolId != null ? Number(schoolId) : null;
+      const nextId = schoolId != null ? Number(schoolId) : null;
+      if (overlayRecentToggledSchoolId !== nextId) clearOverlayRecentToggledPickups();
+      activeNaviSchoolId = nextId;
       activeNaviPickupId = null;
       saveNaviLockState();
       if (activeNaviSchoolId !== null) {
@@ -6702,6 +7011,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     function setNaviLockedPickup(pickupId, opts = {}) {
+      clearOverlayRecentToggledPickups();
       activeNaviPickupId = pickupId || null;
       activeNaviSchoolId = null;
       saveNaviLockState();
@@ -6711,6 +7021,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     function clearNaviLock(silent) {
+      clearOverlayRecentToggledPickups();
       activeNaviSchoolId = null;
       activeNaviPickupId = null;
       saveNaviLockState();
@@ -6762,7 +7073,7 @@ function speakSchoolQuantity(school, opts = {}) {
             kind: 'delivery',
             school: { ...locked, dist: distanceToSchool(locked) },
             dist: distanceToSchool(locked),
-            pickups: [],
+            pickups: overlayPickupsForSchool(locked),
             isNaviLocked: true
           };
         } else {
@@ -6827,8 +7138,14 @@ function speakSchoolQuantity(school, opts = {}) {
 
       const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
       const pendingDeliveries = enriched.filter(s => !completedMap[s.id]);
-      const pendingWithDist = pendingDeliveries.filter(s => s.dist !== null).sort((a, b) => a.dist - b.dist);
-      const nearestDelivery = pendingWithDist[0] || pendingDeliveries.find(s => s.id === (SCHOOLS[currentCursorIndex] && SCHOOLS[currentCursorIndex].id)) || pendingDeliveries[0] || null;
+      let orderedDeliveries = [];
+      if (sortMode === 'route' && typeof window.nkGetRouteRank === 'function') {
+        const rank = window.nkGetRouteRank(pendingDeliveries);
+        orderedDeliveries = [...pendingDeliveries].sort((a, b) => (rank.get(a.id) ?? 999999) - (rank.get(b.id) ?? 999999));
+      } else {
+        orderedDeliveries = pendingDeliveries.filter(s => s.dist !== null).sort((a, b) => a.dist - b.dist);
+      }
+      const nearestDelivery = orderedDeliveries[0] || pendingDeliveries.find(s => s.id === (SCHOOLS[currentCursorIndex] && SCHOOLS[currentCursorIndex].id)) || pendingDeliveries[0] || null;
 
       // 2. 사용자가 '회수·반품' 또는 '추가 납품' 탭을 보고 있을 때 -> 해당 탭의 남은 할 일 우선 표시
       if (currentView === 'pickup') {
@@ -6852,7 +7169,7 @@ function speakSchoolQuantity(school, opts = {}) {
           kind: 'delivery',
           school: nearestDelivery,
           dist: nearestDelivery.dist,
-          pickups: [],
+          pickups: overlayPickupsForSchool(nearestDelivery),
           isNaviLocked: false
         };
       }
@@ -6863,7 +7180,7 @@ function speakSchoolQuantity(school, opts = {}) {
           kind: 'delivery',
           school: nearestDelivery,
           dist: nearestDelivery.dist,
-          pickups: [],
+          pickups: overlayPickupsForSchool(nearestDelivery),
           isNaviLocked: false
         };
       }
@@ -7286,13 +7603,24 @@ ${school.address || ''}`;
     var domOverlayCollapsed = Boolean(domOverlayCollapsed);
     try { domOverlayCollapsed = localStorage.getItem('nk_dom_overlay_collapsed') === '1'; } catch (e) {}
     var domOverlayMoved = false;
+    function closeDomPopMenus() {
+      ['domOverlayQuickMenu', 'domOverlayCfgMenu', 'domOverlayHoldMenu', 'domOverlaySmsMenu'].forEach(id => {
+        document.getElementById(id)?.classList.add('hidden');
+      });
+      document.getElementById('domOverlayBadge')?.setAttribute('aria-expanded', 'false');
+      document.getElementById('domOverlayCfgBtn')?.setAttribute('aria-expanded', 'false');
+    }
     function setDomOverlayCollapsed(c) {
       domOverlayCollapsed = !!c;
+      if (domOverlayCollapsed) closeDomPopMenus();
       try { localStorage.setItem('nk_dom_overlay_collapsed', domOverlayCollapsed ? '1' : '0'); } catch (e) {}
       const box = document.getElementById('domFloatingOverlay');
       if (box) box.classList.toggle('nk-dom-collapsed', domOverlayCollapsed);
       const btn = document.getElementById('domOverlayCollapseBtn');
-      if (btn) btn.textContent = domOverlayCollapsed ? '➕' : '➖';
+      if (btn) {
+        btn.textContent = domOverlayCollapsed ? '➕' : '➖';
+        btn.setAttribute('aria-label', domOverlayCollapsed ? '펼치기' : '접기');
+      }
       if (domOverlayActive) renderDomFloatingOverlay();
     }
     var lastOverlayOpenedAt = lastOverlayOpenedAt || 0;
@@ -7355,194 +7683,627 @@ ${school.address || ''}`;
     // OVERLAY_KIND_SWITCH_V1
     let overlayKindChoice = 'auto';
     let overlayChoiceId = null;
+
+    function orderedOverlayDeliveries() {
+      const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
+      const pending = enriched.filter(s => !completedMap[s.id]);
+      if (sortMode === 'route' && typeof window.nkGetRouteRank === 'function') {
+        const rank = window.nkGetRouteRank(pending);
+        return [...pending].sort((a, b) => (rank.get(a.id) ?? 999999) - (rank.get(b.id) ?? 999999));
+      }
+      return pending.sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
+    }
+
+    function overlayTargetKey(t) {
+      if (!t) return '';
+      if (t.kind === 'delivery' && t.school) return 'd:' + String(t.school.id);
+      if (t.kind === 'pickup' && t.pickupGroup) return 'p:' + String(t.pickupGroup.key);
+      return '';
+    }
+
     function overlayKindPool(mode) {
       if (mode === 'delivery') {
-        return SCHOOLS.filter(s => !completedMap[s.id]).map(s => ({
-          kind:'delivery', school:s, dist:distanceToSchool(s), pickups:[], isNaviLocked:false
-        })).sort((a,b)=>(a.dist ?? Infinity)-(b.dist ?? Infinity));
+        return orderedOverlayDeliveries().map(s => ({
+          kind: 'delivery',
+          school: s,
+          dist: s.dist,
+          pickups: overlayPickupsForSchool(s),
+          isNaviLocked: activeNaviSchoolId === s.id
+        }));
       }
-      return getPendingPickupGroupsWithDist(mode).map(g => ({
-        kind:'pickup', pickupGroup:g, dist:g.dist, isNaviLocked:false
+      if (mode === 'return' || mode === 'extra') {
+        return getPendingPickupGroupsWithDist(mode).map(g => ({
+          kind: 'pickup',
+          pickupGroup: g,
+          dist: g.dist,
+          isNaviLocked: !!(activeNaviPickupId && g.items && g.items.some(p => p.id === activeNaviPickupId))
+        }));
+      }
+      const deliveries = orderedOverlayDeliveries().map(s => ({
+        kind: 'delivery',
+        school: s,
+        dist: s.dist,
+        pickups: overlayPickupsForSchool(s),
+        isNaviLocked: activeNaviSchoolId === s.id
       }));
+      const pickups = getPendingPickupGroupsWithDist()
+        .filter(g => !g.schoolId || completedMap[g.schoolId] || (activeNaviPickupId && g.items && g.items.some(p => p.id === activeNaviPickupId)))
+        .map(g => ({
+          kind: 'pickup',
+          pickupGroup: g,
+          dist: g.dist,
+          isNaviLocked: !!(activeNaviPickupId && g.items && g.items.some(p => p.id === activeNaviPickupId))
+        }));
+      const combined = [...deliveries, ...pickups];
+      if (sortMode !== 'route') {
+        combined.sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
+      }
+      return combined;
     }
-    function overlayTargetKey(t) {
-      return t.kind === 'delivery' ? String(t.school.id) : String(t.pickupGroup.key);
-    }
+
     function getOverlayDisplayTarget() {
       if (overlayKindChoice === 'auto') return getBestPipTarget();
       const pool = overlayKindPool(overlayKindChoice);
       return pool.find(t => overlayTargetKey(t) === overlayChoiceId) || pool[0] || null;
     }
+
     window.onNativeOverlaySelectKind = function(mode) {
-      if (!['auto','delivery','return','extra'].includes(mode)) return;
+      if (!['auto', 'delivery', 'return', 'extra'].includes(mode)) return;
       const current = getOverlayDisplayTarget();
       const name = current?.school?.name || current?.pickupGroup?.name;
       overlayKindChoice = mode;
-      const pool = mode === 'auto' ? [] : overlayKindPool(mode);
-      const target = pool.find(t => (t.school?.name || t.pickupGroup?.name) === name) || pool[0];
-      overlayChoiceId = target ? overlayTargetKey(target) : null;
+      if (mode === 'auto') {
+        overlayChoiceId = null;
+      } else {
+        const pool = overlayKindPool(mode);
+        const target = pool.find(t => (t.school?.name || t.pickupGroup?.name) === name) || pool[0];
+        overlayChoiceId = target ? overlayTargetKey(target) : null;
+        if (!target) showToast('선택한 종류의 미완료 업무가 없습니다.');
+      }
       syncNativeAndDomOverlays();
-      if (mode !== 'auto' && !target) showToast('선택한 종류의 미완료 업무가 없습니다.');
     };
+
     function nextOverlayDisplayTarget() {
       const pool = overlayKindPool(overlayKindChoice);
       if (!pool.length) { showToast('선택한 종류의 미완료 업무가 없습니다.'); return; }
       const current = getOverlayDisplayTarget();
-      const i = current ? pool.findIndex(t => overlayTargetKey(t) === overlayTargetKey(current)) : -1;
-      overlayChoiceId = overlayTargetKey(pool[(i+1)%pool.length]);
+      const curKey = current ? overlayTargetKey(current) : '';
+      const i = curKey ? pool.findIndex(t => overlayTargetKey(t) === curKey) : -1;
+      const nextT = pool[(i + 1) % pool.length];
+      if (pool.length === 1 && curKey && overlayTargetKey(nextT) === curKey && current.isNaviLocked) {
+        showToast('현재 마지막 남은 목적지입니다.');
+        return;
+      }
+      overlayChoiceId = overlayKindChoice === 'auto' ? null : (nextT ? overlayTargetKey(nextT) : null);
+      if (nextT && nextT.kind === 'delivery' && nextT.school) {
+        setNaviLockedSchool(nextT.school.id);
+        showToast(`다음▶ ${nextT.school.name}`);
+      } else if (nextT && nextT.kind === 'pickup' && nextT.pickupGroup && nextT.pickupGroup.items && nextT.pickupGroup.items[0]) {
+        setNaviLockedPickup(nextT.pickupGroup.items[0].id);
+        showToast(`다음▶ ${nextT.pickupGroup.name}`);
+      }
       syncNativeAndDomOverlays();
     }
-    (function bindOverlayKindMenu() {
-      const badge = document.getElementById('domOverlayBadge');
-      if (!badge) return;
-      badge.setAttribute('role','button'); badge.tabIndex=0;
-      badge.setAttribute('aria-label','표시할 업무 종류 선택');
-      badge.setAttribute('aria-expanded','false');
-      const menu=document.createElement('div');menu.hidden=true;
-      menu.setAttribute('role','group');menu.setAttribute('aria-label','표시할 업무 종류');
-      menu.style.cssText='padding:8px;gap:6px;flex-wrap:wrap;background:#152238;border-radius:10px';
-      for (const [mode,label] of [['delivery','납품'],['return','반품·회수'],['extra','추가 납품'],['auto','자동 표시']]) {
-        const b=document.createElement('button');b.type='button';b.textContent=label;
-        b.style.cssText='padding:10px;color:white;background:#334155;border-radius:8px;min-height:44px';
-        b.onclick=()=>{window.onNativeOverlaySelectKind(mode);menu.hidden=true;menu.style.display='none';badge.setAttribute('aria-expanded','false');};
-        menu.append(b);
+
+    function formatOverlayDistShort(d, fallback) {
+      if (d !== null && d !== undefined && isFinite(d)) return formatDistance(d);
+      return fallback || '';
+    }
+
+    function buildOverlaySmsBodies(name, qtyText) {
+      const cleanName = String(name || '원').trim();
+      const qPart = qtyText ? ` (${qtyText})` : '';
+      return {
+        arriving: `[엔터코딩] 안녕하세요, ${cleanName}입니다. 잠시 후 방문 예정입니다.`,
+        delivered: `[엔터코딩] ${cleanName} 전달${qPart} 완료했습니다. 감사합니다.`,
+        absent: `[엔터코딩] ${cleanName} 방문드렸으나 부재중이셔서 문자 남깁니다.`
+      };
+    }
+
+    function summarizeOverlayTarget(t) {
+      if (!t) return '';
+      if (t.kind === 'delivery' && t.school) return totalLabel(t.school);
+      if (t.kind === 'pickup' && t.pickupGroup) {
+        const grp = t.pickupGroup;
+        const total = grp.items.reduce((acc, p) => acc + (Number(p.qty) || 0), 0);
+        return total > 0 ? `총${total}개` : `${grp.items.length}건`;
       }
-      document.getElementById('domOverlayDragHeader').after(menu);
-      const toggle=()=>{menu.hidden=!menu.hidden;menu.style.display=menu.hidden?'none':'flex';badge.setAttribute('aria-expanded',String(!menu.hidden));};
-      badge.addEventListener('click',toggle);
-      badge.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
-      for(const event of ['mousedown','touchstart'])badge.addEventListener(event,e=>e.stopPropagation());
-    })();
+      return '';
+    }
 
     function buildOverlayPayload() {
       const best = getOverlayDisplayTarget();
+      const radiusMeters = parseInt(document.getElementById('radiusSelect')?.value, 10) || 300;
       const undoLabel = (typeof window.nkGetUndoLabel === 'function') ? window.nkGetUndoLabel() : '';
+      const gpsState = typeof gpsUiState === 'string' ? gpsUiState : 'off';
+      const gpsAccuracy = userAccuracy != null && isFinite(userAccuracy) ? Math.round(userAccuracy) : null;
+
+      let pool = overlayKindPool(overlayKindChoice);
+      const curKey = best ? overlayTargetKey(best) : '';
+      if (best && curKey && !pool.some(t => overlayTargetKey(t) === curKey)) {
+        pool = [best, ...pool];
+      }
+      const remainingCount = pool.length;
+      const orderedQuick = curKey ? [best, ...pool.filter(t => overlayTargetKey(t) !== curKey)] : pool;
+      const quickList = orderedQuick.slice(0, 5).map(t => ({
+        key: overlayTargetKey(t),
+        name: t.kind === 'delivery'
+          ? `${t.school.order}. ${t.school.name}`
+          : `${t.pickupGroup.groupMode === 'extra' ? '➕' : '↩️'} ${t.pickupGroup.name}`,
+        distText: formatOverlayDistShort(t.dist, t.kind === 'delivery' ? t.school.subRegion : t.pickupGroup.subRegion),
+        summary: summarizeOverlayTarget(t),
+        kind: t.kind === 'delivery' ? 'delivery' : (t.pickupGroup.groupMode || 'return'),
+        active: overlayTargetKey(t) === curKey
+      }));
+
+      let nextPreview = null;
+      if (pool.length > 1) {
+        const curIdx = curKey ? pool.findIndex(t => overlayTargetKey(t) === curKey) : -1;
+        const nextT = pool[(curIdx + 1) % pool.length];
+        if (nextT && overlayTargetKey(nextT) !== curKey) {
+          nextPreview = {
+            key: overlayTargetKey(nextT),
+            name: nextT.kind === 'delivery'
+              ? `${nextT.school.order}. ${nextT.school.name}`
+              : `${nextT.pickupGroup.groupMode === 'extra' ? '➕' : '↩️'} ${nextT.pickupGroup.name}`,
+            distText: formatOverlayDistShort(nextT.dist, nextT.kind === 'delivery' ? nextT.school.subRegion : nextT.pickupGroup.subRegion),
+            summary: summarizeOverlayTarget(nextT)
+          };
+        }
+      }
+
       if (!best) {
         return {
           kindChoice: overlayKindChoice,
-        modeBadge: overlayKindChoice === 'auto' ? '✅ 완료' : ({delivery:'납품',return:'반품·회수',extra:'추가 납품'}[overlayKindChoice] + ' ▾'),
+          targetKind: 'none',
+          modeBadge: overlayKindChoice === 'auto' ? '✅ 완료' : ({ delivery: '납품', return: '반품·회수', extra: '추가 납품' }[overlayKindChoice] + ' ▾'),
           modeColor: '#059669',
           name: overlayKindChoice === 'auto' ? '모든 납품·회수 완료!' : '선택한 종류의 미완료 업무 없음',
           distText: '완료',
+          gpsState,
+          gpsAccuracy,
           progressText: '남은 목적지가 없습니다',
+          collapsedSummary: '모든 업무 완료',
+          address: '',
           phone: '',
           memo: '',
           pickupNote: '',
           undoLabel,
           naviUrl: '',
           webNaviUrl: '',
+          kakaoUrl: '',
+          kakaoWebUrl: '',
+          tmapUrl: '',
+          tmapWebUrl: '',
+          nearby: false,
+          arrived: false,
+          allChecked: false,
+          remainingCount: 0,
+          quickList: [],
+          nextPreview: null,
+          smsBodies: null,
           items: []
         };
       }
+
       if (best.kind === 'pickup' && best.pickupGroup) {
         const grp = best.pickupGroup;
         const firstP = grp.items && grp.items[0];
         const linkedS = firstP && typeof pkLinkedSchool === 'function' ? pkLinkedSchool(firstP) : null;
         const isExtra = (grp.groupMode === 'extra') || (firstP && typeof pkGroupOf === 'function' && pkGroupOf(firstP) === 'extra');
-        const naviUrl = firstP && typeof pkNaviUrl === 'function' ? pkNaviUrl(firstP) : `nmap://search?query=${encodeURIComponent(grp.address || grp.name)}&appname=entercoding.delivery`;
-        const webNaviUrl = `https://map.naver.com/p/search/${encodeURIComponent(grp.address || grp.name)}`;
+        const addr = grp.address || (linkedS && linkedS.address) || (firstP && firstP.address) || '';
+        const naviTarget = {
+          id: linkedS ? linkedS.id : undefined,
+          name: grp.name,
+          address: addr,
+          lat: (linkedS && linkedS.lat) ?? (firstP && firstP.lat),
+          lng: (linkedS && linkedS.lng) ?? (firstP && firstP.lng)
+        };
+        const naviUrl = firstP && typeof pkNaviUrl === 'function' ? pkNaviUrl(firstP) : `nmap://search?query=${encodeURIComponent(addr || grp.name)}&appname=entercoding.delivery`;
+        const webNaviUrl = `https://map.naver.com/p/search/${encodeURIComponent(addr || grp.name)}`;
+        const kakaoUrl = buildKakaoNaviUrl(naviTarget);
+        const kakaoWebUrl = buildKakaoWebUrl(naviTarget);
+        const tmapUrl = buildTmapNaviUrl(naviTarget);
+        const tmapWebUrl = webNaviUrl;
+        const distShort = formatOverlayDistShort(best.dist, grp.subRegion || (isExtra ? '추가 납품' : '회수·반품'));
         const distLabel = best.dist !== null && best.dist !== undefined ? `거리 ${formatDistance(best.dist)}` : (grp.subRegion || (isExtra ? '추가 납품' : '회수·반품'));
         const normFirstFq = firstP ? normalizeFieldQuantities(firstP.fieldQuantities, !!firstP.done) : [];
         const singleFq = grp.items.length === 1 && normFirstFq.length ? normFirstFq : null;
         const overlayItems = singleFq
-          ? singleFq.map((q, idx) => ({
-              index: idx,
-              checked: !!(firstP.done || Number(q.done || 0) >= Number(q.qty)),
-              label: `${q.label} : ${q.qty}개`
-            }))
+          ? singleFq.map((q, idx) => {
+              const tQty = Math.max(0, Number(q.qty) || 0);
+              const dQty = firstP.done ? tQty : Math.min(tQty, Math.max(0, Number(q.done || 0)));
+              const checked = !!(firstP.done || (tQty > 0 && dQty >= tQty));
+              return {
+                index: idx,
+                checked,
+                label: (dQty > 0 && dQty < tQty) ? `${q.label} : ${dQty}/${tQty}개` : `${q.label} : ${tQty}개`,
+                qty: tQty,
+                deliveredQty: dQty,
+                adjustable: tQty > 1,
+                kind: isExtra ? 'extra' : 'pickup'
+              };
+            })
           : grp.items.map((p, idx) => ({
               index: idx,
               checked: !!p.done,
-              label: `[${p.type}] ${p.items || p.title}`
+              label: `[${p.type}] ${p.items || p.title}`,
+              qty: Number(p.qty || 1),
+              deliveredQty: p.done ? Number(p.qty || 1) : 0,
+              adjustable: false,
+              kind: isExtra ? 'extra' : 'pickup'
             }));
         const doneCnt = overlayItems.filter(it => it.checked).length;
+        const allChecked = overlayItems.length > 0 && overlayItems.every(it => it.checked);
         const memoList = grp.items.map(p => (p.memo || p.fieldReason || (p.manualWorkflow && p.manualWorkflow.note) || '').trim()).filter(Boolean);
+        const totalQty = singleFq
+          ? (firstP.qty || singleFq.reduce((a, r) => a + r.qty, 0))
+          : grp.items.reduce((a, p) => a + (Number(p.qty) || 0), 0);
+        const nearby = best.dist !== null && best.dist !== undefined && best.dist <= radiusMeters;
+        const arrived = best.dist !== null && best.dist !== undefined && best.dist <= Math.min(180, radiusMeters);
         return {
           kindChoice: overlayKindChoice,
-        modeBadge: isExtra ? (best.isNaviLocked ? '🧭 추가납품·고정' : '➕ 추가 납품') : (best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품'),
+          targetKind: 'pickup',
+          modeBadge: isExtra ? (best.isNaviLocked ? '🧭 추가납품·고정' : '➕ 추가 납품') : (best.isNaviLocked ? '🧭 회수·내비고정' : '↩️ 회수·반품'),
           modeColor: isExtra ? '#7C3AED' : (best.isNaviLocked ? '#059669' : '#E11D48'),
           name: `${isExtra ? '➕' : '↩️'} ${grp.name}`,
           distText: distLabel,
+          gpsState,
+          gpsAccuracy,
           progressText: singleFq
-            ? `품목체크 ${doneCnt}/${singleFq.length} · 총 ${firstP.qty || singleFq.reduce((a, r) => a + r.qty, 0)}개`
+            ? `품목체크 ${doneCnt}/${singleFq.length} · 총 ${totalQty}개`
             : `${isExtra ? '추가 납품' : '회수·반품'} ${grp.items.length}건 · 터치 시 완료 체크`,
+          collapsedSummary: `${grp.name}${distShort ? ' · ' + distShort : ''} · ${totalQty > 0 ? '총' + totalQty + '개' : grp.items.length + '건'}`,
+          address: addr,
           phone: (linkedS && linkedS.phone) || '',
           memo: memoList[0] || (linkedS && linkedS.fieldOps && linkedS.fieldOps.memo) || '',
           pickupNote: '',
           undoLabel,
           naviUrl,
           webNaviUrl,
-          nearby: best.dist !== null && best.dist !== undefined && best.dist <= 300,
+          kakaoUrl,
+          kakaoWebUrl,
+          tmapUrl,
+          tmapWebUrl,
+          nearby,
+          arrived,
+          allChecked,
+          remainingCount,
+          quickList,
+          nextPreview,
+          smsBodies: buildOverlaySmsBodies(grp.name, totalQty > 0 ? `총 ${totalQty}개` : `${grp.items.length}건`),
           closeOnOpenApp: true,
           autoHideOnAppOpen: true,
           items: overlayItems
         };
       }
+
       const s = best.school;
       const dItems = deliveryItems(s);
       const pr = itemProgress(s);
       const pickups = best.pickups || [];
       const linkedPendingPickups = typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(s) : [];
+      const fOps = s.fieldOps || {};
+      const deliveredMap = fOps.delivered || {};
+      const distShort = formatOverlayDistShort(best.dist, s.subRegion || '');
       const distLabel = best.dist !== null && best.dist !== undefined ? `거리 ${formatDistance(best.dist)}` : (s.subRegion || '');
-      const mappedItems = dItems.map((it, idx) => ({
-        index: idx,
-        checked: isItemChecked(s.id, it.key),
-        label: `${it.label} : ${it.qty}개`
-      }));
+      const mappedItems = dItems.map((it, idx) => {
+        const totalQty = Math.max(0, Number(it.qty) || 0);
+        const checked = isItemChecked(s.id, it.key);
+        const hasRawDel = typeof deliveredMap[it.key] === 'number' && !Number.isNaN(deliveredMap[it.key]);
+        const delQty = completedMap[s.id]
+          ? totalQty
+          : hasRawDel
+            ? Math.min(totalQty, Math.max(0, Number(deliveredMap[it.key])))
+            : (checked ? totalQty : 0);
+        return {
+          index: idx,
+          checked,
+          label: (delQty > 0 && delQty < totalQty) ? `${it.label} : ${delQty}/${totalQty}개` : `${it.label} : ${totalQty}개`,
+          qty: totalQty,
+          deliveredQty: delQty,
+          adjustable: totalQty > 1,
+          kind: 'delivery'
+        };
+      });
       pickups.forEach((p, pIdx) => {
+        const isExtraPk = typeof pkGroupOf === 'function' ? pkGroupOf(p) === 'extra' : false;
         mappedItems.push({
           index: 1000 + pIdx,
           checked: !!p.done,
-          label: `↩️ [${p.type}] ${p.items || p.title}`
+          label: `${isExtraPk ? '➕' : '↩️'} [${p.type}] ${p.items || p.title}`,
+          qty: Number(p.qty || 1),
+          deliveredQty: p.done ? Number(p.qty || 1) : 0,
+          adjustable: false,
+          kind: isExtraPk ? 'linked-extra' : 'linked-pickup'
         });
       });
-      const fOps = s.fieldOps || {};
       const statusPrefix = fOps.deliveryStatus && fOps.deliveryStatus !== '대기' && fOps.deliveryStatus !== '완료' ? `[${fOps.deliveryStatus}] ` : '';
+      const allChecked = dItems.length > 0 && pr.done >= pr.total;
+      const nearby = best.dist !== null && best.dist !== undefined && best.dist <= radiusMeters;
+      const arrived = best.dist !== null && best.dist !== undefined && best.dist <= Math.min(180, radiusMeters);
+      const webNaviUrl = buildNaverWebUrl(s);
+
       return {
         kindChoice: overlayKindChoice,
+        targetKind: 'delivery',
         modeBadge: overlayKindChoice === 'delivery' ? '납품 ▾' : (best.isNaviLocked ? '🧭 내비고정(거리무관)' : '🏫 최단거리 자동'),
         modeColor: best.isNaviLocked ? '#059669' : '#2563EB',
         name: `${s.order}. ${s.name}`,
         distText: distLabel,
+        gpsState,
+        gpsAccuracy,
         progressText: `품목체크 ${pr.done}/${pr.total} · ${totalLabel(s)}${linkedPendingPickups.length ? ` · 회수/추가 ${linkedPendingPickups.length}건` : ''}`,
+        collapsedSummary: `${s.name}${distShort ? ' · ' + distShort : ''} · ${totalLabel(s)}`,
+        address: s.address || '',
         phone: s.phone || '',
         memo: statusPrefix + (fOps.memo || fOps.reason || ''),
         pickupNote: linkedPendingPickups.length ? `↩️ 회수·추가 ${linkedPendingPickups.length}건 함께 확인` : '',
         undoLabel,
         naviUrl: buildNaverNaviSchemeUrl(s),
-        webNaviUrl: buildNaverWebUrl(s),
-        nearby: best.dist !== null && best.dist !== undefined && best.dist <= 300,
+        webNaviUrl,
+        kakaoUrl: buildKakaoNaviUrl(s),
+        kakaoWebUrl: buildKakaoWebUrl(s),
+        tmapUrl: buildTmapNaviUrl(s),
+        tmapWebUrl: webNaviUrl,
+        nearby,
+        arrived,
+        allChecked,
+        remainingCount,
+        quickList,
+        nextPreview,
+        smsBodies: buildOverlaySmsBodies(s.name, totalLabel(s)),
         closeOnOpenApp: true,
         autoHideOnAppOpen: true,
         items: mappedItems
       };
     }
 
+    const DOM_OV_PRESETS = {
+      solid: { bg: 0.96, win: 1.00 },
+      mid:   { bg: 0.82, win: 1.00 },
+      light: { bg: 0.48, win: 0.96 },
+      ghost: { bg: 0.18, win: 0.90 }
+    };
+    const DOM_OV_NAVI_META = {
+      naver: { text: '🟢내비', title: '네이버 내비 길안내 출발', cls: '' },
+      kakao: { text: '🟡카카오', title: '카카오내비 길안내 출발', cls: 'nk-navi-kakao' },
+      tmap:  { text: '🔵티맵', title: '티맵 길안내 출발', cls: 'nk-navi-tmap' }
+    };
+    function clampDomOvNum(v, lo, hi, fallback) {
+      const n = parseFloat(v);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.max(lo, Math.min(hi, n));
+    }
+    const domOvState = {
+      size: 'md',
+      theme: 'dark',
+      bgAlpha: 0.88,
+      winAlpha: 1.00,
+      naviApp: 'naver',
+      holdDone: false,
+      addrOpen: false,
+      memoExpanded: false,
+      lastNearby: false,
+      autoExpandSuppressUntil: 0,
+      sideInitialized: false
+    };
+    try {
+      const svSz = localStorage.getItem('nk_overlay_size');
+      if (svSz === 'sm' || svSz === 'md' || svSz === 'lg') domOvState.size = svSz;
+      const svTh = localStorage.getItem('nk_overlay_theme');
+      if (svTh === 'light' || svTh === 'dark') domOvState.theme = svTh;
+      const svNv = localStorage.getItem('nk_overlay_navi_app');
+      if (svNv && DOM_OV_NAVI_META[svNv]) domOvState.naviApp = svNv;
+      domOvState.holdDone = localStorage.getItem('nk_overlay_hold_done') === '1';
+      const svBg = localStorage.getItem('nk_overlay_bg_alpha');
+      if (svBg !== null) {
+        domOvState.bgAlpha = clampDomOvNum(svBg, 0.10, 0.98, 0.88);
+      } else {
+        const legacyAl = localStorage.getItem('nk_overlay_alpha');
+        if (legacyAl === 'solid') domOvState.bgAlpha = 0.96;
+        else if (legacyAl === 'mid') domOvState.bgAlpha = 0.86;
+        else if (legacyAl === 'light') domOvState.bgAlpha = 0.58;
+      }
+      const svWin = localStorage.getItem('nk_overlay_win_alpha');
+      if (svWin !== null) domOvState.winAlpha = clampDomOvNum(svWin, 0.35, 1.00, 1.00);
+    } catch (e) {}
+
+    function saveDomOvPref(k, v) {
+      try { localStorage.setItem(k, String(v)); } catch (e) {}
+    }
+
+    function applyDomOverlayVisuals() {
+      const box = document.getElementById('domFloatingOverlay');
+      if (!box) return;
+      const bg = clampDomOvNum(domOvState.bgAlpha, 0.10, 0.98, 0.88);
+      const win = clampDomOvNum(domOvState.winAlpha, 0.35, 1.00, 1.00);
+      const light = domOvState.theme === 'light';
+
+      const itemAlpha = Math.max(0.08, Math.min(0.95, bg * 0.96)).toFixed(3);
+      const itemOnAlpha = Math.max(0.16, Math.min(0.96, 0.08 + bg * 0.88)).toFixed(3);
+      const cardAlpha = Math.max(0.08, Math.min(0.92, bg * 0.90)).toFixed(3);
+      const btnAlpha = Math.max(0.20, Math.min(0.96, 0.14 + bg * 0.84)).toFixed(3);
+      const colAlpha = Math.max(0.14, Math.min(0.94, bg * 0.90)).toFixed(3);
+      const bdAlpha = Math.max(0.28, Math.min(1.00, 0.25 + bg * 0.75)).toFixed(3);
+      const menuAlpha = Math.max(0.84, Math.min(0.98, 0.78 + bg * 0.20)).toFixed(3);
+
+      const st = box.style;
+      st.setProperty('--dom-ov-win-opacity', win.toFixed(2));
+      if (light) {
+        st.setProperty('--dom-ov-w-bg', `rgba(248, 250, 252, ${bg.toFixed(3)})`);
+        st.setProperty('--dom-ov-col-bg', `rgba(248, 250, 252, ${colAlpha})`);
+        st.setProperty('--dom-ov-border', `rgba(5, 150, 105, ${bdAlpha})`);
+        st.setProperty('--dom-ov-item-bg', `rgba(226, 232, 240, ${itemAlpha})`);
+        st.setProperty('--dom-ov-item-bd', `rgba(148, 163, 184, ${bdAlpha})`);
+        st.setProperty('--dom-ov-item-fg', '#0f172a');
+        st.setProperty('--dom-ov-item-on-bg', `rgba(167, 243, 208, ${itemOnAlpha})`);
+        st.setProperty('--dom-ov-item-on-bd', `rgba(5, 150, 105, ${bdAlpha})`);
+        st.setProperty('--dom-ov-item-on-fg', '#065f46');
+        st.setProperty('--dom-ov-card-bg', `rgba(241, 245, 249, ${cardAlpha})`);
+        st.setProperty('--dom-ov-menu-bg', `rgba(248, 250, 252, ${menuAlpha})`);
+        st.setProperty('--dom-ov-btn-bg', `rgba(226, 232, 240, ${btnAlpha})`);
+        st.setProperty('--dom-ov-btn-bd', `rgba(148, 163, 184, ${bdAlpha})`);
+        st.setProperty('--dom-ov-text-shadow', bg < 0.65 ? '0 1px 2px rgba(255,255,255,0.96), 0 0 6px rgba(255,255,255,0.9)' : 'none');
+      } else {
+        st.setProperty('--dom-ov-w-bg', `rgba(15, 23, 42, ${bg.toFixed(3)})`);
+        st.setProperty('--dom-ov-col-bg', `rgba(15, 23, 42, ${colAlpha})`);
+        st.setProperty('--dom-ov-border', `rgba(16, 185, 129, ${bdAlpha})`);
+        st.setProperty('--dom-ov-item-bg', `rgba(30, 41, 59, ${itemAlpha})`);
+        st.setProperty('--dom-ov-item-bd', `rgba(71, 85, 105, ${bdAlpha})`);
+        st.setProperty('--dom-ov-item-fg', '#f8fafc');
+        st.setProperty('--dom-ov-item-on-bg', `rgba(6, 78, 59, ${itemOnAlpha})`);
+        st.setProperty('--dom-ov-item-on-bd', `rgba(16, 185, 129, ${bdAlpha})`);
+        st.setProperty('--dom-ov-item-on-fg', '#6ee7b7');
+        st.setProperty('--dom-ov-card-bg', `rgba(12, 27, 46, ${cardAlpha})`);
+        st.setProperty('--dom-ov-menu-bg', `rgba(21, 34, 56, ${menuAlpha})`);
+        st.setProperty('--dom-ov-btn-bg', `rgba(51, 65, 85, ${btnAlpha})`);
+        st.setProperty('--dom-ov-btn-bd', `rgba(100, 116, 139, ${bdAlpha})`);
+        st.setProperty('--dom-ov-text-shadow', bg < 0.65 ? '0 1px 2px rgba(2,6,23,0.95), 0 0 6px rgba(2,6,23,0.85)' : 'none');
+      }
+
+      box.classList.toggle('nk-dom-sm', domOvState.size === 'sm');
+      box.classList.toggle('nk-dom-lg', domOvState.size === 'lg');
+      box.classList.toggle('nk-dom-light', light);
+
+      const bgPct = Math.round(bg * 100);
+      const winPct = Math.round(win * 100);
+      const bgValEl = document.getElementById('domOverlayBgAlphaVal');
+      const winValEl = document.getElementById('domOverlayWinAlphaVal');
+      const bgRange = document.getElementById('domOverlayBgAlphaRange');
+      const winRange = document.getElementById('domOverlayWinAlphaRange');
+      if (bgValEl) bgValEl.textContent = `${bgPct}%`;
+      if (winValEl) winValEl.textContent = `${winPct}%`;
+      if (bgRange && Number(bgRange.value) !== bgPct) bgRange.value = String(bgPct);
+      if (winRange && Number(winRange.value) !== winPct) winRange.value = String(winPct);
+
+      document.querySelectorAll('#domOverlayCfgMenu [data-dom-preset]').forEach(btn => {
+        const pr = DOM_OV_PRESETS[btn.getAttribute('data-dom-preset')];
+        const match = pr && Math.abs(bg - pr.bg) <= 0.03 && Math.abs(win - pr.win) <= 0.03;
+        btn.classList.toggle('is-active', !!match);
+      });
+      document.querySelectorAll('#domOverlayCfgMenu [data-dom-theme]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.getAttribute('data-dom-theme') === domOvState.theme);
+      });
+      document.querySelectorAll('#domOverlayCfgMenu [data-dom-size]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.getAttribute('data-dom-size') === domOvState.size);
+      });
+      document.querySelectorAll('#domOverlayCfgMenu [data-dom-navi]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.getAttribute('data-dom-navi') === domOvState.naviApp);
+      });
+    }
+
+    function snapDomOverlayEdge(side) {
+      const box = document.getElementById('domFloatingOverlay');
+      if (!box) return;
+      const rect = box.getBoundingClientRect();
+      const w = rect.width || box.offsetWidth || 270;
+      const leftX = 8;
+      const rightX = Math.max(8, (window.innerWidth || 360) - w - 8);
+      let targetSide = side;
+      if (targetSide !== 'left' && targetSide !== 'right') {
+        targetSide = (rect.left + w / 2 > (window.innerWidth || 360) / 2) ? 'left' : 'right';
+      }
+      box.style.right = 'auto';
+      box.style.left = (targetSide === 'left' ? leftX : rightX) + 'px';
+      if (!box.style.top) box.style.top = Math.max(8, Math.round(rect.top || 80)) + 'px';
+      saveDomOvPref('nk_dom_overlay_side', targetSide);
+    }
+
+    function compactDomBadge(raw) {
+      let t = String(raw || '').replace('▾', '').trim();
+      const paren = t.indexOf('(');
+      if (paren > 0) t = t.slice(0, paren).trim();
+      t = t.replace('최단거리 자동', '자동').replace('회수·내비고정', '회수·고정').replace('추가납품·고정', '추가·고정')
+        .replace('회수·반품', '회수').replace('추가 납품', '추가');
+      return t + ' ▾';
+    }
+
     function renderDomFloatingOverlay() {
       const box = document.getElementById('domFloatingOverlay');
       if (!box || !domOverlayActive) return;
       const payload = buildOverlayPayload();
+
+      if (payload.nearby && !domOvState.lastNearby && domOverlayCollapsed && Date.now() >= domOvState.autoExpandSuppressUntil) {
+        domOvState.lastNearby = true;
+        setDomOverlayCollapsed(false);
+        return;
+      }
+      domOvState.lastNearby = !!payload.nearby;
+
+      box.classList.toggle('nk-dom-collapsed', domOverlayCollapsed);
+      box.classList.toggle('nk-dom-arrived', !!payload.arrived);
+      box.classList.toggle('nk-dom-ready', !!payload.allChecked);
+      applyDomOverlayVisuals();
+
+      if (!domOvState.sideInitialized) {
+        domOvState.sideInitialized = true;
+        try {
+          if (localStorage.getItem('nk_dom_overlay_side') === 'left') snapDomOverlayEdge('left');
+        } catch (e) {}
+      }
+
+      const gpsDot = document.getElementById('domOverlayGpsDot');
+      if (gpsDot) {
+        const gs = payload.gpsState || 'off';
+        gpsDot.className = gs;
+        gpsDot.title = gs === 'live' ? 'GPS 수신 양호'
+          : gs === 'weak' ? 'GPS 약함'
+          : gs === 'searching' ? 'GPS 탐색 중'
+          : gs === 'manual' ? '수동 위치'
+          : gs === 'denied' ? 'GPS 권한 필요' : 'GPS 꺼짐';
+      }
+
       const badgeEl = document.getElementById('domOverlayBadge');
-      const distEl = document.getElementById('domOverlayDist');
-      const titleEl = document.getElementById('domOverlayTitle');
-      const progEl = document.getElementById('domOverlayProgress');
-      const itemsEl = document.getElementById('domOverlayItems');
-      const undoEl = document.getElementById('domOverlayUndoBtn');
-      const memoEl = document.getElementById('domOverlayMemo');
-      const callEl = document.getElementById('domOverlayCallBtn');
       if (badgeEl) {
-        badgeEl.textContent = payload.modeBadge;
+        badgeEl.textContent = compactDomBadge(payload.modeBadge);
         badgeEl.style.backgroundColor = payload.modeColor;
       }
-      box.classList.toggle('nk-dom-collapsed', domOverlayCollapsed);
       const colBtn = document.getElementById('domOverlayCollapseBtn');
-      if (colBtn) colBtn.textContent = domOverlayCollapsed ? '➕' : '➖';
-      if (distEl) {
-        distEl.textContent = domOverlayCollapsed
-          ? (payload.name ? `${payload.name} · ${payload.distText}` : payload.distText)
-          : payload.distText;
+      if (colBtn) {
+        colBtn.textContent = domOverlayCollapsed ? '➕' : '➖';
+        colBtn.setAttribute('aria-label', domOverlayCollapsed ? '펼치기' : '접기');
       }
+
+      const distEl = document.getElementById('domOverlayDist');
+      if (distEl) {
+        const weakAcc = (payload.gpsState === 'weak' && payload.gpsAccuracy) ? ` (±${payload.gpsAccuracy}m)` : '';
+        distEl.textContent = domOverlayCollapsed
+          ? (payload.collapsedSummary || (payload.name ? `${payload.name} · ${payload.distText}` : payload.distText))
+          : ((payload.arrived ? '🚨 ' : '') + payload.distText + weakAcc);
+      }
+
+      const titleEl = document.getElementById('domOverlayTitle');
       if (titleEl) titleEl.textContent = payload.name;
+
+      // Quick Menu & Quick Target Switcher
+      document.querySelectorAll('#domOverlayQuickMenu [data-dom-kind]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.getAttribute('data-dom-kind') === (payload.kindChoice || overlayKindChoice));
+      });
+      const remEl = document.getElementById('domOverlayRemLabel');
+      if (remEl) remEl.textContent = payload.remainingCount ? `남은 ${payload.remainingCount}곳` : '';
+      const qListEl = document.getElementById('domOverlayQuickList');
+      if (qListEl) {
+        const ql = Array.isArray(payload.quickList) ? payload.quickList : [];
+        if (!ql.length) {
+          qListEl.innerHTML = `<div class="text-[11px] text-slate-400 py-0.5">남은 정거장이 없습니다.</div>`;
+        } else {
+          qListEl.innerHTML = ql.map(qt => `
+            <button type="button" data-dom-target-key="${escapeHtml(qt.key)}" class="nk-dom-quick-target-btn${qt.active ? ' is-active' : ''}">
+              <span class="truncate flex-1 min-w-0">${qt.active ? '✓ ' : ''}${escapeHtml(qt.name)}</span>
+              <span class="shrink-0 text-[10px] opacity-85">${escapeHtml([qt.distText, qt.summary].filter(Boolean).join(' · '))}</span>
+            </button>
+          `).join('');
+        }
+      }
+
+      const hdBtn = document.getElementById('domOverlayHoldDoneToggle');
+      if (hdBtn) {
+        hdBtn.classList.toggle('is-active', domOvState.holdDone);
+        hdBtn.textContent = domOvState.holdDone ? '🔒 완료 길게누르기: 켜짐 (0.6초)' : '🔒 완료 길게누르기: 꺼짐';
+      }
+
+      const undoEl = document.getElementById('domOverlayUndoBtn');
       if (undoEl) {
         if (payload.undoLabel) {
           undoEl.textContent = `↩ ${payload.undoLabel} 완료 취소`;
@@ -7551,32 +8312,113 @@ ${school.address || ''}`;
           undoEl.classList.add('hidden');
         }
       }
-      if (memoEl) {
-        const parts = [payload.memo ? `📝 ${payload.memo}` : '', payload.pickupNote || ''].filter(Boolean);
-        if (parts.length) {
-          memoEl.textContent = parts.join(' · ');
-          memoEl.classList.remove('hidden');
+
+      // Address bar toggle
+      const addrBtn = document.getElementById('domOverlayAddrBtn');
+      const addrBar = document.getElementById('domOverlayAddrBar');
+      const addrTextEl = document.getElementById('domOverlayAddrText');
+      const addr = String(payload.address || '').trim();
+      if (addrBtn) {
+        addrBtn.classList.toggle('hidden', !addr);
+        addrBtn.setAttribute('aria-expanded', String(domOvState.addrOpen && !!addr));
+      }
+      if (addrBar) addrBar.classList.toggle('hidden', !(domOvState.addrOpen && !!addr && !domOverlayCollapsed));
+      if (addrTextEl && addr) addrTextEl.textContent = addr;
+
+      // Expandable memo & quick memo chips
+      const memoBtn = document.getElementById('domOverlayMemoBtn');
+      const memoText = document.getElementById('domOverlayMemoText');
+      const memoChips = document.getElementById('domOverlayMemoChips');
+      const memoParts = [payload.memo ? `📝 ${payload.memo}` : '', payload.pickupNote || ''].filter(Boolean);
+      const hasTarget = payload.targetKind !== 'none' && payload.name !== '모든 납품·회수 완료!' && payload.name !== '선택한 종류의 미완료 업무 없음' && payload.name !== '목적지 준비중';
+      if (memoBtn) {
+        if (hasTarget) {
+          memoBtn.classList.remove('hidden');
+          memoBtn.classList.toggle('opacity-80', !memoParts.length);
+          memoBtn.classList.toggle('expanded', domOvState.memoExpanded);
+          memoBtn.setAttribute('aria-expanded', String(domOvState.memoExpanded));
+          if (memoText) memoText.textContent = memoParts.length ? memoParts.join(' · ') : '📝 + 현장 메모 추가';
+          if (memoChips) {
+            const showChips = domOvState.memoExpanded && !domOverlayCollapsed;
+            memoChips.classList.toggle('hidden', !showChips);
+            memoChips.classList.toggle('flex', showChips);
+          }
         } else {
-          memoEl.textContent = '';
-          memoEl.classList.add('hidden');
+          memoBtn.classList.add('hidden');
+          if (memoChips) {
+            memoChips.classList.add('hidden');
+            memoChips.classList.remove('flex');
+          }
         }
       }
+
+      // Call & SMS & Navi button appearance
+      const hasPhone = !!String(payload.phone || '').replace(/[^0-9+*#,]/g, '');
+      const callEl = document.getElementById('domOverlayCallBtn');
+      const smsEl = document.getElementById('domOverlaySmsBtn');
       if (callEl) {
-        const hasPhone = !!String(payload.phone || '').replace(/[^0-9+*#,]/g, '');
         callEl.disabled = !hasPhone;
-        callEl.textContent = hasPhone ? '📞 전화' : '📞 없음';
+        callEl.textContent = hasPhone ? '📞전화' : '📞없음';
       }
+      if (smsEl) {
+        smsEl.disabled = !hasPhone;
+        smsEl.textContent = hasPhone ? '📩문자' : '📩없음';
+      }
+      const naviBtn = document.getElementById('domOverlayMainNaviBtn');
+      if (naviBtn) {
+        const nm = DOM_OV_NAVI_META[domOvState.naviApp] || DOM_OV_NAVI_META.naver;
+        naviBtn.textContent = nm.text;
+        naviBtn.title = nm.title;
+        naviBtn.classList.toggle('nk-navi-kakao', nm.cls === 'nk-navi-kakao');
+        naviBtn.classList.toggle('nk-navi-tmap', nm.cls === 'nk-navi-tmap');
+      }
+
+      const progEl = document.getElementById('domOverlayProgress');
       if (progEl) progEl.textContent = payload.progressText;
+      const checkAllEl = document.getElementById('domOverlayCheckAllBtn');
+      if (checkAllEl) {
+        const hasUnchecked = Array.isArray(payload.items) && payload.items.some(it => (typeof it.index !== 'number' || it.index < 1000) && !it.checked);
+        checkAllEl.classList.toggle('hidden', !hasUnchecked);
+      }
+
+      const itemsEl = document.getElementById('domOverlayItems');
       if (itemsEl) {
         if (!payload.items || payload.items.length === 0) {
           itemsEl.innerHTML = `<div class="text-xs text-slate-400 py-1">표시할 품목이 없습니다.</div>`;
         } else {
-          itemsEl.innerHTML = payload.items.map(it => `
-            <button type="button" data-dom-overlay-item="${it.index}" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-extrabold border transition flex items-center gap-1.5 ${it.checked ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 line-through opacity-85' : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-white'}">
-              <span>${it.checked ? '☑' : '☐'}</span>
-              <span class="truncate">${escapeHtml(it.label)}</span>
-            </button>
-          `).join('');
+          itemsEl.innerHTML = payload.items.map(it => {
+            const linkedCls = it.kind === 'linked-pickup' ? ' is-linked' : (it.kind === 'linked-extra' ? ' is-linked-extra' : '');
+            const checkedCls = it.checked ? ' is-checked line-through opacity-90' : '';
+            const curDel = Number(it.deliveredQty || 0);
+            const qtyNum = Number(it.qty || 0);
+            const stepper = (it.adjustable && qtyNum > 1)
+              ? `<div class="flex items-center gap-0.5 shrink-0">
+                   <button type="button" data-dom-step="${it.index}:-1" class="nk-dom-step-btn" ${curDel <= 0 ? 'disabled' : ''} aria-label="${escapeHtml(it.label)} 수량 1 감소">−</button>
+                   <button type="button" data-dom-step="${it.index}:1" class="nk-dom-step-btn" ${curDel >= qtyNum ? 'disabled' : ''} aria-label="${escapeHtml(it.label)} 수량 1 증가">+</button>
+                 </div>`
+              : '';
+            return `<div class="flex items-stretch gap-1">
+              <button type="button" data-dom-overlay-item="${it.index}" class="nk-dom-item-btn${checkedCls}${linkedCls} flex-1 min-w-0 text-left px-2 py-1.5 rounded-lg text-xs font-extrabold border transition flex items-center gap-1.5">
+                <span>${it.checked ? '☑' : '☐'}</span>
+                <span class="truncate">${escapeHtml(it.label)}</span>
+              </button>
+              ${stepper}
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const np = payload.nextPreview;
+      const npEl = document.getElementById('domOverlayNextPreview');
+      const npName = document.getElementById('domOverlayNextName');
+      const npMeta = document.getElementById('domOverlayNextMeta');
+      if (npEl) {
+        if (np && np.name) {
+          npEl.classList.remove('hidden');
+          if (npName) npName.textContent = `다음▶ ${np.name}${np.summary ? ' · ' + np.summary : ''}`;
+          if (npMeta) npMeta.textContent = [np.distText, payload.remainingCount > 1 ? `${payload.remainingCount}곳` : ''].filter(Boolean).join(' · ');
+        } else {
+          npEl.classList.add('hidden');
         }
       }
     }
@@ -7604,8 +8446,121 @@ ${school.address || ''}`;
       }
     }
 
-    // Callbacks invoked by Android Native Overlay (FloatingOverlayManager.java) or DOM Overlay
+    function syncDeliveryFieldOpsStatus(s) {
+      if (!s || completedMap[s.id]) return;
+      const dItems = deliveryItems(s);
+      const delivered = (s.fieldOps && s.fieldOps.delivered) || {};
+      let totalOrdered = 0;
+      let totalDelivered = 0;
+      let anyShort = false;
+      dItems.forEach(it => {
+        const q = Math.max(0, Number(it.qty) || 0);
+        const raw = delivered[it.key];
+        const d = (typeof raw === 'number' && !Number.isNaN(raw))
+          ? Math.min(q, Math.max(0, raw))
+          : (isItemChecked(s.id, it.key) ? q : 0);
+        totalOrdered += q;
+        totalDelivered += d;
+        if (q > 0 && d > 0 && d < q) anyShort = true;
+      });
+      if (totalDelivered > 0 && (anyShort || totalDelivered < totalOrdered)) {
+        s.fieldOps = { ...(s.fieldOps || {}), deliveryStatus: '부분 완료', updatedAt: Date.now() };
+      } else if (s.fieldOps && s.fieldOps.deliveryStatus === '부분 완료') {
+        s.fieldOps = { ...s.fieldOps, deliveryStatus: '대기', updatedAt: Date.now() };
+      }
+    }
+
+    function syncPickupFieldStatus(p) {
+      if (!p || p.done || !Array.isArray(p.fieldQuantities) || !p.fieldQuantities.length) return;
+      let totalQty = 0;
+      let totalDone = 0;
+      let anyShort = false;
+      p.fieldQuantities.forEach(r => {
+        const q = Math.max(0, Number(r.qty) || 0);
+        const d = Math.min(q, Math.max(0, Number(r.done || 0)));
+        totalQty += q;
+        totalDone += d;
+        if (q > 0 && d > 0 && d < q) anyShort = true;
+      });
+      if (totalDone > 0 && (anyShort || totalDone < totalQty)) {
+        p.fieldStatus = '부분 완료';
+      } else if (p.fieldStatus === '부분 완료') {
+        p.fieldStatus = '대기';
+      }
+    }
+
+    // Callbacks invoked by Android Native Overlay (FloatingOverlayManager.java / WebOverlayController.java) or DOM Overlay
     window.onNativeOverlayToggleItem = function(idx) {
+      const i = parseInt(idx, 10);
+      if (Number.isNaN(i)) return;
+      const best = getOverlayDisplayTarget();
+      if (!best) return;
+      if (best.kind === 'pickup' && best.pickupGroup) {
+        const grp = best.pickupGroup;
+        const firstP = grp.items && grp.items[0];
+        if (grp.items.length === 1 && firstP && Array.isArray(firstP.fieldQuantities) && firstP.fieldQuantities.length) {
+          firstP.fieldQuantities = normalizeFieldQuantities(firstP.fieldQuantities, !!firstP.done);
+          const row = firstP.fieldQuantities[i];
+          if (row) {
+            const tQty = Math.max(0, Number(row.qty) || 0);
+            const curDone = firstP.done ? tQty : Math.min(tQty, Math.max(0, Number(row.done || 0)));
+            const wasDone = !!(firstP.done || (tQty > 0 && curDone >= tQty));
+            row.done = wasDone ? 0 : tQty;
+            if (wasDone && firstP.done) {
+              firstP.done = false;
+              firstP.doneAt = null;
+              if (firstP.fieldStatus === '완료') firstP.fieldStatus = '대기';
+            }
+            syncPickupFieldStatus(firstP);
+            savePickups();
+            if (typeof renderPickups === 'function') renderPickups();
+            renderList();
+            updateBgMediaAndPip();
+          }
+          return;
+        }
+        const p = grp.items[i];
+        if (p && typeof pkToggleDone === 'function') {
+          pkToggleDone(p.id);
+          updateBgMediaAndPip();
+        }
+        return;
+      }
+      if (best.kind === 'delivery' && best.school) {
+        const s = SCHOOLS.find(x => x.id === best.school.id) || best.school;
+        if (i >= 1000) {
+          const p = (best.pickups || [])[i - 1000];
+          if (p && typeof pkToggleDone === 'function') {
+            if (overlayRecentToggledSchoolId !== s.id) clearOverlayRecentToggledPickups();
+            overlayRecentToggledSchoolId = s.id;
+            if (!p.done) overlayRecentToggledPickupIds.add(String(p.id));
+            else overlayRecentToggledPickupIds.delete(String(p.id));
+            pkToggleDone(p.id);
+            updateBgMediaAndPip();
+          }
+          return;
+        }
+        const dItems = deliveryItems(s);
+        const it = dItems[i];
+        if (it) {
+          const nextState = !isItemChecked(s.id, it.key);
+          setItemChecked(s.id, it.key, nextState);
+          const prevDel = (s.fieldOps && s.fieldOps.delivered) ? { ...s.fieldOps.delivered } : {};
+          prevDel[it.key] = nextState ? Math.max(0, Number(it.qty) || 0) : 0;
+          s.fieldOps = { ...(s.fieldOps || {}), delivered: prevDel, updatedAt: Date.now() };
+          syncDeliveryFieldOpsStatus(s);
+          saveState();
+          renderList();
+          updateBgMediaAndPip();
+        }
+      }
+    };
+
+    window.onNativeOverlayStepItem = function(arg) {
+      const parts = String(arg || '').split(':');
+      const idx = parseInt(parts[0], 10);
+      const delta = parseInt(parts[1], 10);
+      if (Number.isNaN(idx) || !delta) return;
       const best = getOverlayDisplayTarget();
       if (!best) return;
       if (best.kind === 'pickup' && best.pickupGroup) {
@@ -7614,46 +8569,106 @@ ${school.address || ''}`;
         if (grp.items.length === 1 && firstP && Array.isArray(firstP.fieldQuantities) && firstP.fieldQuantities.length) {
           firstP.fieldQuantities = normalizeFieldQuantities(firstP.fieldQuantities, !!firstP.done);
           const row = firstP.fieldQuantities[idx];
-          if (row) {
-            row.done = Number(row.done || 0) >= Number(row.qty) ? 0 : Number(row.qty);
-            savePickups();
-            renderPickups();
-            renderList();
-            syncNativeAndDomOverlays();
+          if (!row) return;
+          const tQty = Math.max(0, Number(row.qty) || 0);
+          const curDone = firstP.done ? tQty : Math.min(tQty, Math.max(0, Number(row.done || 0)));
+          const nextDone = Math.max(0, Math.min(tQty, curDone + delta));
+          row.done = nextDone;
+          if (nextDone < tQty && firstP.done) {
+            firstP.done = false;
+            firstP.doneAt = null;
+            if (firstP.fieldStatus === '완료') firstP.fieldStatus = '대기';
           }
-          return;
+          syncPickupFieldStatus(firstP);
+          savePickups();
+          if (typeof renderPickups === 'function') renderPickups();
+          renderList();
+          updateBgMediaAndPip();
         }
-        const p = grp.items[idx];
-        if (p && typeof pkToggleDone === 'function') {
-          pkToggleDone(p.id);
-          syncNativeAndDomOverlays();
+        return;
+      }
+      if (best.kind === 'delivery' && best.school && idx < 1000) {
+        const s = SCHOOLS.find(x => x.id === best.school.id) || best.school;
+        const dItems = deliveryItems(s);
+        const it = dItems[idx];
+        if (!it) return;
+        const tQty = Math.max(0, Number(it.qty) || 0);
+        const prevDel = (s.fieldOps && s.fieldOps.delivered) ? { ...s.fieldOps.delivered } : {};
+        const hasRaw = typeof prevDel[it.key] === 'number' && !Number.isNaN(prevDel[it.key]);
+        const curDone = hasRaw
+          ? Math.min(tQty, Math.max(0, Number(prevDel[it.key])))
+          : (isItemChecked(s.id, it.key) ? tQty : 0);
+        const nextDone = Math.max(0, Math.min(tQty, curDone + delta));
+        prevDel[it.key] = nextDone;
+        s.fieldOps = { ...(s.fieldOps || {}), delivered: prevDel, updatedAt: Date.now() };
+        setItemChecked(s.id, it.key, tQty > 0 && nextDone >= tQty);
+        syncDeliveryFieldOpsStatus(s);
+        saveState();
+        renderList();
+        updateBgMediaAndPip();
+      }
+    };
+
+    window.onNativeOverlayCheckAll = function() {
+      const best = getOverlayDisplayTarget();
+      if (!best) return;
+      if (best.kind === 'pickup' && best.pickupGroup) {
+        const grp = best.pickupGroup;
+        const firstP = grp.items && grp.items[0];
+        if (grp.items.length === 1 && firstP && Array.isArray(firstP.fieldQuantities) && firstP.fieldQuantities.length) {
+          firstP.fieldQuantities = normalizeFieldQuantities(firstP.fieldQuantities, !!firstP.done);
+          firstP.fieldQuantities.forEach(r => { r.done = Number(r.qty) || 0; });
+          syncPickupFieldStatus(firstP);
+          savePickups();
+          if (typeof renderPickups === 'function') renderPickups();
+          renderList();
+          updateBgMediaAndPip();
+          showToast('✅ 전체 품목 수량을 체크했습니다.');
+        } else if (grp.items && grp.items.length) {
+          grp.items.forEach(p => {
+            if (!p.done) {
+              p.done = true;
+              p.doneAt = Date.now();
+              if (Array.isArray(p.fieldQuantities)) p.fieldQuantities.forEach(r => { r.done = r.qty; });
+              if (p.worksTaskId) {
+                p.worksSyncPending = true;
+                p.worksClosedRemote = false;
+                if (typeof worksPushDone === 'function') worksPushDone(p);
+              }
+            }
+          });
+          savePickups();
+          if (typeof renderPickups === 'function') renderPickups();
+          renderList();
+          updateBgMediaAndPip();
+          showToast('✅ 전체 품목을 체크했습니다.');
         }
         return;
       }
       if (best.kind === 'delivery' && best.school) {
-        if (idx >= 1000) {
-          const p = (best.pickups || [])[idx - 1000];
-          if (p && typeof pkToggleDone === 'function') {
-            pkToggleDone(p.id);
-            syncNativeAndDomOverlays();
-          }
-          return;
-        }
-        const s = best.school;
+        const s = SCHOOLS.find(x => x.id === best.school.id) || best.school;
         const dItems = deliveryItems(s);
-        const it = dItems[idx];
-        if (it) {
-          const nextState = !isItemChecked(s.id, it.key);
-          setItemChecked(s.id, it.key, nextState);
-          renderList();
-          updateBgMediaAndPip();
-        }
+        if (!itemChecks[s.id]) itemChecks[s.id] = {};
+        const prevDel = (s.fieldOps && s.fieldOps.delivered) ? { ...s.fieldOps.delivered } : {};
+        dItems.forEach(it => {
+          itemChecks[s.id][it.key] = true;
+          prevDel[it.key] = Math.max(0, Number(it.qty) || 0);
+        });
+        saveItemChecks();
+        s.fieldOps = { ...(s.fieldOps || {}), delivered: prevDel, updatedAt: Date.now() };
+        syncDeliveryFieldOpsStatus(s);
+        saveState();
+        renderList();
+        updateBgMediaAndPip();
+        showToast('✅ 전체 품목 수량을 체크했습니다.');
       }
     };
 
     window.onNativeOverlayCompleteTarget = function(opts = {}) {
       const best = getOverlayDisplayTarget();
       if (!best) return false;
+      clearOverlayRecentToggledPickups();
+      overlayChoiceId = null;
       if (best.kind === 'pickup' && best.pickupGroup) {
         const now = Date.now();
         const prevItems = best.pickupGroup.items.map(p => ({
@@ -7703,21 +8718,28 @@ ${school.address || ''}`;
       return false;
     };
 
-    window.nkLaunchNextPendingAfterComplete = function() {
+    window.nkLaunchNextPendingAfterComplete = function(naviAppArg) {
       const nextTarget = getOverlayDisplayTarget();
       if (!nextTarget) {
         syncNativeAndDomOverlays();
         showToast('🎉 모든 납품·회수 업무를 완료했습니다!');
         return false;
       }
-      window.onNativeOverlayStartNavi(true);
+      const app = (naviAppArg === 'kakao' || naviAppArg === 'tmap' || naviAppArg === 'naver')
+        ? naviAppArg
+        : ((domOvState && domOvState.naviApp) || 'naver');
+      if (app === 'kakao' || app === 'tmap') {
+        window.onNativeOverlayStartCustomNavi(app);
+      } else {
+        window.onNativeOverlayStartNavi(true);
+      }
       return true;
     };
 
-    window.onNativeOverlayCompleteAndNext = function() {
+    window.onNativeOverlayCompleteAndNext = function(naviAppArg) {
       const ok = window.onNativeOverlayCompleteTarget();
       if (!ok) return;
-      window.nkLaunchNextPendingAfterComplete();
+      window.nkLaunchNextPendingAfterComplete(naviAppArg);
     };
 
     window.onNativeOverlayCallPhone = function(phoneArg) {
@@ -7761,6 +8783,7 @@ ${school.address || ''}`;
     window.onNativeOverlayQuickStatus = function(statusText) {
       const best = getOverlayDisplayTarget();
       if (!best) return;
+      clearOverlayRecentToggledPickups();
       const st = String(statusText || '보류').trim();
       if (best.kind === 'delivery' && best.school) {
         const s = SCHOOLS.find(x => x.id === best.school.id);
@@ -7787,31 +8810,255 @@ ${school.address || ''}`;
       }
     };
 
-    window.onNativeOverlayNextTarget = function() {
-      if (overlayKindChoice !== 'auto') { nextOverlayDisplayTarget(); return; }
-      const best = getOverlayDisplayTarget();
-      if (best && best.kind === 'pickup' && typeof PICKUPS !== 'undefined') {
-        const curFirst = best.pickupGroup && best.pickupGroup.items && best.pickupGroup.items[0];
-        const gMode = (best.pickupGroup && best.pickupGroup.groupMode) || (curFirst && typeof pkGroupOf === 'function' ? pkGroupOf(curFirst) : null);
-        let pool = PICKUPS.filter(p => !p.done && (!gMode || pkGroupOf(p) === gMode));
-        if (!pool.length) pool = PICKUPS.filter(p => !p.done);
-        if (!pool.length) {
-          showToast('남은 할 일이 없습니다!');
-          return;
-        }
-        const curIdx = curFirst ? pool.findIndex(p => p.id === curFirst.id) : -1;
-        const nextP = pool[(curIdx + 1) % pool.length];
-        if (nextP) {
-          setNaviLockedPickup(nextP.id);
-          syncNativeAndDomOverlays();
-          showToast(`다음 할 일: ${nextP.school} [${nextP.type}]`);
+    window.onNativeOverlaySelectTarget = function(key) {
+      const k = String(key || '').trim();
+      if (!k) return;
+      clearOverlayRecentToggledPickups();
+      if (k.startsWith('d:')) {
+        const sid = parseInt(k.slice(2), 10);
+        const s = SCHOOLS.find(x => x.id === sid);
+        if (s) {
+          if (overlayKindChoice !== 'auto') overlayChoiceId = k;
+          setNaviLockedSchool(s.id);
+          showToast(`📍 목적지 전환: ${s.name}`);
         }
         return;
       }
-      const nextBtn = document.getElementById('hudNextSchoolBtn');
-      if (nextBtn) {
-        nextBtn.click();
-        syncNativeAndDomOverlays();
+      if (k.startsWith('p:')) {
+        const grpKey = k.slice(2);
+        const grp = getPendingPickupGroupsWithDist().find(g => g.key === grpKey);
+        if (grp && grp.items && grp.items[0]) {
+          if (overlayKindChoice !== 'auto') overlayChoiceId = k;
+          setNaviLockedPickup(grp.items[0].id);
+          showToast(`📍 목적지 전환: ${grp.name}`);
+        }
+        return;
+      }
+      const fallbackSid = parseInt(k, 10);
+      if (!Number.isNaN(fallbackSid)) {
+        const s = SCHOOLS.find(x => x.id === fallbackSid);
+        if (s) {
+          if (overlayKindChoice !== 'auto') overlayChoiceId = 'd:' + s.id;
+          setNaviLockedSchool(s.id);
+          showToast(`📍 목적지 전환: ${s.name}`);
+        }
+      }
+    };
+
+    window.onNativeOverlayNextTarget = function() {
+      nextOverlayDisplayTarget();
+    };
+
+    function fallbackCopyTextToClipboard(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      showToast(ok ? '📋 주소를 복사했습니다.' : '주소를 복사하지 못했습니다.');
+    }
+
+    window.onNativeOverlayCopyAddress = function(addrArg) {
+      const best = getOverlayDisplayTarget();
+      let addr = String(addrArg || '').trim();
+      if (!addr && best) {
+        addr = best.kind === 'delivery'
+          ? ((best.school && best.school.address) || '')
+          : ((best.pickupGroup && best.pickupGroup.address) || '');
+      }
+      if (!addr) {
+        showToast('복사할 주소가 없습니다.');
+        return;
+      }
+      if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.copyText === 'function') {
+        try { window.AndroidOverlay.copyText(addr); return; } catch (e) {}
+      }
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(addr).then(
+          () => showToast('📋 주소를 복사했습니다.'),
+          () => fallbackCopyTextToClipboard(addr)
+        );
+        return;
+      }
+      fallbackCopyTextToClipboard(addr);
+    };
+
+    window.onNativeOverlayEditMemo = function() {
+      const best = getOverlayDisplayTarget();
+      closeAllPopupWindows({ closeModals: false, silent: true });
+      try { window.focus(); } catch (e) {}
+      if (!best) return;
+      if (best.kind === 'delivery' && best.school) {
+        if (typeof openQuickSchoolMemoModal === 'function') {
+          openQuickSchoolMemoModal(best.school.id);
+        } else {
+          openArrivalModal(best.school.id, false);
+        }
+        return;
+      }
+      if (best.kind === 'pickup' && best.pickupGroup && best.pickupGroup.items && best.pickupGroup.items[0]) {
+        if (typeof openPkDetail === 'function') {
+          openPkDetail(best.pickupGroup.items[0].id);
+        }
+      }
+    };
+
+    window.onNativeOverlayAppendMemo = function(chipText) {
+      const chip = String(chipText || '').trim();
+      if (!chip) return;
+      const best = getOverlayDisplayTarget();
+      if (!best) return;
+      if (best.kind === 'delivery' && best.school) {
+        const s = SCHOOLS.find(x => x.id === best.school.id);
+        if (!s) return;
+        const cur = String((s.fieldOps && s.fieldOps.memo) || '').trim();
+        if (cur.includes(chip)) {
+          showToast('이미 메모에 포함된 내용입니다.');
+          return;
+        }
+        const nextMemo = cur ? `${cur} / ${chip}` : chip;
+        s.fieldOps = { ...(s.fieldOps || {}), memo: nextMemo, updatedAt: Date.now() };
+        saveState();
+        renderList();
+        updateBgMediaAndPip();
+        showToast(`📝 [${s.name}] 메모 추가: ${chip}`);
+        return;
+      }
+      if (best.kind === 'pickup' && best.pickupGroup && best.pickupGroup.items && best.pickupGroup.items[0]) {
+        const firstP = best.pickupGroup.items[0];
+        const cur = String(firstP.memo || '').trim();
+        if (cur.includes(chip)) {
+          showToast('이미 메모에 포함된 내용입니다.');
+          return;
+        }
+        firstP.memo = cur ? `${cur} / ${chip}` : chip;
+        savePickups();
+        if (typeof renderPickups === 'function') renderPickups();
+        renderList();
+        updateBgMediaAndPip();
+        showToast(`📝 [${best.pickupGroup.name}] 메모 추가: ${chip}`);
+      }
+    };
+
+    window.onNativeOverlaySendSms = function(tplArg) {
+      const payload = buildOverlayPayload();
+      const cleaned = String(payload.phone || '').replace(/[^0-9+*#,]/g, '');
+      if (!cleaned) {
+        showToast('등록된 전화번호가 없습니다.');
+        return;
+      }
+      const tpl = String(tplArg || 'arriving').trim();
+      const body = (payload.smsBodies && payload.smsBodies[tpl])
+        || (payload.smsBodies && payload.smsBodies.arriving)
+        || '';
+      if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.sendSms === 'function') {
+        try { window.AndroidOverlay.sendSms(cleaned, body); return; } catch (e) {}
+      }
+      const sep = IS_IOS ? '&body=' : '?body=';
+      const href = 'sms:' + cleaned + (body ? sep + encodeURIComponent(body) : '');
+      try {
+        const a = document.createElement('a');
+        a.href = href;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (e) {
+        window.location.href = href;
+      }
+    };
+
+    window.onNativeOverlayStartCustomNavi = function(appArg) {
+      const app = (appArg === 'kakao' || appArg === 'tmap') ? appArg : 'naver';
+      if (app === 'naver') {
+        window.onNativeOverlayStartNavi(true);
+        return;
+      }
+      const best = getOverlayDisplayTarget();
+      if (!best) {
+        showToast('현재 안내할 미완료 목적지가 없습니다.');
+        return;
+      }
+      if (best.kind === 'pickup' && best.pickupGroup) {
+        const firstP = best.pickupGroup.items && best.pickupGroup.items[0];
+        if (firstP) {
+          setNaviLockedPickup(firstP.id);
+          if (typeof ensureBgKeepAliveOnNavi === 'function') {
+            try { ensureBgKeepAliveOnNavi(pkPseudo(firstP)); } catch (e) {}
+          }
+        }
+      } else if (best.kind === 'delivery' && best.school) {
+        const s = SCHOOLS.find(x => x.id === best.school.id) || best.school;
+        setNaviLockedSchool(s.id);
+        speakSchoolQuantity(s);
+        if (typeof ensureBgKeepAliveOnNavi === 'function') {
+          try { ensureBgKeepAliveOnNavi(s); } catch (e) {}
+        }
+      }
+      const p = buildOverlayPayload();
+      const appUrl = app === 'kakao' ? p.kakaoUrl : p.tmapUrl;
+      const webUrl = app === 'kakao' ? p.kakaoWebUrl : p.tmapWebUrl;
+      const label = app === 'kakao' ? '🟡 카카오내비' : '🔵 티맵';
+      const targetName = best.kind === 'delivery' ? (best.school && best.school.name) : (best.pickupGroup && best.pickupGroup.name);
+      showToast(`🧭 [${targetName || ''}] ${label} 길안내를 시작합니다.`);
+      syncNativeAndDomOverlays();
+      openCustomNaviApp(app, appUrl, webUrl);
+    };
+
+    window.onNativeOverlayCalibrate = function() {
+      if (!gpsActive || userAccuracy === null || userLat === null || userLng === null) {
+        showToast('먼저 GPS 수신이 켜져 있어야 현재 위치로 좌표를 보정할 수 있습니다.');
+        return;
+      }
+      if (userAccuracy > 100) {
+        showToast(`GPS 정확도가 낮아(±${Math.round(userAccuracy)}m) 100m 이내일 때만 보정할 수 있습니다.`);
+        return;
+      }
+      const best = getOverlayDisplayTarget();
+      if (!best) {
+        showToast('보정할 목적지가 없습니다.');
+        return;
+      }
+      if (best.kind === 'delivery' && best.school) {
+        customCoords[best.school.id] = { lat: userLat, lng: userLng };
+        saveState();
+        renderList();
+        updateBgMediaAndPip();
+        showToast(`📍 [${best.school.name}] 현재 위치(±${Math.round(userAccuracy)}m)로 좌표 보정 완료!`);
+        return;
+      }
+      if (best.kind === 'pickup' && best.pickupGroup) {
+        const grp = best.pickupGroup;
+        const firstP = grp.items && grp.items[0];
+        const linkedS = firstP && typeof pkLinkedSchool === 'function' ? pkLinkedSchool(firstP) : null;
+        if (linkedS) {
+          customCoords[linkedS.id] = { lat: userLat, lng: userLng };
+          saveState();
+        }
+        (grp.items || []).forEach(p => {
+          p.lat = userLat;
+          p.lng = userLng;
+        });
+        savePickups();
+        if (typeof renderPickups === 'function') renderPickups();
+        renderList();
+        updateBgMediaAndPip();
+        showToast(`📍 [${grp.name}] 현재 위치(±${Math.round(userAccuracy)}m)로 좌표 보정 완료!`);
+      }
+    };
+
+    window.onNativeOverlaySnapEdge = function(side) {
+      const s = String(side || 'toggle');
+      if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.snapEdge === 'function') {
+        try { window.AndroidOverlay.snapEdge(s); } catch (e) {}
+      }
+      if (domOverlayActive) {
+        snapDomOverlayEdge(s);
       }
     };
 
@@ -7847,7 +9094,7 @@ ${school.address || ''}`;
         showToast(`🧭 [${s.name}] 네이버 내비 길안내 출발! 거리와 상관없이 미니창에 고정됩니다.`);
       }
       syncNativeAndDomOverlays();
-      if (shouldLaunchFromJs && naviUrl) {
+      if (shouldLaunchFromJs && (naviUrl || webUrl)) {
         if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.launchNaverNavi === 'function') {
           window.AndroidOverlay.launchNaverNavi(naviUrl, webUrl);
         } else {
@@ -7898,7 +9145,7 @@ ${school.address || ''}`;
 
     // 팝업모드(오버레이/미니창)에서 [앱열기]를 눌렀을 때 팝업창을 끄고 본 앱 화면으로 이동
     window.onNativeOverlayOpenApp = function(opts = {}) {
-      const best = getBestPipTarget();
+      const best = getOverlayDisplayTarget() || getBestPipTarget();
       closeAllPopupWindows({ closeModals: false });
       try { window.focus(); } catch (e) {}
       if (best) {
@@ -8256,7 +9503,145 @@ ${school.address || ''}`;
     });
 
     // Bind interactive DOM Floating Overlay events & drag
+    function setDomBgAlpha(v) {
+      domOvState.bgAlpha = Math.round(clampDomOvNum(v, 0.10, 0.98, 0.88) * 100) / 100;
+      saveDomOvPref('nk_overlay_bg_alpha', domOvState.bgAlpha);
+      applyDomOverlayVisuals();
+    }
+    function setDomWinAlpha(v) {
+      domOvState.winAlpha = Math.round(clampDomOvNum(v, 0.35, 1.00, 1.00) * 100) / 100;
+      saveDomOvPref('nk_overlay_win_alpha', domOvState.winAlpha);
+      applyDomOverlayVisuals();
+    }
+    function toggleDomSubMenu(menuId, triggerId) {
+      const m = document.getElementById(menuId);
+      if (!m) return;
+      const opening = m.classList.contains('hidden');
+      closeDomPopMenus();
+      if (opening) {
+        m.classList.remove('hidden');
+        if (triggerId) document.getElementById(triggerId)?.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    document.getElementById('domOverlayBadge')?.addEventListener('click', () => {
+      toggleDomSubMenu('domOverlayQuickMenu', 'domOverlayBadge');
+    });
+    document.getElementById('domOverlayCfgBtn')?.addEventListener('click', () => {
+      toggleDomSubMenu('domOverlayCfgMenu', 'domOverlayCfgBtn');
+    });
+    document.getElementById('domOverlayQuickMenu')?.addEventListener('click', (e) => {
+      const kb = e.target.closest('[data-dom-kind]');
+      if (kb) {
+        closeDomPopMenus();
+        window.onNativeOverlaySelectKind(kb.getAttribute('data-dom-kind'));
+        return;
+      }
+      const tb = e.target.closest('[data-dom-target-key]');
+      if (tb) {
+        closeDomPopMenus();
+        window.onNativeOverlaySelectTarget(tb.getAttribute('data-dom-target-key'));
+      }
+    });
+
+    document.getElementById('domOverlayBgAlphaRange')?.addEventListener('input', (e) => {
+      setDomBgAlpha(Number(e.target.value) / 100);
+    });
+    document.getElementById('domOverlayWinAlphaRange')?.addEventListener('input', (e) => {
+      setDomWinAlpha(Number(e.target.value) / 100);
+    });
+    document.getElementById('domOverlayCfgMenu')?.addEventListener('click', (e) => {
+      const bgStep = e.target.closest('[data-dom-bg-step]');
+      if (bgStep) {
+        setDomBgAlpha(domOvState.bgAlpha + parseInt(bgStep.getAttribute('data-dom-bg-step'), 10) / 100);
+        return;
+      }
+      const winStep = e.target.closest('[data-dom-win-step]');
+      if (winStep) {
+        setDomWinAlpha(domOvState.winAlpha + parseInt(winStep.getAttribute('data-dom-win-step'), 10) / 100);
+        return;
+      }
+      const pb = e.target.closest('[data-dom-preset]');
+      if (pb) {
+        const pr = DOM_OV_PRESETS[pb.getAttribute('data-dom-preset')];
+        if (pr) {
+          domOvState.bgAlpha = pr.bg;
+          domOvState.winAlpha = pr.win;
+          saveDomOvPref('nk_overlay_bg_alpha', domOvState.bgAlpha);
+          saveDomOvPref('nk_overlay_win_alpha', domOvState.winAlpha);
+          applyDomOverlayVisuals();
+        }
+        return;
+      }
+      const th = e.target.closest('[data-dom-theme]');
+      if (th) {
+        domOvState.theme = th.getAttribute('data-dom-theme') === 'light' ? 'light' : 'dark';
+        saveDomOvPref('nk_overlay_theme', domOvState.theme);
+        applyDomOverlayVisuals();
+        return;
+      }
+      const sz = e.target.closest('[data-dom-size]');
+      if (sz) {
+        const nextSz = sz.getAttribute('data-dom-size');
+        if (nextSz === 'sm' || nextSz === 'md' || nextSz === 'lg') {
+          domOvState.size = nextSz;
+          saveDomOvPref('nk_overlay_size', nextSz);
+          applyDomOverlayVisuals();
+        }
+        return;
+      }
+      const nv = e.target.closest('[data-dom-navi]');
+      if (nv) {
+        const nextNv = nv.getAttribute('data-dom-navi');
+        if (DOM_OV_NAVI_META[nextNv]) {
+          domOvState.naviApp = nextNv;
+          saveDomOvPref('nk_overlay_navi_app', nextNv);
+          renderDomFloatingOverlay();
+        }
+      }
+    });
+    document.getElementById('domOverlaySnapBtn')?.addEventListener('click', () => {
+      snapDomOverlayEdge('toggle');
+    });
+    document.getElementById('domOverlayCalibBtn')?.addEventListener('click', () => {
+      closeDomPopMenus();
+      window.onNativeOverlayCalibrate();
+    });
+    document.getElementById('domOverlayHoldDoneToggle')?.addEventListener('click', () => {
+      domOvState.holdDone = !domOvState.holdDone;
+      saveDomOvPref('nk_overlay_hold_done', domOvState.holdDone ? '1' : '0');
+      renderDomFloatingOverlay();
+    });
+
+    document.getElementById('domOverlayAddrBtn')?.addEventListener('click', () => {
+      domOvState.addrOpen = !domOvState.addrOpen;
+      renderDomFloatingOverlay();
+    });
+    document.getElementById('domOverlayCopyAddrBtn')?.addEventListener('click', () => {
+      window.onNativeOverlayCopyAddress();
+    });
+    document.getElementById('domOverlayMemoBtn')?.addEventListener('click', () => {
+      domOvState.memoExpanded = !domOvState.memoExpanded;
+      renderDomFloatingOverlay();
+    });
+    document.getElementById('domOverlayMemoChips')?.addEventListener('click', (e) => {
+      const cb = e.target.closest('[data-dom-chip]');
+      if (!cb) return;
+      const chip = cb.getAttribute('data-dom-chip');
+      if (chip === '__EDIT__') window.onNativeOverlayEditMemo();
+      else window.onNativeOverlayAppendMemo(chip);
+    });
+    document.getElementById('domOverlayCheckAllBtn')?.addEventListener('click', () => {
+      window.onNativeOverlayCheckAll();
+    });
+
     document.getElementById('domOverlayItems')?.addEventListener('click', (e) => {
+      const stepBtn = e.target.closest('[data-dom-step]');
+      if (stepBtn) {
+        e.stopPropagation();
+        window.onNativeOverlayStepItem(stepBtn.getAttribute('data-dom-step'));
+        return;
+      }
       const btn = e.target.closest('[data-dom-overlay-item]');
       if (!btn) return;
       const idx = parseInt(btn.getAttribute('data-dom-overlay-item'), 10);
@@ -8269,34 +9654,110 @@ ${school.address || ''}`;
       window.onNativeOverlayOpenApp({ silent: false });
     });
     document.getElementById('domOverlayMainNaviBtn')?.addEventListener('click', () => {
+      domOvState.autoExpandSuppressUntil = Date.now() + 2500;
       setDomOverlayCollapsed(true);
-      window.onNativeOverlayStartNavi(true);
+      if (domOvState.naviApp === 'kakao' || domOvState.naviApp === 'tmap') {
+        window.onNativeOverlayStartCustomNavi(domOvState.naviApp);
+      } else {
+        window.onNativeOverlayStartNavi(true);
+      }
     });
-    document.getElementById('domOverlayCompleteBtn')?.addEventListener('click', () => {
+
+    let domHoldHintTimer = null;
+    function showDomHoldHint() {
+      const el = document.getElementById('domOverlayHoldHint');
+      if (!el) return;
+      clearTimeout(domHoldHintTimer);
+      el.classList.remove('hidden');
+      domHoldHintTimer = setTimeout(() => {
+        el.classList.add('hidden');
+      }, 1800);
+    }
+    function bindDomHoldAction(btn, actionFn) {
+      if (!btn) return;
+      let timer = null;
+      let fired = false;
+      btn.addEventListener('pointerdown', (e) => {
+        if (!domOvState.holdDone || e.button > 0) return;
+        fired = false;
+        btn.classList.add('nk-dom-holding');
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          timer = null;
+          fired = true;
+          btn.classList.remove('nk-dom-holding');
+          actionFn();
+        }, 550);
+      });
+      const cancelHold = () => {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+          btn.classList.remove('nk-dom-holding');
+          if (domOvState.holdDone && !fired) showDomHoldHint();
+        } else {
+          btn.classList.remove('nk-dom-holding');
+        }
+      };
+      btn.addEventListener('pointerup', cancelHold);
+      btn.addEventListener('pointercancel', cancelHold);
+      btn.addEventListener('pointerleave', () => {
+        if (timer) { clearTimeout(timer); timer = null; }
+        btn.classList.remove('nk-dom-holding');
+      });
+      btn.addEventListener('click', (e) => {
+        if (domOvState.holdDone) {
+          if (fired) { fired = false; e.preventDefault(); return; }
+          if (e.detail === 0) { actionFn(); return; }
+          e.preventDefault();
+          return;
+        }
+        actionFn();
+      });
+    }
+    bindDomHoldAction(document.getElementById('domOverlayCompleteBtn'), () => {
       window.onNativeOverlayCompleteTarget();
     });
-    document.getElementById('domOverlayCompleteNextBtn')?.addEventListener('click', () => {
+    bindDomHoldAction(document.getElementById('domOverlayCompleteNextBtn'), () => {
+      domOvState.autoExpandSuppressUntil = Date.now() + 2500;
       setDomOverlayCollapsed(true);
-      window.onNativeOverlayCompleteAndNext();
+      window.onNativeOverlayCompleteAndNext(domOvState.naviApp);
     });
+
     document.getElementById('domOverlayUndoBtn')?.addEventListener('click', () => {
       window.onNativeOverlayUndoComplete();
     });
     document.getElementById('domOverlayCallBtn')?.addEventListener('click', () => {
       window.onNativeOverlayCallPhone();
     });
+    document.getElementById('domOverlaySmsBtn')?.addEventListener('click', (e) => {
+      if (e.currentTarget.disabled) return;
+      toggleDomSubMenu('domOverlaySmsMenu');
+    });
+    document.getElementById('domOverlaySmsMenu')?.addEventListener('click', (e) => {
+      const sb = e.target.closest('[data-dom-sms]');
+      if (!sb) return;
+      closeDomPopMenus();
+      window.onNativeOverlaySendSms(sb.getAttribute('data-dom-sms'));
+    });
     document.getElementById('domOverlaySpeakBtn')?.addEventListener('click', () => {
       window.onNativeOverlaySpeakTarget();
     });
+    document.getElementById('domOverlayColSpeakBtn')?.addEventListener('click', () => {
+      window.onNativeOverlaySpeakTarget();
+    });
     document.getElementById('domOverlayHoldBtn')?.addEventListener('click', () => {
-      const m = document.getElementById('domOverlayHoldMenu');
-      if (m) m.classList.toggle('hidden');
+      toggleDomSubMenu('domOverlayHoldMenu');
     });
     document.getElementById('domOverlayHoldMenu')?.addEventListener('click', (e) => {
       const b = e.target.closest('[data-dom-status]');
       if (!b) return;
-      document.getElementById('domOverlayHoldMenu')?.classList.add('hidden');
+      closeDomPopMenus();
       window.onNativeOverlayQuickStatus(b.getAttribute('data-dom-status'));
+    });
+    document.getElementById('domOverlayNextPreview')?.addEventListener('click', () => {
+      const np = buildOverlayPayload().nextPreview;
+      if (np && np.key) window.onNativeOverlaySelectTarget(np.key);
     });
     document.getElementById('domOverlayNextBtn')?.addEventListener('click', () => {
       window.onNativeOverlayNextTarget();
@@ -8402,11 +9863,11 @@ ${school.address || ''}`;
     (function initDomOverlayDrag() {
       const box = document.getElementById('domFloatingOverlay');
       const header = document.getElementById('domOverlayDragHeader');
-      const title = document.getElementById('domOverlayTitle');
+      const titleRow = document.getElementById('domOverlayTitleRow');
       if (!box) return;
       let dragging = false, startX = 0, startY = 0, origLeft = 0, origTop = 0;
       const onStart = (e) => {
-        if (e.target.closest('button')) return;
+        if (e.target.closest('button, input, select, textarea, a')) return;
         const pt = e.touches ? e.touches[0] : e;
         const rect = box.getBoundingClientRect();
         dragging = true;
@@ -8425,16 +9886,25 @@ ${school.address || ''}`;
         const dx = pt.clientX - startX;
         const dy = pt.clientY - startY;
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) domOverlayMoved = true;
-        const nx = Math.max(4, Math.min(window.innerWidth - 120, origLeft + dx));
-        const ny = Math.max(4, Math.min(window.innerHeight - 60, origTop + dy));
+        const w = box.offsetWidth || 240;
+        const h = box.offsetHeight || 60;
+        const maxLeft = Math.max(4, (window.innerWidth || 360) - Math.min(w, 160));
+        const maxTop = Math.max(4, (window.innerHeight || 640) - Math.min(h, 60));
+        const nx = Math.max(4, Math.min(maxLeft, origLeft + dx));
+        const ny = Math.max(4, Math.min(maxTop, origTop + dy));
         box.style.left = nx + 'px';
         box.style.top = ny + 'px';
       };
       const onEnd = () => {
+        if (dragging && domOverlayMoved) {
+          const rect = box.getBoundingClientRect();
+          const side = (rect.left + rect.width / 2) > ((window.innerWidth || 360) / 2) ? 'right' : 'left';
+          saveDomOvPref('nk_dom_overlay_side', side);
+        }
         dragging = false;
         setTimeout(() => { domOverlayMoved = false; }, 50);
       };
-      [header, title].forEach(el => {
+      [header, titleRow].forEach(el => {
         if (!el) return;
         el.addEventListener('mousedown', onStart);
         el.addEventListener('touchstart', onStart, { passive: true });

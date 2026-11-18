@@ -7,6 +7,8 @@ package __PACKAGE__;
 // overlay.html 을 불러오지 못하면 기존 네이티브 미니창(fallback)으로 자동 전환합니다.
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -30,15 +32,18 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class WebOverlayController {
-    public static final int SHELL_VERSION = 1;
+    public static final int SHELL_VERSION = 2;
     private static final String TAG = "NkWebOverlay";
     private static final String OVERLAY_URL = "https://n-kids.github.io/entercoding-delivery/overlay.html";
+    private static final String LOCAL_OVERLAY_URL = "file:///android_asset/public/overlay.html";
     private static final String PREFS = "web_overlay_prefs";
     private static final long READY_TIMEOUT_MS = 8000L;
+    private static final long LOCAL_READY_TIMEOUT_MS = 4000L;
 
     private final Activity activity;
     private final Context appContext;
@@ -52,6 +57,7 @@ public class WebOverlayController {
     private boolean showing = false;
     private boolean ready = false;
     private boolean failed = false;
+    private boolean usingLocalFallback = false;
     private String pendingPayload = "{}";
     private String naviUrl = "";
     private String webNaviUrl = "";
@@ -66,7 +72,13 @@ public class WebOverlayController {
     private final Runnable readyTimeout = new Runnable() {
         @Override
         public void run() {
-            if (!ready) fail("overlay.html 응답 없음 (" + READY_TIMEOUT_MS + "ms)");
+            if (!ready) {
+                if (!usingLocalFallback) {
+                    tryLocalFallback("응답 없음 (" + READY_TIMEOUT_MS + "ms)");
+                } else {
+                    fail("overlay.html 응답 없음 (" + LOCAL_READY_TIMEOUT_MS + "ms)");
+                }
+            }
         }
     };
 
@@ -118,6 +130,28 @@ public class WebOverlayController {
         if (showing && ready) eval("window.nkSetCollapsed && window.nkSetCollapsed(" + collapsed + ");");
     }
 
+    public void snapEdge(final String side) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (lp == null) return;
+                int leftX = dp(4);
+                int rightX = Math.max(0, screenW() - lp.width - dp(4));
+                if ("left".equalsIgnoreCase(side)) {
+                    lp.x = leftX;
+                } else if ("right".equalsIgnoreCase(side)) {
+                    lp.x = rightX;
+                } else {
+                    boolean currentlyRight = (lp.x + lp.width / 2) > (screenW() / 2);
+                    lp.x = currentlyRight ? leftX : rightX;
+                }
+                clamp();
+                relayout();
+                prefs().edit().putInt("x", lp.x).putInt("y", lp.y).apply();
+            }
+        });
+    }
+
     public void destroy() {
         hide();
         if (view != null) {
@@ -125,6 +159,7 @@ public class WebOverlayController {
             view = null;
         }
         ready = false;
+        usingLocalFallback = false;
     }
 
     // ------------------------------------------------------------ internals
@@ -183,6 +218,7 @@ public class WebOverlayController {
     private void fail(String reason) {
         if (failed) return;
         failed = true;
+        handler.removeCallbacks(readyTimeout);
         Log.w(TAG, "웹 미니창 사용 불가 → 기존 네이티브 미니창으로 전환: " + reason);
         handler.post(new Runnable() {
             @Override
@@ -192,6 +228,15 @@ public class WebOverlayController {
                 if (wasShowing && fallback != null) fallback.run();
             }
         });
+    }
+
+    private void tryLocalFallback(String reason) {
+        if (usingLocalFallback || failed || view == null) return;
+        usingLocalFallback = true;
+        Log.w(TAG, "원격 overlay.html 로드 실패 → 내장 자산으로 전환: " + reason);
+        handler.removeCallbacks(readyTimeout);
+        handler.postDelayed(readyTimeout, LOCAL_READY_TIMEOUT_MS);
+        view.loadUrl(LOCAL_OVERLAY_URL + "?shell=" + SHELL_VERSION);
     }
 
     private void ensureView() {
@@ -216,6 +261,7 @@ public class WebOverlayController {
         WebSettings s = view.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
+        s.setAllowFileAccess(true);
         s.setTextZoom(100);
         s.setCacheMode(isNetworkConnected() ? WebSettings.LOAD_DEFAULT : WebSettings.LOAD_CACHE_ELSE_NETWORK);
         view.addJavascriptInterface(new Bridge(), "OverlayHost");
@@ -223,7 +269,15 @@ public class WebOverlayController {
             @Override
             public void onReceivedError(WebView v, WebResourceRequest req, WebResourceError err) {
                 if (req != null && req.isForMainFrame() && !ready) {
-                    fail("로드 오류 " + (err != null ? err.getErrorCode() + " " + err.getDescription() : ""));
+                    final String reason = err != null ? err.getErrorCode() + " " + err.getDescription() : "";
+                    if (!usingLocalFallback) {
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() { tryLocalFallback(reason); }
+                        });
+                    } else {
+                        fail("로드 오류 " + reason);
+                    }
                 }
             }
         });
@@ -234,6 +288,7 @@ public class WebOverlayController {
             }
         });
         ready = false;
+        usingLocalFallback = false;
         handler.removeCallbacks(readyTimeout);
         handler.postDelayed(readyTimeout, READY_TIMEOUT_MS);
         view.loadUrl(OVERLAY_URL + "?shell=" + SHELL_VERSION);
@@ -298,26 +353,30 @@ public class WebOverlayController {
         return false;
     }
 
-    private void launchNavi() {
+    private void launchUrlPair(String primaryUrl, String fallbackUrl) {
         try {
-            if (naviUrl.length() > 0) {
-                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(naviUrl));
+            if (primaryUrl != null && primaryUrl.length() > 0) {
+                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(primaryUrl));
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 appContext.startActivity(i);
                 return;
             }
         } catch (Exception e) {
-            Log.w(TAG, "내비 앱 실행 실패, 웹 지도로 전환", e);
+            Log.w(TAG, "내비 앱 실행 실패, 대체 주소로 전환", e);
         }
         try {
-            if (webNaviUrl.length() > 0) {
-                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(webNaviUrl));
+            if (fallbackUrl != null && fallbackUrl.length() > 0) {
+                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl));
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 appContext.startActivity(i);
             }
         } catch (Exception e) {
             Log.w(TAG, "웹 지도 실행 실패", e);
         }
+    }
+
+    private void launchNavi() {
+        launchUrlPair(naviUrl, webNaviUrl);
     }
 
     private static boolean isAllowedMainFn(String fn) {
@@ -337,7 +396,7 @@ public class WebOverlayController {
                     ready = true;
                     pageVersion = version != null ? version : "";
                     handler.removeCallbacks(readyTimeout);
-                    Log.d(TAG, "overlay.html ready v=" + pageVersion);
+                    Log.d(TAG, "overlay.html ready v=" + pageVersion + (usingLocalFallback ? " (local)" : ""));
                     if (showing) render();
                 }
             });
@@ -361,6 +420,11 @@ public class WebOverlayController {
                     relayout();
                 }
             });
+        }
+
+        @JavascriptInterface
+        public void snapEdge(final String side) {
+            WebOverlayController.this.snapEdge(side);
         }
 
         /** 드래그 손잡이(pointerdown)에서 호출 */
@@ -394,6 +458,15 @@ public class WebOverlayController {
         }
 
         @JavascriptInterface
+        public void launchNaviUrl(final String appUrl, final String webUrl) {
+            evalMain("window.onNativeOverlayStartNavi && window.onNativeOverlayStartNavi(false);");
+            handler.post(new Runnable() {
+                @Override
+                public void run() { launchUrlPair(appUrl, webUrl); }
+            });
+        }
+
+        @JavascriptInterface
         public void callPhone(final String rawPhone) {
             handler.post(new Runnable() {
                 @Override
@@ -406,6 +479,44 @@ public class WebOverlayController {
                         appContext.startActivity(i);
                     } catch (Exception e) {
                         Log.w(TAG, "전화 걸기 실패", e);
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void sendSms(final String rawPhone, final String body) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    String cleaned = rawPhone != null ? rawPhone.replaceAll("[^0-9+*#,]", "") : "";
+                    if (cleaned.isEmpty()) return;
+                    try {
+                        Intent i = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + cleaned));
+                        if (body != null && body.length() > 0) i.putExtra("sms_body", body);
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        appContext.startActivity(i);
+                    } catch (Exception e) {
+                        Log.w(TAG, "문자 앱 열기 실패", e);
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void copyText(final String text) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (text == null || text.isEmpty()) return;
+                    try {
+                        ClipboardManager cm = (ClipboardManager) appContext.getSystemService(Context.CLIPBOARD_SERVICE);
+                        if (cm != null) {
+                            cm.setPrimaryClip(ClipData.newPlainText("entercoding", text));
+                            Toast.makeText(appContext, "주소가 복사되었습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "클립보드 복사 실패", e);
                     }
                 }
             });
