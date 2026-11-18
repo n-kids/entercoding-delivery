@@ -101,6 +101,13 @@ public class WebOverlayController {
         setPayload(payload);
         if (!showing) {
             ensureView();
+            if (usingLocalFallback && isNetworkConnected()) {
+                reloadFromServer();
+            } else if (view != null) {
+                try {
+                    view.getSettings().setCacheMode(isNetworkConnected() ? WebSettings.LOAD_DEFAULT : WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                } catch (Exception ignored) {}
+            }
             try {
                 windowManager.addView(view, lp);
                 showing = true;
@@ -124,6 +131,31 @@ public class WebOverlayController {
             try { windowManager.removeView(view); } catch (Exception e) { Log.w(TAG, "removeView", e); }
         }
         showing = false;
+    }
+
+    public void reloadFromServer() {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                failed = false;
+                if (view == null) return;
+                if (!isNetworkConnected()) {
+                    Log.d(TAG, "오프라인 상태라 미니창 새로고침 건너뜀");
+                    return;
+                }
+                try {
+                    WebSettings s = view.getSettings();
+                    s.setCacheMode(WebSettings.LOAD_DEFAULT);
+                    view.clearCache(true);
+                } catch (Exception ignored) {}
+                ready = false;
+                usingLocalFallback = false;
+                handler.removeCallbacks(readyTimeout);
+                handler.postDelayed(readyTimeout, READY_TIMEOUT_MS);
+                view.loadUrl(OVERLAY_URL + "?shell=" + SHELL_VERSION + "&nk_upd=" + System.currentTimeMillis());
+                Log.d(TAG, "미니창 서버 새로고침 시작");
+            }
+        });
     }
 
     public void setCollapsed(boolean collapsed) {
@@ -396,6 +428,11 @@ public class WebOverlayController {
                     ready = true;
                     pageVersion = version != null ? version : "";
                     handler.removeCallbacks(readyTimeout);
+                    if (view != null) {
+                        try {
+                            view.getSettings().setCacheMode(isNetworkConnected() ? WebSettings.LOAD_DEFAULT : WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                        } catch (Exception ignored) {}
+                    }
                     Log.d(TAG, "overlay.html ready v=" + pageVersion + (usingLocalFallback ? " (local)" : ""));
                     if (showing) render();
                 }

@@ -77,6 +77,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -89,6 +91,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -279,18 +282,53 @@ public class FloatingOverlayManager {
         return true;
     }
 
+    private boolean isNetworkConnectedSafe() {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null) {
+                NetworkInfo info = cm.getActiveNetworkInfo();
+                return info != null && info.isConnected();
+            }
+        } catch (Exception ignored) {}
+        return true;
+    }
+
     @JavascriptInterface
     public void forceRefreshFromServer() {
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
+                if (!isNetworkConnectedSafe()) {
+                    Toast.makeText(appContext, "오프라인 상태입니다. 인터넷 연결 후 다시 시도해 주세요.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (webOverlay != null) {
+                    webOverlay.reloadFromServer();
+                }
                 if (webView != null) {
-                    webView.getSettings().setCacheMode(android.webkit.WebSettings.LOAD_DEFAULT);
-                    webView.clearCache(false);
-                    webView.loadUrl("https://n-kids.github.io/entercoding-delivery/?v=" + System.currentTimeMillis());
+                    webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+                    webView.clearCache(true);
+                    webView.loadUrl("https://n-kids.github.io/entercoding-delivery/?nk_upd=" + System.currentTimeMillis());
                 }
             }
         });
+    }
+
+    @JavascriptInterface
+    public void refreshOverlayFromServer() {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (webOverlay != null) {
+                    webOverlay.reloadFromServer();
+                }
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public String getOverlayPageVersion() {
+        return webOverlay != null ? webOverlay.getPageVersion() : "";
     }
 
     @JavascriptInterface

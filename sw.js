@@ -2,7 +2,7 @@
 // 앱 파일 캐시와 시스템 알림을 담당합니다.
 // 원 정보·수량을 Service Worker가 직접 저장했다고 간주하지 않습니다.
 
-const BUILD = 'integrated-20261117-overlay2';
+const BUILD = 'integrated-20261118-autoupdate1';
 
 const SCOPE = new URL(self.registration.scope);
 
@@ -42,7 +42,14 @@ async function cacheFile(cache, name) {
     throw new Error(`${name}: HTTP ${response.status}`);
   }
 
-  await cache.put(appUrl(name), response);
+  if (name === 'index.html') {
+    await Promise.all([
+      cache.put(appUrl(name), response.clone()),
+      cache.put(SCOPE.href, response.clone())
+    ]);
+  } else {
+    await cache.put(appUrl(name), response);
+  }
 }
 
 // 필수 파일 준비 실패 시 설치를 성공으로 처리하지 않습니다.
@@ -99,7 +106,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.origin !== SCOPE.origin) return;
   if (!url.pathname.startsWith(SCOPE.pathname)) return;
-  if (url.pathname.endsWith('/sw.js')) return;
+  if (url.pathname.endsWith('/sw.js') || url.pathname.endsWith('/version.json')) return;
 
   const navigation = request.mode === 'navigate';
   // 미니창(overlay.html)은 오프라인일 때 앱 본 화면(index.html)으로 대체하지 않음
@@ -115,7 +122,7 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(CACHE_NAME);
 
     async function fallback() {
-      const exact = await cache.match(request, { ignoreSearch: overlayPage });
+      const exact = await cache.match(request, { ignoreSearch: overlayPage || navigation || staticAsset });
 
       if (exact) return exact;
 
@@ -132,9 +139,16 @@ self.addEventListener('fetch', (event) => {
       });
 
       if (response.ok) {
-        await cache
-          .put(request, response.clone())
-          .catch(console.warn);
+        const puts = [cache.put(request, response.clone())];
+        if (navigation && !overlayPage) {
+          if (url.search || url.pathname === SCOPE.pathname) {
+            puts.push(cache.put(appUrl('index.html'), response.clone()));
+            puts.push(cache.put(SCOPE.href, response.clone()));
+          }
+        } else if (overlayPage && url.search) {
+          puts.push(cache.put(appUrl('overlay.html'), response.clone()));
+        }
+        await Promise.allSettled(puts).catch(console.warn);
 
         return response;
       }
@@ -197,7 +211,42 @@ self.addEventListener('message', (event) => {
   const data = event.data || {};
 
   if (data.type === 'SKIP_WAITING') {
-    event.waitUntil(self.skipWaiting());
+    event.waitUntil((async () => {
+      await self.skipWaiting();
+      try {
+        event.ports?.[0]?.postMessage({ ok: true, build: BUILD });
+      } catch (e) {}
+    })());
+    return;
+  }
+
+  if (data.type === 'REFRESH_ASSETS') {
+    event.waitUntil((async () => {
+      const allowed = new Set([...REQUIRED_FILES, ...OPTIONAL_FILES]);
+      const requested = Array.isArray(data.files) && data.files.length
+        ? data.files.map((f) => String(f || '').replace(/^\.\//, '')).filter((f) => allowed.has(f))
+        : [...REQUIRED_FILES, ...OPTIONAL_FILES];
+      const targets = requested.length ? requested : [...REQUIRED_FILES, ...OPTIONAL_FILES];
+      const cache = await caches.open(CACHE_NAME);
+      const updated = [];
+      const failed = [];
+      await Promise.allSettled(targets.map(async (name) => {
+        try {
+          await cacheFile(cache, name);
+          updated.push(name);
+        } catch (err) {
+          failed.push({ file: name, error: String(err) });
+        }
+      }));
+      try {
+        event.ports?.[0]?.postMessage({
+          ok: failed.length === 0,
+          build: BUILD,
+          updated,
+          failed
+        });
+      } catch (e) {}
+    })());
     return;
   }
 
