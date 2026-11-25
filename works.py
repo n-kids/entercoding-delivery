@@ -117,11 +117,10 @@ class Works:
             token, exp = self._usr
             if token and time.time() < exp - 300:
                 return token
-            if not self._store_loaded:
-                self._store_loaded = True
-                stored = self._stored_refresh_token()
-                if stored and stored != self._refresh_token:
-                    self._candidates = [stored, self._refresh_token]
+            # 새 접근 토큰이 필요할 때마다 보관소를 다시 읽는다: PC에서 다시 로그인해 저장한 토큰을 재시작 없이 바로 쓰도록 (2026-11-18)
+            stored = self._stored_refresh_token()
+            if stored and stored != self._refresh_token and stored not in self._candidates:
+                self._candidates = [stored, *self._candidates]
             cands = [c for c in dict.fromkeys([*self._candidates, self._refresh_token]) if c]
             if not cands:
                 raise WorksError("NW_USER_REFRESH_TOKEN 이 없어 할 일 API를 쓸 수 없음")
@@ -315,10 +314,32 @@ class Works:
         self._call("PATCH", f"/tasks/{task_id}", user=True, json=body)
         return self.task(task_id)
 
+    @staticmethod
+    def _is_task_done(t):
+        if not isinstance(t, dict):
+            return False
+        if str(t.get("status") or "TODO").upper() == "DONE":
+            return True
+        sts = [str(a.get("status") or "TODO").upper() for a in (t.get("assignees") or []) if isinstance(a, dict)]
+        if not sts:
+            return False
+        if str(t.get("completionCondition") or "ANY_ONE").upper() == "MUST_ALL":
+            return all(x == "DONE" for x in sts)
+        return any(x == "DONE" for x in sts)
+
+    def _my_user_id(self):
+        if not self.admin_id:
+            return None
+        try:
+            return self.user_id_of(self.admin_id)
+        except Exception:
+            return None
+
     def set_task_done(self, task_id, done=True):
         """할 일을 완료(또는 미완료)로 바꾼다.
 
-        관리자는 요청자라서 전체 완료가 막히면, 담당자 완료 API로 담당자 한 명(완료 조건 ANY_ONE)을 완료 처리한다.
+        전체 완료 API가 권한 등으로 막히면 담당자 완료 API로 전환하되,
+        네이버웍스 규칙상 토큰 본인(관리자 계정)의 담당 상태를 우선 시도한다.
         """
         action = "complete" if done else "incomplete"
         try:
@@ -327,9 +348,60 @@ class Works:
         except WorksError as first:
             err = first
         t = self.task(task_id)
-        assignees = [a.get("assigneeId") for a in t.get("assignees", []) if a.get("assigneeId")]
+        if self._is_task_done(t) == bool(done):
+            return
+        raw_assignees = [a for a in (t.get("assignees") or []) if isinstance(a, dict) and a.get("assigneeId")]
+        assignees = [a["assigneeId"] for a in raw_assignees]
         if not assignees:
             raise err
-        targets = assignees if (t.get("completionCondition") == "MUST_ALL" or not done) else assignees[:1]
+        my_id = self._my_user_id()
+        must_all = str(t.get("completionCondition") or "ANY_ONE").upper() == "MUST_ALL"
+
+        def _prioritized(ids):
+            if my_id and my_id in ids:
+                return [my_id] + [i for i in ids if i != my_id]
+            return list(ids)
+
+        if done:
+            pending_ids = [a["assigneeId"] for a in raw_assignees if str(a.get("status") or "TODO").upper() != "DONE"]
+            targets = _prioritized(pending_ids or assignees)
+            if must_all:
+                last_err = err
+                for a in targets:
+                    try:
+                        self._call("POST", f"/tasks/{task_id}/assignees/{a}/complete", user=True)
+                    except WorksError as e:
+                        last_err = e
+                if self._is_task_done(self.task(task_id)):
+                    return
+                raise last_err
+            last_err = err
+            for a in targets:
+                try:
+                    self._call("POST", f"/tasks/{task_id}/assignees/{a}/complete", user=True)
+                    return
+                except WorksError as e:
+                    last_err = e
+            # 관리자가 요청자이지만 담당자 목록에 없는 ANY_ONE 할 일: 본인을 담당자에 추가 후 본인 완료
+            if my_id and my_id not in assignees and t.get("assignorId") == my_id:
+                try:
+                    self.set_task_assignees(task_id, [*assignees, my_id])
+                    self._call("POST", f"/tasks/{task_id}/assignees/{my_id}/complete", user=True)
+                    return
+                except WorksError as e:
+                    last_err = e
+            raise last_err
+
+        done_ids = [a["assigneeId"] for a in raw_assignees if str(a.get("status") or "TODO").upper() == "DONE"]
+        targets = _prioritized(done_ids or assignees)
+        last_err = err
+        succeeded = 0
         for a in targets:
-            self._call("POST", f"/tasks/{task_id}/assignees/{a}/{action}", user=True)
+            try:
+                self._call("POST", f"/tasks/{task_id}/assignees/{a}/incomplete", user=True)
+                succeeded += 1
+            except WorksError as e:
+                last_err = e
+        if succeeded and not self._is_task_done(self.task(task_id)):
+            return
+        raise last_err

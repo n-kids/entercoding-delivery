@@ -179,10 +179,26 @@ def _is_meta_line(text):
     return not s or bool(_META_LINE_RE.search(s))
 
 
-def _parse_single_token(token):
+def _strip_school_prefix(label, school_names=()):
+    """품목 이름 앞에 붙은 원 이름을 뗀다 ('시립풍무푸르지오 만3세 영어' → '만3세 영어')."""
+    out = str(label or "")
+    for h in school_names or ():
+        core = re.sub(r"\s+", "", str(h or ""))
+        if len(core) < 2:
+            continue
+        pat = r"^\s*" + r"\s*".join(re.escape(ch) for ch in core) + r"(?:어린이집|유치원)?\s*"
+        cut = re.sub(pat, "", out)
+        if cut != out and cut.strip():
+            out = cut
+    return out.strip()
+
+
+def _parse_single_token(token, school_names=()):
     """'책상4개', '보석화장대 12', '스마트테트리스 5개 회수' 같은 단일 품목+수량 문자열을 파싱한다."""
     t = re.sub(r"^[\s\-·•*]+", "", _strip_user_id(token)).strip()
-    t = re.sub(r"^원문\s*[:：]\s*", "", t, flags=re.I).strip()
+    t = re.sub(r"^(원문|품목)\s*[:：]\s*", "", t, flags=re.I).strip()
+    if re.match(r"^원\s*[:：]", t):
+        return None
     if not t or _is_meta_line(t) or _PROSE_NOISE_RE.search(t):
         return None
     t_clean = _TRAILING_ACTION_RE.sub("", t).strip(" ,.:·-")
@@ -190,7 +206,7 @@ def _parse_single_token(token):
         return None
     m = _ITEM_QTY_END_RE.match(t_clean)
     if m:
-        name = _TRAILING_ACTION_RE.sub("", m.group(1)).strip(" ,.:·-")
+        name = _strip_school_prefix(_TRAILING_ACTION_RE.sub("", m.group(1)).strip(" ,.:·-"), school_names)
         qty = int(m.group(2))
         unit = (m.group(3) or "개").strip()
         if name and len(name) <= 25 and qty > 0 and not _is_meta_line(name):
@@ -207,7 +223,7 @@ def _parse_single_token(token):
     return None
 
 
-def _parse_items_and_qty(rest, content="", prev_fq=None):
+def _parse_items_and_qty(rest, content="", prev_fq=None, school_names=()):
     """제목 나머지(rest)와 웍스 본문(content)에서 품목 요약 문자열, 총수량, 품목별 수량(fieldQuantities)을 추출한다."""
     rest = _strip_user_id(rest)
     content = _strip_user_id(content)
@@ -216,27 +232,45 @@ def _parse_items_and_qty(rest, content="", prev_fq=None):
     raw_lines = [ln.strip() for ln in re.split(r"[\r\n]+", content) if ln.strip()] if content else []
     content_lines = []
     content_tokens = []
+    original_tokens = []   # '원문: …' 은 제목·품목을 한 번 더 적은 것 → 다른 곳에서 품목을 못 찾을 때만 사용
     for ln in raw_lines:
         if _is_meta_line(ln):
             continue
-        cleaned_ln = re.sub(r"^원문\s*[:：]\s*", "", ln, flags=re.I).strip()
-        if not cleaned_ln or _is_meta_line(cleaned_ln):
+        if re.match(r"^원문\s*[:：]", ln, flags=re.I):
+            original_tokens.extend(x.strip() for x in re.split(r"[,/]+", re.sub(r"^원문\s*[:：]\s*", "", ln, flags=re.I)) if x.strip())
             continue
-        content_lines.append(cleaned_ln)
-        parts = [x.strip() for x in re.split(r"[,/]+", cleaned_ln) if x.strip() and not _is_meta_line(x)]
-        content_tokens.extend(parts)
+        parts = []
+        for x in re.split(r"[,/]+", ln):
+            x = x.strip()
+            if not x or _is_meta_line(x) or re.match(r"^원\s*[:：]", x):
+                continue
+            if re.match(r"^원문\s*[:：]", x, flags=re.I):
+                original_tokens.append(re.sub(r"^원문\s*[:：]\s*", "", x, flags=re.I).strip())
+                continue
+            x = re.sub(r"^품목\s*[:：]\s*", "", x).strip()
+            if x and not _is_meta_line(x):
+                parts.append(x)
+        if parts:
+            content_lines.append(", ".join(parts))
+            content_tokens.extend(parts)
 
     parsed = []
     seen = set()
-    for raw in title_tokens + content_tokens:
-        entry = _parse_single_token(raw)
-        if not entry:
-            continue
-        key = _norm(entry["label"])
-        if not key or key in seen:
-            continue
-        seen.add(key)
-        parsed.append(entry)
+
+    def _add(tokens):
+        for raw in tokens:
+            entry = _parse_single_token(raw, school_names)
+            if not entry:
+                continue
+            key = _norm(entry["label"])
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            parsed.append(entry)
+
+    _add(title_tokens + content_tokens)
+    if not parsed:
+        _add(original_tokens)
 
     # 기존 앱에서 체크하거나 수정한 done / actualQty / checked 상태 보존
     if prev_fq and isinstance(prev_fq, list):
@@ -263,9 +297,17 @@ def _parse_items_and_qty(rest, content="", prev_fq=None):
         qm = re.search(r"(\d+)\s*(개|권|부|세트|박스|set)", f"{rest} {' '.join(content_lines)}", re.I)
         qty_sum = int(qm.group(1)) if qm else 0
 
-    content_summary = ", ".join(
-        ln for ln in content_lines if _norm(ln) and _norm(ln) not in _norm(rest)
-    )
+    summary_parts = []
+    for tok in content_tokens:
+        e = _parse_single_token(tok, school_names)
+        part = f"{e['label']} {e['qty']}" if e else tok
+        k = _norm(part)
+        if not k or (rest and k in _norm(rest)) or any(_norm(x) == k for x in summary_parts):
+            continue
+        if e and _norm(e["label"]) in _norm(rest):
+            continue
+        summary_parts.append(part)
+    content_summary = ", ".join(summary_parts)
     if rest and content_summary:
         items_str = f"{rest} · {content_summary}"
     else:
@@ -288,7 +330,7 @@ def _new_record(t, schools, now_ms, i):
     rest = re.sub(r"^[\s,.:·-]+", "", rest).strip()
 
     school_name = s["name"] if s else first
-    items_str, total_qty, field_quantities = _parse_items_and_qty(rest, content)
+    items_str, total_qty, field_quantities = _parse_items_and_qty(rest, content, school_names=(first, school_name))
     task_type = infer_task_type(title, content)
 
     return {
@@ -483,6 +525,7 @@ def _sync_once(works, is_app_task_fn, reason):
     now_ms = int(time.time() * 1000)
     out = {"added": 0, "updated": 0, "closed": 0, "reopened": 0, "pushed": 0, "failed": 0,
            "linked": 0, "assigneeChanged": 0, "assigneePushed": 0}
+    failed_errors = []
     changed = []
     linked_ids = set()
 
@@ -524,7 +567,10 @@ def _sync_once(works, is_app_task_fn, reason):
         due, who, content = _due(t), _assignees(t), _strip_user_id(t.get("content") or "")
         at = t
         if v.get("worksAssigneePending"):
+            prev_failed = out["failed"]
             at = _push_assignee(works, tid, v, t, out)
+            if out["failed"] > prev_failed and v.get("worksAssigneeError"):
+                failed_errors.append(f"담당자({t.get('title') or tid}): {v['worksAssigneeError']}")
             dirty = True
             if at is not None:
                 who = _assignees(at)
@@ -561,6 +607,7 @@ def _sync_once(works, is_app_task_fn, reason):
                     fresh["items"].split(" · ")[0] if " · " in fresh["items"] else fresh["items"],
                     content,
                     prev_fq=v.get("fieldQuantities"),
+                    school_names=(fresh.get("school"),),
                 )
                 v["items"] = fresh["items"]
                 v["qty"] = total_qty
@@ -593,6 +640,7 @@ def _sync_once(works, is_app_task_fn, reason):
                 except Exception as e:
                     log.warning("웍스 완료 처리 실패 %s: %s", t.get("title"), e)
                     out["failed"] += 1
+                    failed_errors.append(f"완료({t.get('title') or tid}): {e}"[:160])
                     if dirty:
                         changed.append(v)
                     continue
@@ -645,6 +693,7 @@ def _sync_once(works, is_app_task_fn, reason):
             except Exception as e:
                 log.warning("웍스 미완료 처리 실패 %s: %s", tid, e)
                 out["failed"] += 1
+                failed_errors.append(f"미완료({tid}): {e}"[:160])
                 continue
         elif v.get("done") and (v.get("worksSyncPending") or v.get("worksStatus") != "DONE"):
             v.update(worksStatus="DONE", worksSyncPending=False, worksDoneAt=v.get("worksDoneAt") or now_ms)
@@ -658,14 +707,18 @@ def _sync_once(works, is_app_task_fn, reason):
         except Exception as e:
             log.warning("앱 기록 저장 실패 %s: %s", v.get("id"), e)
             out["failed"] += 1
+            failed_errors.append(f"저장({v.get('id')}): {e}"[:160])
     by_type = {}
     for t in tasks:
         k = infer_task_type(t.get("title"), t.get("content"))
         by_type[k] = by_type.get(k, 0) + 1
+    last_err = "; ".join(failed_errors[:3])[:300]
     out.update(ok=True, tasks=len(tasks), byType=by_type, written=len(changed), reason=reason,
                at=int(time.time() * 1000), ms=int((time.time() - started) * 1000))
-    state.update(lastAt=out["at"], lastOk=True, lastError="", last=out)
-    if changed or reason != "timer":
+    if failed_errors:
+        out["failedErrors"] = failed_errors[:5]
+    state.update(lastAt=out["at"], lastOk=(out["failed"] == 0), lastError=last_err, last=out)
+    if changed or out["failed"] or reason != "timer":
         log.info("앱 동기화(%s): 웍스 %d건, 새로 %d, 변경 %d, 담당자 %d, 완료 %d, 재개 %d, 연결 %d, 웍스 반영 %d(담당자 %d), 실패 %d",
                  reason, len(tasks), out["added"], out["updated"], out["assigneeChanged"], out["closed"], out["reopened"],
                  out["linked"], out["pushed"], out["assigneePushed"], out["failed"])

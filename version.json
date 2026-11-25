@@ -1,7 +1,7 @@
 {
-  "appVersion": "2026-11-18.2",
+  "appVersion": "2026-11-25.1",
   "overlayVersion": "2026-11-18.2",
-  "swBuild": "integrated-20261118-autoupdate2",
-  "updatedAt": "2026-11-18T12:00:00Z",
-  "notes": "팝업창/미니창 실행 중 내 위치 기준 가까워진 원 자동 표시 및 자동 전환"
+  "swBuild": "integrated-20261125-worksfix1",
+  "updatedAt": "2026-11-25T09:40:00Z",
+  "notes": "웍스 할 일 완료/미완료 연동 안정화(실시간 덮어쓰기 방지, 반영 대기 항목 정리 보호, 미니창 품목 해제 연동)"
 }

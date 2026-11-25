@@ -5739,19 +5739,30 @@ function speakSchoolQuantity(school, opts = {}) {
       renderPickups();
     });
     document.getElementById('pkClearDoneBtn').addEventListener('click', (e) => {
-      const n = PICKUPS.filter(p => p.done && pkInMode(p)).length;
-      if (!n) { showToast('완료된 할 일이 없습니다.'); return; }
+      const doneInMode = PICKUPS.filter(p => p.done && pkInMode(p));
+      const keptPending = doneInMode.filter(p => p.worksTaskId && p.worksSyncPending);
+      const clearable = doneInMode.filter(p => !(p.worksTaskId && p.worksSyncPending));
+      if (!doneInMode.length) { showToast('완료된 할 일이 없습니다.'); return; }
+      if (!clearable.length) {
+        if (typeof worksRetryPending === 'function') worksRetryPending();
+        showToast(`웍스 반영 대기 중인 ${keptPending.length}건은 반영 완료 후 정리됩니다. 지금 다시 전송을 시도합니다.`);
+        return;
+      }
       const btn = e.currentTarget;
       if (btn.getAttribute('data-confirm') !== '1') {
         btn.setAttribute('data-confirm', '1');
-        btn.textContent = `한 번 더 누르면 ${n}건 정리`;
+        btn.textContent = `한 번 더 누르면 ${clearable.length}건 정리`;
         setTimeout(() => { if (btn.isConnected) { btn.removeAttribute('data-confirm'); btn.textContent = '↺ 완료 정리'; } }, 3000);
         return;
       }
       btn.removeAttribute('data-confirm');
       btn.textContent = '↺ 완료 정리';
-      PICKUPS = PICKUPS.filter(p => !(p.done && pkInMode(p))); savePickups(); renderPickups(); renderList();
-      showToast(`완료된 ${n}건을 정리했습니다.`);
+      const dropIds = new Set(clearable.map(p => p.id));
+      PICKUPS = PICKUPS.filter(p => !dropIds.has(p.id)); savePickups(); renderPickups(); renderList();
+      if (keptPending.length && typeof worksRetryPending === 'function') worksRetryPending();
+      showToast(keptPending.length
+        ? `완료된 ${clearable.length}건을 정리했습니다. (웍스 반영 대기 ${keptPending.length}건은 유지 후 재전송)`
+        : `완료된 ${clearable.length}건을 정리했습니다.`);
     });
     document.getElementById('pkList').addEventListener('click', (e) => {
       const nv = e.target.closest('[data-pk-navi]');
@@ -6019,7 +6030,11 @@ function speakSchoolQuantity(school, opts = {}) {
       try {
         await worksApi(`/app/pickups/${encodeURIComponent(p.worksTaskId)}/${want ? 'complete' : 'incomplete'}`, 'POST');
         const cur = PICKUPS.find(x => x.id === p.id) || p;
-        if (!!cur.done === want) { cur.worksSyncPending = false; cur.worksStatus = want ? 'DONE' : 'TODO'; }
+        if (!!cur.done === want) {
+          cur.worksSyncPending = false;
+          cur.worksStatus = want ? 'DONE' : 'TODO';
+          cur.worksDoneAt = want ? Date.now() : null;
+        }
         savePickups(); renderPickups(); renderList();
         showToast(want ? '웍스 할 일도 완료 처리했습니다.' : '웍스 할 일도 미완료로 되돌렸습니다.');
         return true;
@@ -6211,10 +6226,14 @@ function speakSchoolQuantity(school, opts = {}) {
           }
         }
         if (p.done && !p.worksSyncPending && p.worksStatus === 'DONE') {
-          p.done = false;
-          p.doneAt = null;
-          p.worksClosedRemote = false;
-          reopened++;
+          const since = now - Number(p.worksDoneAt || p.doneAt || 0);
+          if (since >= 120000) {
+            p.done = false;
+            p.doneAt = null;
+            p.worksDoneAt = null;
+            p.worksClosedRemote = false;
+            reopened++;
+          }
         }
         if (!p.done) p.worksStatus = 'TODO';
       });
@@ -6779,6 +6798,19 @@ function speakSchoolQuantity(school, opts = {}) {
       if (r.updated_by === SYNC_CLIENT_ID) return;
       const k = r.kind + '|' + r.rid;
       const cur = syncLocalRecords();
+      const localVal = cur[k];
+      if (r.kind === 'pickup' && localVal && localVal.worksTaskId && (localVal.worksSyncPending || localVal.worksAssigneePending)) {
+        const localDirty = syncSnap[k] !== stableStr(localVal);
+        const doneSatisfied = !localVal.worksSyncPending || (!r.deleted && r.value && !r.value.worksSyncPending && !!r.value.done === !!localVal.done);
+        const assigneeSatisfied = !localVal.worksAssigneePending || (!r.deleted && r.value && !r.value.worksAssigneePending && String(r.value.assignee || '') === String(localVal.assignee || ''));
+        if (localDirty && !(doneSatisfied && assigneeSatisfied)) {
+          if (r.deleted || r.value === null) delete syncSnap[k];
+          else syncSnap[k] = stableStr(r.value);
+          saveSyncSnap();
+          scheduleSync(150);
+          return;
+        }
+      }
       if (r.deleted || r.value === null) { delete cur[k]; delete syncSnap[k]; }
       else { cur[k] = r.value; syncSnap[k] = stableStr(r.value); }
       saveSyncSnap();
@@ -7659,7 +7691,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-18.2';
+    var NK_APP_VERSION = '2026-11-25.1';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.2';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
@@ -9524,13 +9556,21 @@ ${school.address || ''}`;
             const curDone = firstP.done ? tQty : Math.min(tQty, Math.max(0, Number(row.done || 0)));
             const wasDone = !!(firstP.done || (tQty > 0 && curDone >= tQty));
             row.done = wasDone ? 0 : tQty;
-            if (wasDone && firstP.done) {
+            const reopenedFromDone = !!(wasDone && firstP.done);
+            if (reopenedFromDone) {
               firstP.done = false;
               firstP.doneAt = null;
               if (firstP.fieldStatus === '완료') firstP.fieldStatus = '대기';
+              if (firstP.worksTaskId) {
+                firstP.worksSyncPending = true;
+                firstP.worksClosedRemote = false;
+              }
             }
             syncPickupFieldStatus(firstP);
             savePickups();
+            if (reopenedFromDone && firstP.worksTaskId && typeof worksPushDone === 'function') {
+              worksPushDone(firstP);
+            }
             if (typeof renderPickups === 'function') renderPickups();
             renderList();
             updateBgMediaAndPip();
@@ -9592,13 +9632,21 @@ ${school.address || ''}`;
           const curDone = firstP.done ? tQty : Math.min(tQty, Math.max(0, Number(row.done || 0)));
           const nextDone = Math.max(0, Math.min(tQty, curDone + delta));
           row.done = nextDone;
-          if (nextDone < tQty && firstP.done) {
+          const reopenedFromDone = !!(nextDone < tQty && firstP.done);
+          if (reopenedFromDone) {
             firstP.done = false;
             firstP.doneAt = null;
             if (firstP.fieldStatus === '완료') firstP.fieldStatus = '대기';
+            if (firstP.worksTaskId) {
+              firstP.worksSyncPending = true;
+              firstP.worksClosedRemote = false;
+            }
           }
           syncPickupFieldStatus(firstP);
           savePickups();
+          if (reopenedFromDone && firstP.worksTaskId && typeof worksPushDone === 'function') {
+            worksPushDone(firstP);
+          }
           if (typeof renderPickups === 'function') renderPickups();
           renderList();
           updateBgMediaAndPip();
