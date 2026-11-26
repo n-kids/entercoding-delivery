@@ -2247,7 +2247,8 @@ function markSchoolCompletion(schoolId, isDone, opts = {}) {
   const prevFieldOps = s.fieldOps ? JSON.parse(JSON.stringify(s.fieldOps)) : null;
   if (isDone) {
     completedMap[id] = true;
-    s.fieldOps = { ...(s.fieldOps || {}), deliveryStatus: '완료', completedAt: Date.now(), updatedAt: Date.now() };
+    const completedAt = (prevDone && s.fieldOps && s.fieldOps.completedAt) ? s.fieldOps.completedAt : Date.now();
+    s.fieldOps = { ...(s.fieldOps || {}), deliveryStatus: '완료', completedAt, updatedAt: Date.now() };
     if (typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === id && !opts.keepNaviLock) {
       setNaviLockedSchool(null, { skipRender: true });
     }
@@ -4609,7 +4610,10 @@ function speakSchoolQuantity(school, opts = {}) {
         oldList.filter(s => !used.has(s.id)).forEach(s => { delete completedMap[s.id]; delete customCoords[s.id]; });
       }
       SCHOOLS = nextList;
-      if (document.getElementById('importResetDone').checked) { completedMap = {}; autoShownSet = {}; itemChecks = {}; saveItemChecks(); }
+      if (document.getElementById('importResetDone').checked) {
+        completedMap = {}; autoShownSet = {}; itemChecks = {}; saveItemChecks();
+        SCHOOLS.forEach(s => { if (s && s.fieldOps) { s.fieldOps.completedAt = null; if (s.fieldOps.deliveryStatus === '완료') s.fieldOps.deliveryStatus = '대기'; } });
+      }
       currentCursorIndex = 0;
       if (importPhotoBlob) {
         try { await idbPut('sheetPhoto', { blob: importPhotoBlob, at: Date.now() }); showStoredSheetPhoto(); } catch (e) {}
@@ -7691,7 +7695,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-27.1';
+    var NK_APP_VERSION = '2026-11-27.2';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.2';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [

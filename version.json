@@ -1,7 +1,7 @@
 {
-  "appVersion": "2026-11-27.1",
+  "appVersion": "2026-11-27.2",
   "overlayVersion": "2026-11-18.2",
-  "swBuild": "integrated-20261127-dailyreport1",
-  "updatedAt": "2026-11-27T03:00:00Z",
-  "notes": "결과 요약을 하루 단위로 집계(날짜 선택·전날/다음 날 이동, 이전 날짜 완료 누적 제외, 지난 날짜 기록 보관)"
+  "swBuild": "integrated-20261127-dailyreport2",
+  "updatedAt": "2026-11-27T03:15:00Z",
+  "notes": "하루 결과 요약에서 미완료 목록을 제외하고 실제로 완료 처리한 납품·회수 내역만 기록"
 }

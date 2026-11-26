@@ -695,7 +695,7 @@
 
   // 오늘 기록을 하루 로그에 합칩니다.
   // 지금 목록에 남아 있는 항목은 현재 상태를 따르고(완료 취소 반영),
-  // 납품표 교체 등으로 목록에서 사라진 항목은 기록을 그대로 남깁니다.
+  // 납품표 교체 등으로 목록에서 사라진 항목은 완료 기록을 그대로 남깁니다.
   function syncTodayLog() {
     const tKey = todayStr();
     const log = loadDayLog();
@@ -711,14 +711,7 @@
     Object.entries(prev.pickups || {}).forEach(([id, v]) => {
       if (!pickupIds.has(String(id)) && !pickups[id]) pickups[id] = v;
     });
-    // 오늘 시점의 미완료 목록도 함께 남겨 두면 지난 날짜 보고서에서도 볼 수 있습니다.
-    const pending = SCHOOLS
-      .filter(s => !completedMap[s.id])
-      .map(s => {
-        const f = s.fieldOps || {};
-        return { name: s.name, qty: qtyOf(s), status: f.deliveryStatus || '', reason: f.reason || '', revisitDate: f.revisitDate || '' };
-      });
-    log[tKey] = { deliveries, pickups, pending, updatedAt: Date.now() };
+    log[tKey] = { deliveries, pickups, updatedAt: Date.now() };
     saveDayLog(log);
     return log;
   }
@@ -728,91 +721,59 @@
     const isToday = dayKey === tKey;
     const log = isToday ? syncTodayLog() : loadDayLog();
     const live = collectLiveDay(dayKey);
-    const saved = log[dayKey] || { deliveries: {}, pickups: {}, pending: null };
-    const deliveries = { ...(saved.deliveries || {}), ...live.deliveries };
-    const pickupsDone = { ...(saved.pickups || {}), ...live.pickups };
+    const saved = log[dayKey] || { deliveries: {}, pickups: {} };
+    const schoolById = new Map(SCHOOLS.map(s => [String(s.id), s]));
+    const pickupById = new Map((typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) ? PICKUPS : []).map(p => [String(p.id), p]));
+
+    const deliveries = {};
+    Object.entries(saved.deliveries || {}).forEach(([id, v]) => {
+      const cur = schoolById.get(String(id));
+      if (!cur || (completedMap[cur.id] && dayKeyOf(schoolDoneAt(cur)) === dayKey)) {
+        deliveries[id] = v;
+      }
+    });
+    Object.assign(deliveries, live.deliveries);
+
+    const pickupsDone = {};
+    Object.entries(saved.pickups || {}).forEach(([id, v]) => {
+      const cur = pickupById.get(String(id));
+      if (!cur || (cur.done && dayKeyOf(cur.doneAt) === dayKey)) {
+        pickupsDone[id] = v;
+      }
+    });
+    Object.assign(pickupsDone, live.pickups);
+
     const byTime = (a, b) => (a.at || 0) - (b.at || 0);
     const doneList = Object.values(deliveries).sort(byTime);
     const doneQty = doneList.reduce((a, d) => a + (Number(d.qty) || 0), 0);
+    const pkDoneList = Object.values(pickupsDone).sort(byTime);
 
     const lines = [];
     lines.push(`[엔터코딩 납품 결과 보고] ${dayLabel(dayKey)}`);
-
-    let pendingList = [];
-    if (isToday) {
-      pendingList = SCHOOLS.filter(s => !completedMap[s.id]).map(s => {
-        const f = s.fieldOps || {};
-        return { name: s.name, qty: qtyOf(s), status: f.deliveryStatus || '', reason: f.reason || '', revisitDate: f.revisitDate || '' };
-      });
-    } else if (Array.isArray(saved.pending)) {
-      pendingList = saved.pending;
-    }
-    const pendingQty = pendingList.reduce((a, d) => a + (Number(d.qty) || 0), 0);
-    const hasPendingInfo = isToday || Array.isArray(saved.pending);
-
-    if (hasPendingInfo) {
-      const totalCnt = doneList.length + pendingList.length;
-      lines.push(`• 정규 납품: ${doneList.length}/${totalCnt}곳 완료 (${doneQty}/${doneQty + pendingQty}개)`);
-    } else {
-      lines.push(`• 정규 납품: ${doneList.length}곳 완료 (${doneQty}개)`);
-    }
-
-    if (isToday) {
-      const earlier = SCHOOLS.filter(s => completedMap[s.id] && dayKeyOf(schoolDoneAt(s)) !== tKey);
-      if (earlier.length) lines.push(`  (이전 날짜에 완료된 ${earlier.length}곳은 오늘 집계에서 제외)`);
-    }
+    lines.push(`• 정규 납품 완료: ${doneList.length}곳 (${doneQty}개)`);
+    lines.push(`• 회수·추가 처리 완료: ${pkDoneList.length}건`);
 
     if (doneList.length) {
       lines.push('');
-      lines.push('■ 납품 완료 원');
+      lines.push(`■ 납품 완료 원 (${doneList.length}곳)`);
       doneList.forEach((d, i) => {
         const tm = d.at ? ` (${fmtHm(d.at)})` : '';
         lines.push(`${i + 1}. ${d.name} · ${Number(d.qty) || 0}개${tm}`);
       });
     }
-    if (pendingList.length) {
+
+    if (pkDoneList.length) {
       lines.push('');
-      lines.push(isToday ? '■ 미완료 / 보류·재방문 원' : '■ 그날 미완료 / 보류·재방문 원');
-      pendingList.forEach((d, i) => {
-        const st = d.status && d.status !== '대기' && d.status !== '완료' ? `[${d.status}] ` : '';
-        const reason = d.reason ? ` - ${d.reason}` : '';
-        const rev = d.revisitDate ? ` (재방문: ${d.revisitDate})` : '';
-        lines.push(`${i + 1}. ${d.name} · ${Number(d.qty) || 0}개 ${st}${reason}${rev}`.trim());
+      lines.push(`■ 회수·반품·추가 처리 완료 (${pkDoneList.length}건)`);
+      pkDoneList.forEach((p, i) => {
+        const tm = p.at ? ` (${fmtHm(p.at)})` : '';
+        lines.push(`${i + 1}. [${p.type}] ${p.school} · ${p.items}${tm}`);
       });
     }
 
-    const pkDoneList = Object.values(pickupsDone).sort(byTime);
-    const allPickups = typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) ? PICKUPS : [];
-    // 남은 할 일은 오늘 보고서에서만 보여 주고, 기한이 오늘 이후인 일은 건수만 따로 표시합니다.
-    const pkPendingAll = isToday ? allPickups.filter(p => !p.done) : [];
-    const pkPendingNow = pkPendingAll.filter(p => !pickupDue(p) || pickupDue(p) <= dayKey);
-    const pkLater = pkPendingAll.length - pkPendingNow.length;
-    if (pkDoneList.length || pkPendingAll.length) {
+    if (!doneList.length && !pkDoneList.length) {
       lines.push('');
-      const laterTxt = pkLater ? ` (이후 기한 ${pkLater}건 별도)` : '';
-      lines.push(isToday
-        ? `• 회수·추가 업무: 완료 ${pkDoneList.length}건 / 남은 할 일 ${pkPendingNow.length}건${laterTxt}`
-        : `• 회수·추가 업무: 완료 ${pkDoneList.length}건`);
-      if (pkDoneList.length) {
-        lines.push('■ 회수·반품·추가 처리 완료');
-        pkDoneList.forEach((p, i) => {
-          const tm = p.at ? ` (${fmtHm(p.at)})` : '';
-          lines.push(`${i + 1}. [${p.type}] ${p.school} · ${p.items}${tm}`);
-        });
-      }
-      if (pkPendingNow.length) {
-        lines.push('■ 남은 회수·반품·추가');
-        pkPendingNow.forEach((p, i) => {
-          const st = p.fieldStatus && p.fieldStatus !== '대기' ? ` [${p.fieldStatus}]` : '';
-          const due = pickupDue(p) && pickupDue(p) < dayKey ? ` (기한 지남 ${pickupDue(p)})` : '';
-          lines.push(`${i + 1}. [${p.type}] ${p.school} · ${p.items || p.title || ''}${st}${due}`);
-        });
-      }
-    }
-
-    if (!doneList.length && !pkDoneList.length && !isToday && !hasPendingInfo) {
-      lines.push('');
-      lines.push('이 날짜에 기록된 완료 내역이 없습니다.');
+      lines.push('이 날짜에 완료 처리된 내역이 없습니다.');
     }
     return lines.join('\n');
   }
@@ -823,7 +784,7 @@
   reportDlg.innerHTML = `
     <div>
       <h2>📋 하루 납품·회수 결과 요약</h2>
-      <p class="nk-sub">선택한 날짜에 완료한 내역만 모아 보여 줍니다. 카카오톡이나 네이버 웍스에 바로 붙여넣을 수 있습니다.</p>
+      <p class="nk-sub">선택한 날짜에 완료 처리한 납품·회수 내역만 기록됩니다. 카카오톡이나 네이버 웍스에 바로 붙여넣을 수 있습니다.</p>
       <div style="display:flex;gap:6px;align-items:center">
         <button id="nkReportPrevDay" type="button" aria-label="전날" style="min-width:44px;min-height:42px;border-radius:10px;background:#22324b;color:#e2e8f0;font-weight:800">◀</button>
         <input id="nkReportDate" type="date" aria-label="보고 날짜" style="flex:1;margin-top:0;text-align:center">
