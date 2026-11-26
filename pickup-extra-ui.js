@@ -42,9 +42,9 @@
   const box = document.getElementById('pkList');
   if (!box) return;
   function decorate() {
-    box.querySelectorAll('[data-pk-card]').forEach(card => {
-      // 통일된 .dc-card 마크업은 이미 납품 카드와 동일한 4단 구조로 렌더링됨
-      if (card.classList.contains('dc-card')) return;
+    const legacyCards = box.querySelectorAll('[data-pk-card]:not(.dc-card)');
+    if (!legacyCards.length) return;
+    legacyCards.forEach(card => {
       const id = card.getAttribute('data-pk-card');
       const task = typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => String(p.id) === id) : null;
       if (!task) return;
@@ -85,8 +85,8 @@
   }
   const observer = new MutationObserver(() => {
     observer.disconnect();
-    try { decorate(); } finally { observer.observe(box, {childList:true, subtree:true}); }
+    try { decorate(); } finally { observer.observe(box, {childList:true}); }
   });
   decorate();
-  observer.observe(box, {childList:true, subtree:true});
+  observer.observe(box, {childList:true});
 })();

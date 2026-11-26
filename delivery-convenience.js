@@ -670,8 +670,13 @@
       const keys = Object.keys(log).sort();
       const cutoff = shiftDay(todayStr(), -DAY_LOG_KEEP_DAYS);
       keys.forEach(k => { if (k < cutoff) delete log[k]; });
-      localStorage.setItem(DAY_LOG_KEY, JSON.stringify(log));
-    } catch (e) {}
+      const prevStr = localStorage.getItem(DAY_LOG_KEY);
+      const nextStr = JSON.stringify(log);
+      if (nextStr === prevStr) return false;
+      localStorage.setItem(DAY_LOG_KEY, nextStr);
+      if (typeof scheduleSync === 'function') scheduleSync();
+      return true;
+    } catch (e) { return false; }
   }
 
   // 현재 앱 데이터에서 특정 날짜에 완료된 항목만 추립니다.
@@ -711,7 +716,11 @@
     Object.entries(prev.pickups || {}).forEach(([id, v]) => {
       if (!pickupIds.has(String(id)) && !pickups[id]) pickups[id] = v;
     });
-    log[tKey] = { deliveries, pickups, updatedAt: Date.now() };
+    if (Object.keys(deliveries).length || Object.keys(pickups).length) {
+      log[tKey] = { deliveries, pickups };
+    } else {
+      delete log[tKey];
+    }
     saveDayLog(log);
     return log;
   }
@@ -824,7 +833,7 @@
 
   // 보고서를 열지 않아도 오늘 기록이 남도록 주기적으로, 그리고 앱을 벗어날 때 저장합니다.
   try { syncTodayLog(); } catch (e) {}
-  setInterval(() => { try { syncTodayLog(); } catch (e) {} }, 60 * 1000);
+  setInterval(() => { if (document.visibilityState !== 'hidden') { try { syncTodayLog(); } catch (e) {} } }, 60 * 1000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { syncTodayLog(); } catch (e) {} } });
   window.addEventListener('pagehide', () => { try { syncTodayLog(); } catch (e) {} });
 

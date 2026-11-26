@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -5473,88 +5473,7 @@ function speakSchoolQuantity(school, opts = {}) {
         sec.classList.add('hidden');
         sec.innerHTML = '';
       }
-      return;
-      const pendingAll = (PICKUPS || []).filter(p => p && !p.done);
-      const unlinked = pendingAll.filter(p => !pkLinkedSchool(p));
-      const extraPending = pendingAll.filter(p => pkGroupOf(p) === 'extra');
-      const returnPending = pendingAll.filter(p => pkGroupOf(p) === 'return');
-      if (!pendingAll.length) {
-        sec.classList.add('hidden');
-        sec.innerHTML = '';
-        return;
-      }
-      sec.classList.remove('hidden');
-      sec.innerHTML = `
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="px-2 py-0.5 rounded-lg text-[11px] font-black bg-violet-500 text-white">🔗 네이버 웍스 할 일 자동 연동</span>
-            <span class="text-xs sm:text-sm font-extrabold text-white">
-              추가 납품 <strong class="text-violet-300">${extraPending.length}건</strong> · 회수·반품 <strong class="text-rose-300">${returnPending.length}건</strong>
-              ${unlinked.length ? `<span class="text-amber-300 ml-1">(정규 납품 외 단독 방문 원 ${unlinked.length}건)</span>` : ''}
-            </span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button type="button" data-dw-sync class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition">🔄 웍스 동기화</button>
-            ${extraPending.length ? `<button type="button" data-dw-tab="extra" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-violet-500/25 hover:bg-violet-500/40 text-violet-200 border border-violet-500/40 transition">➕ 추가 납품 탭 보기</button>` : ''}
-            ${returnPending.length ? `<button type="button" data-dw-tab="pickup" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-rose-500/25 hover:bg-rose-500/40 text-rose-200 border border-rose-500/40 transition">↩️ 회수·반품 탭 보기</button>` : ''}
-          </div>
-        </div>
-        ${unlinked.length ? `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
-          ${unlinked.map(p => {
-            const c = pkCoords(p); const ok = hasCoords(c);
-            const dist = pkDistance(p);
-            const fqs = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
-            return `
-            <article class="rounded-xl border border-violet-500/40 bg-slate-950/90 p-3 space-y-2" data-pk-card="${escapeHtml(p.id)}">
-              <div class="flex flex-wrap items-center justify-between gap-1.5">
-                <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
-                  <span class="px-2 py-0.5 rounded-full border ${PK_TYPE_CLASS[p.type] || PK_TYPE_CLASS['기타']}">${pkIcon(p.type)} ${escapeHtml(p.type)}</span>
-                  <span class="text-base font-black text-white">${escapeHtml(pkGuessFullName(p.school || '원 이름 없음'))}</span>
-                  ${p.qty ? `<span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-extrabold">총 ${p.qty}개</span>` : ''}
-                </div>
-                ${dist !== null ? `<span class="text-xs font-bold text-indigo-300">${formatDistance(dist)}</span>` : ''}
-              </div>
-              <p class="text-xs sm:text-sm font-bold text-amber-200 leading-snug">${escapeHtml(p.items || p.title)}</p>
-              ${fqs.length ? `<div class="flex flex-wrap gap-1">${fqs.map(q => `<span class="px-2 py-0.5 rounded-md bg-slate-800 text-violet-200 border border-slate-700 text-[11px] font-bold">${escapeHtml(q.label)} <strong class="text-amber-300">${q.qty}</strong></span>`).join('')}</div>` : ''}
-              <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold pt-0.5">
-                ${ok ? `<a href="${pkNaviUrl(p)}" target="_top" data-dw-navi="${escapeHtml(p.id)}" class="py-2 px-2 rounded-lg bg-[#03C75A] text-slate-950 text-center font-black">🟢 내비 출발</a>`
-                     : `<button type="button" data-dw-geo="${escapeHtml(p.id)}" class="py-2 px-2 rounded-lg bg-amber-500 text-slate-950 font-black">📍 위치 찾기</button>`}
-                <button type="button" data-dw-detail="${escapeHtml(p.id)}" class="py-2 px-2 rounded-lg bg-slate-800 text-amber-300 border border-slate-700">🔍 상세보기</button>
-                <button type="button" data-dw-done="${escapeHtml(p.id)}" class="py-2 px-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-extrabold">✓ 완료</button>
-              </div>
-            </article>`;
-          }).join('')}
-        </div>` : ''}
-      `;
     }
-    document.getElementById('deliveryWorksSection')?.addEventListener('click', (e) => {
-      const syncBtn = e.target.closest('[data-dw-sync]');
-      if (syncBtn) { worksFetchPickups(false); return; }
-      const tabBtn = e.target.closest('[data-dw-tab]');
-      if (tabBtn) { setView(tabBtn.getAttribute('data-dw-tab')); return; }
-      const nv = e.target.closest('[data-dw-navi]');
-      if (nv) {
-        e.preventDefault();
-        const pid = nv.getAttribute('data-dw-navi');
-        const p = PICKUPS.find(x => x.id === pid);
-        if (p) {
-          if (typeof setNaviLockedPickup === 'function') setNaviLockedPickup(p.id);
-          if (typeof ensureBgKeepAliveOnNavi === 'function') { try { ensureBgKeepAliveOnNavi(pkPseudo(p)); } catch (err) {} }
-          if (typeof openPopupModeWithScreenOff === 'function') openPopupModeWithScreenOff();
-          const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(p) : null;
-          const webUrl = `https://map.naver.com/p/search/${encodeURIComponent((s && s.address) || p.address || (s ? s.name : p.school) || '')}`;
-          openNaverMapApp(pkNaviUrl(p), webUrl);
-        }
-        return;
-      }
-      const geoBtn = e.target.closest('[data-dw-geo]');
-      if (geoBtn) { pkOpenGeo(geoBtn.getAttribute('data-dw-geo')); return; }
-      const dtBtn = e.target.closest('[data-dw-detail]');
-      if (dtBtn) { openPkDetail(dtBtn.getAttribute('data-dw-detail')); return; }
-      const doneBtn = e.target.closest('[data-dw-done]');
-      if (doneBtn) { pkToggleDone(doneBtn.getAttribute('data-dw-done')); return; }
-    });
     document.getElementById('schoolList')?.addEventListener('click', (e) => {
       const d = e.target.closest('[data-pk-done]');
       if (d) {
@@ -5913,12 +5832,30 @@ function speakSchoolQuantity(school, opts = {}) {
       el.className = 'text-[11px] -mt-1 ' + ({ ok: 'text-emerald-300', warn: 'text-amber-300', err: 'text-rose-300' }[kind] || 'text-slate-400');
       el.textContent = text;
     }
-    async function worksToken() {
+    async function worksToken(forceRefresh) {
       if (!sb || !syncUser) return null;
-      try { const { data } = await sb.auth.getSession(); return data && data.session ? data.session.access_token : null; } catch (e) { return null; }
+      try {
+        if (forceRefresh && typeof sb.auth.refreshSession === 'function') {
+          const { data } = await sb.auth.refreshSession();
+          if (data && data.session && data.session.access_token) return data.session.access_token;
+        }
+        const { data } = await sb.auth.getSession();
+        const session = data && data.session;
+        if (!session) return null;
+        const expMs = Number(session.expires_at || 0) * 1000;
+        if (expMs && expMs - Date.now() < 60000 && typeof sb.auth.refreshSession === 'function') {
+          try {
+            const refreshed = await sb.auth.refreshSession();
+            if (refreshed && refreshed.data && refreshed.data.session && refreshed.data.session.access_token) {
+              return refreshed.data.session.access_token;
+            }
+          } catch (e) {}
+        }
+        return session.access_token || null;
+      } catch (e) { return null; }
     }
-    async function worksApi(path, method, payload) {
-      const token = await worksToken();
+    async function worksApi(path, method, payload, _retried) {
+      const token = await worksToken(!!_retried);
       if (!token) { const e = new Error('공유 로그인이 필요합니다. 상단 ☁️ 공유 로그인을 먼저 해 주세요.'); e.login = true; throw e; }
       const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 60000);
       try {
@@ -5929,6 +5866,10 @@ function speakSchoolQuantity(school, opts = {}) {
           opts.body = JSON.stringify(payload);
         }
         const res = await fetch(WORKS_BOT_URL + path, opts);
+        if (res.status === 401 && !_retried && sb && typeof sb.auth.refreshSession === 'function') {
+          clearTimeout(tm);
+          return await worksApi(path, method, payload, true);
+        }
         let body = null; try { body = await res.json(); } catch (e) {}
         if (!res.ok) throw new Error((body && (body.detail || body.message)) || ('HTTP ' + res.status));
         return body || {};
@@ -6277,22 +6218,24 @@ function speakSchoolQuantity(school, opts = {}) {
           const r = await worksApi('/app/pickups/sync?all=1&include_manual=1&unfiltered=1', 'POST', { all: true, include_manual: true, includeManual: true, unfiltered: true });
           worksServerSync = true; worksLastFetchAt = Date.now();
           if (typeof syncPullAll === 'function') { try { await syncPullAll(); } catch (e) {} }
-          // 또한 /app/pickups 목록도 함께 조회하여 사용자가 직접 등록한 할 일이나 본문 품목이 누락 없이 반영되도록 병합
+          // 수동 불러오기(!auto)일 때만 추가 /app/pickups 조회로 누락 보정 (자동 주기 동기화는 서버 30초 동기화 + syncPullAll 로 충분)
           let extraAdded = 0;
-          try {
-            const listData = await worksApi('/app/pickups?all=1&include_manual=1&unfiltered=1');
-            const rawTasks = [
-              ...(Array.isArray(listData.tasks) ? listData.tasks : []),
-              ...(Array.isArray(listData.allTasks) ? listData.allTasks : []),
-              ...(Array.isArray(listData.manualTasks) ? listData.manualTasks : []),
-              ...(Array.isArray(r.tasksList) ? r.tasksList : [])
-            ];
-            if (rawTasks.length) {
-              const up = worksUpsertTasks(rawTasks, { checkClosed: false });
-              extraAdded = up.added.length;
-              if (up.added.length) pkAutoGeocode(up.added.filter(p => !pkLinkedSchool(p)));
-            }
-          } catch (e) {}
+          if (!auto) {
+            try {
+              const listData = await worksApi('/app/pickups?all=1&include_manual=1&unfiltered=1');
+              const rawTasks = [
+                ...(Array.isArray(listData.tasks) ? listData.tasks : []),
+                ...(Array.isArray(listData.allTasks) ? listData.allTasks : []),
+                ...(Array.isArray(listData.manualTasks) ? listData.manualTasks : []),
+                ...(Array.isArray(r.tasksList) ? r.tasksList : [])
+              ];
+              if (rawTasks.length) {
+                const up = worksUpsertTasks(rawTasks, { checkClosed: false });
+                extraAdded = up.added.length;
+                if (up.added.length) pkAutoGeocode(up.added.filter(p => !pkLinkedSchool(p)));
+              }
+            } catch (e) {}
+          }
           pkEnrichWorks();
           savePickups(); renderPickups(); renderList();
           const totalAdded = (r.added || 0) + extraAdded;
@@ -6634,17 +6577,37 @@ function speakSchoolQuantity(school, opts = {}) {
       Object.keys(itemChecks).forEach(id => { const v = itemChecks[id]; if (v && Object.keys(v).length) m['check|' + id] = v; });
       try { ['kakaoKey', 'geminiKey'].forEach(k => { if (SETTINGS[k]) m['setting|' + k] = SETTINGS[k]; }); } catch (e) {}
       (PICKUPS || []).forEach(p => { if (p && p.id) m['pickup|' + p.id] = p; });
+      try {
+        const rawLog = localStorage.getItem('nk_daily_result_log_v1');
+        const dayLog = rawLog ? JSON.parse(rawLog) : null;
+        if (dayLog && typeof dayLog === 'object') {
+          Object.keys(dayLog).forEach(dk => {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dk)) return;
+            const entry = dayLog[dk];
+            if (!entry || typeof entry !== 'object') return;
+            const deliveries = (entry.deliveries && typeof entry.deliveries === 'object') ? entry.deliveries : {};
+            const pickups = (entry.pickups && typeof entry.pickups === 'object') ? entry.pickups : {};
+            if (Object.keys(deliveries).length || Object.keys(pickups).length) {
+              m['meta|daylog:' + dk] = { deliveries, pickups };
+            }
+          });
+        }
+      } catch (e) {}
       return m;
     }
 
     function syncApplyState(m) {
-      const schools = {}, done = {}, coords = {}, checks = {}, sets = {}, pickups = [];
+      const schools = {}, done = {}, coords = {}, checks = {}, sets = {}, pickups = [], daylogs = {};
       let order = [];
       Object.keys(m).forEach(k => {
         const [kind, rid] = syncSplit(k); const v = m[k];
         if (v === undefined || v === null) return;
         if (kind === 'school') schools[rid] = v;
         else if (kind === 'meta' && rid === 'order' && Array.isArray(v)) order = v;
+        else if (kind === 'meta' && rid.indexOf('daylog:') === 0 && v && typeof v === 'object') {
+          const dk = rid.slice(7);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dk)) daylogs[dk] = v;
+        }
         else if (kind === 'done') done[rid] = true;
         else if (kind === 'coord') coords[rid] = v;
         else if (kind === 'check') checks[rid] = v;
@@ -6667,6 +6630,19 @@ function speakSchoolQuantity(school, opts = {}) {
         localStorage.setItem('entercoding_coords_v1', JSON.stringify(customCoords));
         localStorage.setItem('entercoding_itemchecks_v1', JSON.stringify(itemChecks));
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(SETTINGS));
+        if (Object.keys(daylogs).length) {
+          let localLog = {};
+          try { localLog = JSON.parse(localStorage.getItem('nk_daily_result_log_v1') || '{}') || {}; } catch (e) {}
+          Object.keys(daylogs).forEach(dk => {
+            const rv = daylogs[dk] || {};
+            const lv = (localLog[dk] && typeof localLog[dk] === 'object') ? localLog[dk] : {};
+            localLog[dk] = {
+              deliveries: { ...(lv.deliveries || {}), ...(rv.deliveries || {}) },
+              pickups: { ...(lv.pickups || {}), ...(rv.pickups || {}) }
+            };
+          });
+          localStorage.setItem('nk_daily_result_log_v1', JSON.stringify(localLog));
+        }
       } catch (e) {}
       if (currentCursorIndex >= SCHOOLS.length) currentCursorIndex = 0;
     }
@@ -6802,21 +6778,29 @@ function speakSchoolQuantity(school, opts = {}) {
       if (r.updated_by === SYNC_CLIENT_ID) return;
       const k = r.kind + '|' + r.rid;
       const cur = syncLocalRecords();
-      const localVal = cur[k];
-      if (r.kind === 'pickup' && localVal && localVal.worksTaskId && (localVal.worksSyncPending || localVal.worksAssigneePending)) {
-        const localDirty = syncSnap[k] !== stableStr(localVal);
-        const doneSatisfied = !localVal.worksSyncPending || (!r.deleted && r.value && !r.value.worksSyncPending && !!r.value.done === !!localVal.done);
-        const assigneeSatisfied = !localVal.worksAssigneePending || (!r.deleted && r.value && !r.value.worksAssigneePending && String(r.value.assignee || '') === String(localVal.assignee || ''));
-        if (localDirty && !(doneSatisfied && assigneeSatisfied)) {
-          if (r.deleted || r.value === null) delete syncSnap[k];
-          else syncSnap[k] = stableStr(r.value);
+      const hasLocal = k in cur;
+      const localVal = hasLocal ? cur[k] : undefined;
+      const localStr = hasLocal ? stableStr(localVal) : undefined;
+      const localDirty = syncHasSnap && (localStr !== syncSnap[k]);
+      const remoteEmpty = !!(r.deleted || r.value === null);
+      const remoteStr = remoteEmpty ? undefined : stableStr(r.value);
+      if (localDirty && localStr !== remoteStr) {
+        let acceptRemote = false;
+        if (r.kind === 'pickup' && localVal && localVal.worksTaskId && (localVal.worksSyncPending || localVal.worksAssigneePending)) {
+          const doneSatisfied = !localVal.worksSyncPending || (!remoteEmpty && !r.value.worksSyncPending && !!r.value.done === !!localVal.done);
+          const assigneeSatisfied = !localVal.worksAssigneePending || (!remoteEmpty && !r.value.worksAssigneePending && String(r.value.assignee || '') === String(localVal.assignee || ''));
+          acceptRemote = doneSatisfied && assigneeSatisfied;
+        }
+        if (!acceptRemote && ['school', 'done', 'check', 'coord', 'pickup'].includes(r.kind)) {
+          if (remoteEmpty) delete syncSnap[k];
+          else syncSnap[k] = remoteStr;
           saveSyncSnap();
           scheduleSync(150);
           return;
         }
       }
-      if (r.deleted || r.value === null) { delete cur[k]; delete syncSnap[k]; }
-      else { cur[k] = r.value; syncSnap[k] = stableStr(r.value); }
+      if (remoteEmpty) { delete cur[k]; delete syncSnap[k]; }
+      else { cur[k] = r.value; syncSnap[k] = remoteStr; }
       saveSyncSnap();
       syncApplyState(cur);
       syncRerender();
@@ -6836,6 +6820,19 @@ function speakSchoolQuantity(school, opts = {}) {
         });
     }
 
+    function maybeAutoWorksSync(minGapMs) {
+      if (typeof worksFetchPickups !== 'function') return;
+      const hasPending = Array.isArray(PICKUPS) && PICKUPS.some(p => p && p.worksTaskId && (p.worksSyncPending || p.worksAssigneePending));
+      if (hasPending && typeof worksRetryPending === 'function') {
+        try { worksRetryPending(); } catch (e) {}
+      }
+      // 서버 실시간 동기화가 켜져 있으면 Supabase 실시간·syncPullAll로 이미 최신 상태이므로 5분 안전망 주기로만 호출
+      const gap = worksServerSync === true ? Math.max(minGapMs, 300000) : minGapMs;
+      if (Date.now() - worksLastFetchAt >= gap) {
+        try { worksFetchPickups(true); } catch (e) {}
+      }
+    }
+
     async function syncStart(user) {
       syncUser = user;
       setTimeout(() => { try { if (Date.now() - worksLastFetchAt > 45000) worksFetchPickups(true); } catch (e) {} }, 1800);
@@ -6848,9 +6845,7 @@ function speakSchoolQuantity(school, opts = {}) {
       syncPullTimer = setInterval(() => {
         if (document.visibilityState === 'visible') {
           syncPullAll();
-          if (typeof worksFetchPickups === 'function' && Date.now() - worksLastFetchAt >= 55000) {
-            try { worksFetchPickups(true); } catch (e) {}
-          }
+          maybeAutoWorksSync(55000);
         }
       }, 60000);
     }
@@ -6885,7 +6880,7 @@ function speakSchoolQuantity(school, opts = {}) {
 
     window.addEventListener('online', () => { if (syncUser) { setSyncState('loading'); syncPullAll(); } });
     window.addEventListener('offline', () => { if (syncUser) setSyncState('offline'); });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && syncUser) { syncPullAll(); if (typeof worksFetchPickups === 'function' && Date.now() - worksLastFetchAt >= 30000) { try { worksFetchPickups(true); } catch (e) {} } } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && syncUser) { syncPullAll(); maybeAutoWorksSync(30000); } });
 
     // ---------- sync modal ----------
     function askSyncConflict() {
@@ -7695,7 +7690,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-27.3';
+    var NK_APP_VERSION = '2026-11-27.4';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.2';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
@@ -9782,11 +9777,16 @@ ${school.address || ''}`;
       if (best.kind === 'delivery' && best.school) {
         const s = best.school;
         markSchoolCompletion(s.id, true, { skipUndo: !!opts.skipUndo });
+        const leftPickups = typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(s) : [];
         renderList();
         updateNaviLockBanner();
         nkSyncAutoOverlayTrackingKey();
         updateBgMediaAndPip();
-        if (!opts.silent) showToast(`✅ [${s.name}] 납품 완료 처리되었습니다!`);
+        if (!opts.silent) {
+          showToast(leftPickups.length
+            ? `✅ [${s.name}] 납품 완료! ⚠️ 미완료 회수·추가 ${leftPickups.length}건이 남아 있습니다.`
+            : `✅ [${s.name}] 납품 완료 처리되었습니다!`);
+        }
         return true;
       }
       return false;
@@ -11095,8 +11095,10 @@ ${school.address || ''}`;
       }
       function commit(){
         try{
-          const values=[[SCHOOLS_KEY,JSON.stringify(SCHOOLS)],['entercoding_completed_v1',JSON.stringify(completedMap)],[PICKUPS_KEY,JSON.stringify(PICKUPS)]];
-          values.forEach(([k,v])=>{localStorage.setItem(k,v);if(localStorage.getItem(k)!==v)throw Error('저장 검증 실패');});localError='';localAt=Date.now();scheduleSync();renderList();renderPickups();status();return true;
+          const okState=typeof saveState==='function'?saveState():false;
+          const okPickups=typeof savePickups==='function'?savePickups():false;
+          if(!okState||!okPickups)throw Error('저장 검증 실패');
+          localError='';localAt=Date.now();renderList();renderPickups();status();return true;
         }catch(e){localError=e.message;status();showToast('기기 저장 실패. 창을 닫지 말고 저장을 다시 시도하세요.');return false;}
       }
       const stateOptions=(value)=>['대기','부분 완료','재방문','완료'].map(v=>`<option ${v===value?'selected':''}>${v}</option>`).join('');
@@ -11157,7 +11159,7 @@ ${school.address || ''}`;
         }
       };
       panel.onkeydown=e=>{if(e.key==='Escape'){panel.hidden=true;focusBack?.focus();}if(e.key==='Tab'){const list=[...panel.querySelectorAll('button,input,textarea,select')].filter(x=>!x.disabled),first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}};
-      window.addEventListener('online',()=>{status();scheduleSync(0);});window.addEventListener('offline',status);setInterval(status,1800);status();
+      window.addEventListener('online',()=>{status();scheduleSync(0);});window.addEventListener('offline',status);document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='hidden')status();});setInterval(()=>{if(document.visibilityState!=='hidden')status();},5000);status();
     })();
 
 // Notification deep-link review; never claim completion with no save acknowledgement.

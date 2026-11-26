@@ -2,7 +2,7 @@
 // 앱 파일 캐시와 시스템 알림을 담당합니다.
 // 원 정보·수량을 Service Worker가 직접 저장했다고 간주하지 않습니다.
 
-const BUILD = 'integrated-20261127-dailyreport3';
+const BUILD = 'integrated-20261127-auditfix1';
 
 const SCOPE = new URL(self.registration.scope);
 
@@ -31,6 +31,20 @@ const OPTIONAL_FILES = [
   'icon-512.png'
 ];
 
+const PINNED_CDN_PREFIXES = [
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@',
+  'https://unpkg.com/leaflet@1.9.4/'
+];
+
+const OPTIONAL_CDN_URLS = [
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+];
+
+const isPinnedCdnAsset = (href) =>
+  PINNED_CDN_PREFIXES.some((prefix) => href.startsWith(prefix));
+
 const appUrl = (name) => new URL(name, SCOPE).href;
 
 async function cacheFile(cache, name) {
@@ -52,6 +66,19 @@ async function cacheFile(cache, name) {
   }
 }
 
+async function cachePinnedCdn(cache, cdnUrl) {
+  const response = await fetch(cdnUrl, {
+    mode: 'cors',
+    credentials: 'omit'
+  });
+
+  if (!response.ok) {
+    throw new Error(`${cdnUrl}: HTTP ${response.status}`);
+  }
+
+  await cache.put(cdnUrl, response);
+}
+
 // 필수 파일 준비 실패 시 설치를 성공으로 처리하지 않습니다.
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -61,15 +88,17 @@ self.addEventListener('install', (event) => {
       REQUIRED_FILES.map((name) => cacheFile(cache, name))
     );
 
-    const results = await Promise.allSettled(
-      OPTIONAL_FILES.map((name) => cacheFile(cache, name))
-    );
+    const results = await Promise.allSettled([
+      ...OPTIONAL_FILES.map((name) => cacheFile(cache, name)),
+      ...OPTIONAL_CDN_URLS.map((cdnUrl) => cachePinnedCdn(cache, cdnUrl))
+    ]);
 
+    const optionalNames = [...OPTIONAL_FILES, ...OPTIONAL_CDN_URLS];
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         console.warn(
           '선택 캐시 파일을 준비하지 못했습니다:',
-          OPTIONAL_FILES[index]
+          optionalNames[index]
         );
       }
     });
@@ -98,12 +127,47 @@ self.addEventListener('activate', (event) => {
 });
 
 // HTML 및 정적 파일: 네트워크 우선, 실패 시 캐시 사용.
-// API 요청·POST 요청·다른 출처 요청은 처리하지 않습니다.
+// 버전이 고정된 필수 외부 라이브러리(Supabase·Leaflet)는 캐시 우선으로 오프라인 실행을 지원합니다.
+// API 요청·POST 요청·그 외 다른 출처 요청은 처리하지 않습니다.
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
   if (request.method !== 'GET') return;
+
+  if (isPinnedCdnAsset(url.href)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(url.href);
+      if (cached) return cached;
+
+      try {
+        const response = await fetch(url.href, {
+          mode: 'cors',
+          credentials: 'omit'
+        });
+
+        if (response.ok) {
+          await cache.put(url.href, response.clone()).catch(console.warn);
+        }
+
+        return response;
+      } catch (_) {
+        try {
+          return await fetch(request);
+        } catch (__) {
+          return new Response('Offline CDN resource unavailable', {
+            status: 503,
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8'
+            }
+          });
+        }
+      }
+    })());
+    return;
+  }
+
   if (url.origin !== SCOPE.origin) return;
   if (!url.pathname.startsWith(SCOPE.pathname)) return;
   if (url.pathname.endsWith('/sw.js') || url.pathname.endsWith('/version.json')) return;

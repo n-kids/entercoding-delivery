@@ -114,7 +114,10 @@
       if(!quantities.length||inputs.some((input,i)=>input.value.trim()===''||!Number.isSafeInteger(Number(input.value))||Number(input.value)<0||Number(input.value)>Math.max(0,Number(quantities[i].qty)||0))){error.textContent='처리 수량을 0부터 전체 수량 사이의 정수로 입력하세요.';return;}
       p.fieldQuantities=quantities.map((q,i)=>({...q,done:Number(inputs[i].value)}));
     }else if(selected){p.manualWorkflow={status:selected,note:dialog.querySelector('#rwNote').value.trim(),updatedAt:new Date().toISOString()};}else delete p.manualWorkflow;
-    try{const raw=JSON.stringify(PICKUPS);localStorage.setItem(PICKUPS_KEY,raw);if(localStorage.getItem(PICKUPS_KEY)!==raw)throw new Error('verify');}
+    try{
+      if(typeof savePickups==='function'){if(!savePickups())throw new Error('verify');}
+      else{const raw=JSON.stringify(PICKUPS);localStorage.setItem(PICKUPS_KEY,raw);if(localStorage.getItem(PICKUPS_KEY)!==raw)throw new Error('verify');}
+    }
     catch(_){if(previous===undefined)delete p[key];else p[key]=previous;error.textContent='기기에 저장하지 못했습니다. 저장 공간·권한을 확인하고 다시 시도하세요.';return;}
     dialog.close();
     if(typeof renderPickups==='function')renderPickups();
@@ -123,7 +126,6 @@
     if(typeof showToast==='function')showToast('기기에 저장했습니다. 서버 동기화는 별도로 진행됩니다.');
   });
   new MutationObserver(update).observe(box,{childList:true});
-  setInterval(()=>{if(document.visibilityState!=='hidden')update();},1500);
-  document.addEventListener('visibilitychange',update);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='hidden')update();});
   update();
 })();

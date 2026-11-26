@@ -119,6 +119,6 @@
   window.addEventListener('online', render);
   window.addEventListener('offline', render);
   document.addEventListener('visibilitychange', render);
-  setInterval(() => { if (document.visibilityState !== 'hidden') render(); }, 700);
+  setInterval(() => { if (document.visibilityState !== 'hidden') render(); }, 4000);
   render();
 })();

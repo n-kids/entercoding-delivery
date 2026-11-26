@@ -87,7 +87,7 @@
   }
   const observer = new MutationObserver(update);
   observer.observe(box,{childList:true});
-  setInterval(() => { if (document.visibilityState !== 'hidden') update(); },1500);
+  setInterval(() => { if (document.visibilityState !== 'hidden') update(); }, 60000);
   document.addEventListener('visibilitychange',update);
   update();
 })();

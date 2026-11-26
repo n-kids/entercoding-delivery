@@ -1,7 +1,7 @@
 {
-  "appVersion": "2026-11-27.3",
+  "appVersion": "2026-11-27.4",
   "overlayVersion": "2026-11-18.2",
-  "swBuild": "integrated-20261127-dailyreport3",
-  "updatedAt": "2026-11-27T03:25:00Z",
-  "notes": "하루 결과 요약에서 웍스에서 완료된 할 일을 제외하고 납품 앱에서 직접 완료한 내역만 기록"
+  "swBuild": "integrated-20261127-auditfix1",
+  "updatedAt": "2026-11-27T04:10:00Z",
+  "notes": "웍스 인증 토큰 자동 갱신·실시간 덮어쓰기 방지·하루 결과 기기 간 동기화·오프라인 CDN 캐시·배터리/폴링 최적화 등 10건 일괄 개선"
 }
