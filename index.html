@@ -485,7 +485,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
             <button id="openInstallModalBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition text-left sm:text-center">
               📱 앱 설치 & APK 가이드
             </button>
-            <button id="openDailyReportBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/30 transition text-left sm:text-center" title="오늘 납품·회수 결과 요약 보고서 생성 및 복사">
+            <button id="openDailyReportBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/30 transition text-left sm:text-center" title="하루 단위 납품·회수 결과 요약 보고서 생성 및 복사">
               📋 오늘 결과 요약
             </button>
             <button id="downloadStandaloneBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition text-left sm:text-center" title="현재 앱을 단독 HTML 파일로 백업 저장">
@@ -7691,7 +7691,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-25.1';
+    var NK_APP_VERSION = '2026-11-27.1';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.2';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
@@ -8298,8 +8298,9 @@ function speakSchoolQuantity(school, opts = {}) {
       if(data.type!=='SW_COMPLETE_ITEM')return {ok:false,error:'지원하지 않는 요청입니다.'};
       if(!school&&!pickups.length)return {ok:false,error:'완료할 항목을 찾지 못했습니다.'};
       if(school){
-        const old=completedMap[school.id];completedMap[school.id]=true;
-        if(!saveState()){if(old===undefined)delete completedMap[school.id];else completedMap[school.id]=old;return {ok:false,error:'원 정보 기기 저장 실패'};}
+        const old=completedMap[school.id];const oldOps=school.fieldOps?JSON.parse(JSON.stringify(school.fieldOps)):school.fieldOps;completedMap[school.id]=true;
+        if(!old)school.fieldOps={...(school.fieldOps||{}),deliveryStatus:'완료',completedAt:Date.now(),updatedAt:Date.now()};
+        if(!saveState()){if(old===undefined)delete completedMap[school.id];else completedMap[school.id]=old;school.fieldOps=oldOps;return {ok:false,error:'원 정보 기기 저장 실패'};}
       }
       if(pickups.length){
         const before=JSON.parse(JSON.stringify(pickups));

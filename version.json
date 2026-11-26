@@ -1,7 +1,7 @@
 {
-  "appVersion": "2026-11-25.1",
+  "appVersion": "2026-11-27.1",
   "overlayVersion": "2026-11-18.2",
-  "swBuild": "integrated-20261125-worksfix1",
-  "updatedAt": "2026-11-25T09:40:00Z",
-  "notes": "웍스 할 일 완료/미완료 연동 안정화(실시간 덮어쓰기 방지, 반영 대기 항목 정리 보호, 미니창 품목 해제 연동)"
+  "swBuild": "integrated-20261127-dailyreport1",
+  "updatedAt": "2026-11-27T03:00:00Z",
+  "notes": "결과 요약을 하루 단위로 집계(날짜 선택·전날/다음 날 이동, 이전 날짜 완료 누적 제외, 지난 날짜 기록 보관)"
 }

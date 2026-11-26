@@ -631,15 +631,206 @@
     if (typeof showToast === 'function') showToast(`[${s.name}] 현장 메모와 상태를 저장했습니다.`);
   });
 
-  // ---- 6. 오늘 납품 결과 요약 보고서 ----
+  // ---- 6. 하루 단위 납품 결과 요약 보고서 ----
+  // 완료 체크가 날짜와 상관없이 누적되어 요약이 계속 쌓이던 문제를 막기 위해
+  // 완료 시각(completedAt / doneAt) 기준으로 선택한 하루만 집계합니다.
+  // 납품표 교체·완료 초기화 뒤에도 지난 날짜를 볼 수 있도록 하루 기록을 기기에 따로 보관합니다.
+  const DAY_LOG_KEY = 'nk_daily_result_log_v1';
+  const DAY_LOG_KEEP_DAYS = 60;
+  const dayKeyOf = (ms) => {
+    if (!ms) return '';
+    const d = new Date(ms);
+    if (isNaN(d.getTime())) return '';
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const shiftDay = (key, delta) => {
+    const [y, m, d] = key.split('-').map(Number);
+    return dayKeyOf(new Date(y, m - 1, d + delta).getTime());
+  };
+  const dayLabel = (key) => {
+    const [y, m, d] = key.split('-').map(Number);
+    const w = ['일', '월', '화', '수', '목', '금', '토'][new Date(y, m - 1, d).getDay()];
+    return `${key} (${w})`;
+  };
+  const qtyOf = (s) => (typeof grandTotal === 'function' ? grandTotal(s) : 0);
+  const schoolDoneAt = (s) => {
+    const f = s.fieldOps || {};
+    return f.completedAt || null;
+  };
+  const pickupDue = (p) => (p && /^\d{4}-\d{2}-\d{2}$/.test(p.due || '') ? p.due : '');
+
+  function loadDayLog() {
+    try {
+      const v = JSON.parse(localStorage.getItem(DAY_LOG_KEY) || '{}');
+      return v && typeof v === 'object' ? v : {};
+    } catch (e) { return {}; }
+  }
+  function saveDayLog(log) {
+    try {
+      const keys = Object.keys(log).sort();
+      const cutoff = shiftDay(todayStr(), -DAY_LOG_KEEP_DAYS);
+      keys.forEach(k => { if (k < cutoff) delete log[k]; });
+      localStorage.setItem(DAY_LOG_KEY, JSON.stringify(log));
+    } catch (e) {}
+  }
+
+  // 현재 앱 데이터에서 특정 날짜에 완료된 항목만 추립니다.
+  function collectLiveDay(dayKey) {
+    const deliveries = {};
+    SCHOOLS.forEach(s => {
+      if (!completedMap[s.id]) return;
+      const at = schoolDoneAt(s);
+      if (dayKeyOf(at) !== dayKey) return;
+      deliveries[s.id] = { name: s.name, qty: qtyOf(s), at };
+    });
+    const pickups = {};
+    if (typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS)) {
+      PICKUPS.forEach(p => {
+        if (!p.done || dayKeyOf(p.doneAt) !== dayKey) return;
+        pickups[p.id] = { type: p.type || '', school: p.school || '', items: p.items || p.title || '', at: p.doneAt };
+      });
+    }
+    return { deliveries, pickups };
+  }
+
+  // 오늘 기록을 하루 로그에 합칩니다.
+  // 지금 목록에 남아 있는 항목은 현재 상태를 따르고(완료 취소 반영),
+  // 납품표 교체 등으로 목록에서 사라진 항목은 기록을 그대로 남깁니다.
+  function syncTodayLog() {
+    const tKey = todayStr();
+    const log = loadDayLog();
+    const prev = log[tKey] || { deliveries: {}, pickups: {} };
+    const live = collectLiveDay(tKey);
+    const schoolIds = new Set(SCHOOLS.map(s => String(s.id)));
+    const pickupIds = new Set((typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) ? PICKUPS : []).map(p => String(p.id)));
+    const deliveries = { ...live.deliveries };
+    Object.entries(prev.deliveries || {}).forEach(([id, v]) => {
+      if (!schoolIds.has(String(id)) && !deliveries[id]) deliveries[id] = v;
+    });
+    const pickups = { ...live.pickups };
+    Object.entries(prev.pickups || {}).forEach(([id, v]) => {
+      if (!pickupIds.has(String(id)) && !pickups[id]) pickups[id] = v;
+    });
+    // 오늘 시점의 미완료 목록도 함께 남겨 두면 지난 날짜 보고서에서도 볼 수 있습니다.
+    const pending = SCHOOLS
+      .filter(s => !completedMap[s.id])
+      .map(s => {
+        const f = s.fieldOps || {};
+        return { name: s.name, qty: qtyOf(s), status: f.deliveryStatus || '', reason: f.reason || '', revisitDate: f.revisitDate || '' };
+      });
+    log[tKey] = { deliveries, pickups, pending, updatedAt: Date.now() };
+    saveDayLog(log);
+    return log;
+  }
+
+  function buildDailyReportText(dayKey) {
+    const tKey = todayStr();
+    const isToday = dayKey === tKey;
+    const log = isToday ? syncTodayLog() : loadDayLog();
+    const live = collectLiveDay(dayKey);
+    const saved = log[dayKey] || { deliveries: {}, pickups: {}, pending: null };
+    const deliveries = { ...(saved.deliveries || {}), ...live.deliveries };
+    const pickupsDone = { ...(saved.pickups || {}), ...live.pickups };
+    const byTime = (a, b) => (a.at || 0) - (b.at || 0);
+    const doneList = Object.values(deliveries).sort(byTime);
+    const doneQty = doneList.reduce((a, d) => a + (Number(d.qty) || 0), 0);
+
+    const lines = [];
+    lines.push(`[엔터코딩 납품 결과 보고] ${dayLabel(dayKey)}`);
+
+    let pendingList = [];
+    if (isToday) {
+      pendingList = SCHOOLS.filter(s => !completedMap[s.id]).map(s => {
+        const f = s.fieldOps || {};
+        return { name: s.name, qty: qtyOf(s), status: f.deliveryStatus || '', reason: f.reason || '', revisitDate: f.revisitDate || '' };
+      });
+    } else if (Array.isArray(saved.pending)) {
+      pendingList = saved.pending;
+    }
+    const pendingQty = pendingList.reduce((a, d) => a + (Number(d.qty) || 0), 0);
+    const hasPendingInfo = isToday || Array.isArray(saved.pending);
+
+    if (hasPendingInfo) {
+      const totalCnt = doneList.length + pendingList.length;
+      lines.push(`• 정규 납품: ${doneList.length}/${totalCnt}곳 완료 (${doneQty}/${doneQty + pendingQty}개)`);
+    } else {
+      lines.push(`• 정규 납품: ${doneList.length}곳 완료 (${doneQty}개)`);
+    }
+
+    if (isToday) {
+      const earlier = SCHOOLS.filter(s => completedMap[s.id] && dayKeyOf(schoolDoneAt(s)) !== tKey);
+      if (earlier.length) lines.push(`  (이전 날짜에 완료된 ${earlier.length}곳은 오늘 집계에서 제외)`);
+    }
+
+    if (doneList.length) {
+      lines.push('');
+      lines.push('■ 납품 완료 원');
+      doneList.forEach((d, i) => {
+        const tm = d.at ? ` (${fmtHm(d.at)})` : '';
+        lines.push(`${i + 1}. ${d.name} · ${Number(d.qty) || 0}개${tm}`);
+      });
+    }
+    if (pendingList.length) {
+      lines.push('');
+      lines.push(isToday ? '■ 미완료 / 보류·재방문 원' : '■ 그날 미완료 / 보류·재방문 원');
+      pendingList.forEach((d, i) => {
+        const st = d.status && d.status !== '대기' && d.status !== '완료' ? `[${d.status}] ` : '';
+        const reason = d.reason ? ` - ${d.reason}` : '';
+        const rev = d.revisitDate ? ` (재방문: ${d.revisitDate})` : '';
+        lines.push(`${i + 1}. ${d.name} · ${Number(d.qty) || 0}개 ${st}${reason}${rev}`.trim());
+      });
+    }
+
+    const pkDoneList = Object.values(pickupsDone).sort(byTime);
+    const allPickups = typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) ? PICKUPS : [];
+    // 남은 할 일은 오늘 보고서에서만 보여 주고, 기한이 오늘 이후인 일은 건수만 따로 표시합니다.
+    const pkPendingAll = isToday ? allPickups.filter(p => !p.done) : [];
+    const pkPendingNow = pkPendingAll.filter(p => !pickupDue(p) || pickupDue(p) <= dayKey);
+    const pkLater = pkPendingAll.length - pkPendingNow.length;
+    if (pkDoneList.length || pkPendingAll.length) {
+      lines.push('');
+      const laterTxt = pkLater ? ` (이후 기한 ${pkLater}건 별도)` : '';
+      lines.push(isToday
+        ? `• 회수·추가 업무: 완료 ${pkDoneList.length}건 / 남은 할 일 ${pkPendingNow.length}건${laterTxt}`
+        : `• 회수·추가 업무: 완료 ${pkDoneList.length}건`);
+      if (pkDoneList.length) {
+        lines.push('■ 회수·반품·추가 처리 완료');
+        pkDoneList.forEach((p, i) => {
+          const tm = p.at ? ` (${fmtHm(p.at)})` : '';
+          lines.push(`${i + 1}. [${p.type}] ${p.school} · ${p.items}${tm}`);
+        });
+      }
+      if (pkPendingNow.length) {
+        lines.push('■ 남은 회수·반품·추가');
+        pkPendingNow.forEach((p, i) => {
+          const st = p.fieldStatus && p.fieldStatus !== '대기' ? ` [${p.fieldStatus}]` : '';
+          const due = pickupDue(p) && pickupDue(p) < dayKey ? ` (기한 지남 ${pickupDue(p)})` : '';
+          lines.push(`${i + 1}. [${p.type}] ${p.school} · ${p.items || p.title || ''}${st}${due}`);
+        });
+      }
+    }
+
+    if (!doneList.length && !pkDoneList.length && !isToday && !hasPendingInfo) {
+      lines.push('');
+      lines.push('이 날짜에 기록된 완료 내역이 없습니다.');
+    }
+    return lines.join('\n');
+  }
+
   const reportDlg = document.createElement('dialog');
   reportDlg.id = 'nkDailyReportDialog';
   reportDlg.className = 'nk-dialog';
   reportDlg.innerHTML = `
     <div>
-      <h2>📋 오늘 납품·회수 결과 요약</h2>
-      <p class="nk-sub">카카오톡이나 네이버 웍스에 바로 붙여넣어 일일 보고할 수 있습니다.</p>
-      <textarea id="nkReportTextarea" rows="12" readonly style="min-height:240px;font-size:13px;line-height:1.55"></textarea>
+      <h2>📋 하루 납품·회수 결과 요약</h2>
+      <p class="nk-sub">선택한 날짜에 완료한 내역만 모아 보여 줍니다. 카카오톡이나 네이버 웍스에 바로 붙여넣을 수 있습니다.</p>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button id="nkReportPrevDay" type="button" aria-label="전날" style="min-width:44px;min-height:42px;border-radius:10px;background:#22324b;color:#e2e8f0;font-weight:800">◀</button>
+        <input id="nkReportDate" type="date" aria-label="보고 날짜" style="flex:1;margin-top:0;text-align:center">
+        <button id="nkReportNextDay" type="button" aria-label="다음 날" style="min-width:44px;min-height:42px;border-radius:10px;background:#22324b;color:#e2e8f0;font-weight:800">▶</button>
+        <button id="nkReportToday" type="button" style="min-width:52px;min-height:42px;border-radius:10px;background:#065f46;color:#d1fae5;font-size:13px;font-weight:800">오늘</button>
+      </div>
+      <textarea id="nkReportTextarea" rows="12" readonly style="min-height:240px;font-size:13px;line-height:1.55;margin-top:10px"></textarea>
       <div class="nk-dlg-actions">
         <button id="nkReportCloseBtn" type="button" class="nk-btn-cancel">닫기</button>
         <button id="nkReportCopyBtn" type="button" class="nk-btn-copy">📋 결과 복사하기</button>
@@ -648,64 +839,33 @@
   `;
   document.body.appendChild(reportDlg);
 
-  function buildDailyReportText() {
-    const tStr = todayStr();
-    const doneSchools = SCHOOLS.filter(s => !!completedMap[s.id]);
-    const pendingSchools = SCHOOLS.filter(s => !completedMap[s.id]);
-    const doneQty = doneSchools.reduce((a, s) => a + (typeof grandTotal === 'function' ? grandTotal(s) : 0), 0);
-    const totalQty = SCHOOLS.reduce((a, s) => a + (typeof grandTotal === 'function' ? grandTotal(s) : 0), 0);
-
-    const lines = [];
-    lines.push(`[엔터코딩 납품 결과 보고] ${tStr}`);
-    lines.push(`• 정규 납품: ${doneSchools.length}/${SCHOOLS.length}곳 완료 (${doneQty}/${totalQty}개)`);
-    if (doneSchools.length) {
-      lines.push('');
-      lines.push('■ 납품 완료 원');
-      doneSchools.forEach((s, i) => {
-        const tm = s.fieldOps && s.fieldOps.completedAt ? ` (${fmtHm(s.fieldOps.completedAt)})` : '';
-        const q = typeof grandTotal === 'function' ? grandTotal(s) : 0;
-        lines.push(`${i + 1}. ${s.name} · ${q}개${tm}`);
-      });
-    }
-    if (pendingSchools.length) {
-      lines.push('');
-      lines.push('■ 미완료 / 보류·재방문 원');
-      pendingSchools.forEach((s, i) => {
-        const f = s.fieldOps || {};
-        const st = f.deliveryStatus && f.deliveryStatus !== '대기' ? `[${f.deliveryStatus}] ` : '';
-        const reason = f.reason ? ` - ${f.reason}` : '';
-        const rev = f.revisitDate ? ` (재방문: ${f.revisitDate})` : '';
-        const q = typeof grandTotal === 'function' ? grandTotal(s) : 0;
-        lines.push(`${i + 1}. ${s.name} · ${q}개 ${st}${reason}${rev}`.trim());
-      });
-    }
-    if (typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) && PICKUPS.length) {
-      const pkDoneToday = PICKUPS.filter(p => p.done && (!p.doneAt || new Date(p.doneAt).toDateString() === new Date().toDateString()));
-      const pkPending = PICKUPS.filter(p => !p.done);
-      lines.push('');
-      lines.push(`• 회수·추가 업무: 완료 ${pkDoneToday.length}건 / 남은 할 일 ${pkPending.length}건`);
-      if (pkDoneToday.length) {
-        lines.push('■ 회수·반품·추가 처리 완료');
-        pkDoneToday.forEach((p, i) => {
-          const tm = p.doneAt ? ` (${fmtHm(p.doneAt)})` : '';
-          lines.push(`${i + 1}. [${p.type}] ${p.school} · ${p.items || p.title || ''}${tm}`);
-        });
-      }
-      if (pkPending.length) {
-        lines.push('■ 남은 회수·반품·추가');
-        pkPending.forEach((p, i) => {
-          const st = p.fieldStatus && p.fieldStatus !== '대기' ? ` [${p.fieldStatus}]` : '';
-          lines.push(`${i + 1}. [${p.type}] ${p.school} · ${p.items || p.title || ''}${st}`);
-        });
-      }
-    }
-    return lines.join('\n');
+  let reportDayKey = todayStr();
+  function renderReportDay(key) {
+    const tKey = todayStr();
+    reportDayKey = key > tKey ? tKey : key;
+    const input = document.getElementById('nkReportDate');
+    input.value = reportDayKey;
+    input.max = tKey;
+    document.getElementById('nkReportNextDay').disabled = reportDayKey >= tKey;
+    document.getElementById('nkReportNextDay').style.opacity = reportDayKey >= tKey ? '.4' : '1';
+    document.getElementById('nkReportTextarea').value = buildDailyReportText(reportDayKey);
   }
-
   function openDailyReportDialog() {
-    document.getElementById('nkReportTextarea').value = buildDailyReportText();
+    renderReportDay(todayStr());
     reportDlg.showModal();
   }
+  document.getElementById('nkReportPrevDay').addEventListener('click', () => renderReportDay(shiftDay(reportDayKey, -1)));
+  document.getElementById('nkReportNextDay').addEventListener('click', () => renderReportDay(shiftDay(reportDayKey, 1)));
+  document.getElementById('nkReportToday').addEventListener('click', () => renderReportDay(todayStr()));
+  document.getElementById('nkReportDate').addEventListener('change', (e) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) renderReportDay(e.target.value);
+  });
+
+  // 보고서를 열지 않아도 오늘 기록이 남도록 주기적으로, 그리고 앱을 벗어날 때 저장합니다.
+  try { syncTodayLog(); } catch (e) {}
+  setInterval(() => { try { syncTodayLog(); } catch (e) {} }, 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { syncTodayLog(); } catch (e) {} } });
+  window.addEventListener('pagehide', () => { try { syncTodayLog(); } catch (e) {} });
 
   document.getElementById('openDailyReportBtn')?.addEventListener('click', openDailyReportDialog);
   document.getElementById('nkReportCloseBtn').addEventListener('click', () => reportDlg.close());
@@ -724,7 +884,7 @@
       try { copied = document.execCommand('copy'); } catch (e) {}
     }
     if (typeof showToast === 'function') {
-      showToast(copied ? '📋 오늘 납품 결과를 클립보드에 복사했습니다!' : '텍스트를 직접 선택해 복사해 주세요.');
+      showToast(copied ? `📋 ${reportDayKey} 납품 결과를 클립보드에 복사했습니다!` : '텍스트를 직접 선택해 복사해 주세요.');
     }
   });
 
