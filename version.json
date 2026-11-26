@@ -1,7 +1,7 @@
 {
-  "appVersion": "2026-11-27.2",
+  "appVersion": "2026-11-27.3",
   "overlayVersion": "2026-11-18.2",
-  "swBuild": "integrated-20261127-dailyreport2",
-  "updatedAt": "2026-11-27T03:15:00Z",
-  "notes": "하루 결과 요약에서 미완료 목록을 제외하고 실제로 완료 처리한 납품·회수 내역만 기록"
+  "swBuild": "integrated-20261127-dailyreport3",
+  "updatedAt": "2026-11-27T03:25:00Z",
+  "notes": "하루 결과 요약에서 웍스에서 완료된 할 일을 제외하고 납품 앱에서 직접 완료한 내역만 기록"
 }

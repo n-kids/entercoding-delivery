@@ -686,7 +686,7 @@
     const pickups = {};
     if (typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS)) {
       PICKUPS.forEach(p => {
-        if (!p.done || dayKeyOf(p.doneAt) !== dayKey) return;
+        if (!p.done || p.worksClosedRemote || dayKeyOf(p.doneAt) !== dayKey) return;
         pickups[p.id] = { type: p.type || '', school: p.school || '', items: p.items || p.title || '', at: p.doneAt };
       });
     }
@@ -694,7 +694,7 @@
   }
 
   // 오늘 기록을 하루 로그에 합칩니다.
-  // 지금 목록에 남아 있는 항목은 현재 상태를 따르고(완료 취소 반영),
+  // 지금 목록에 남아 있는 항목은 현재 상태를 따르고(완료 취소·웍스 원격 완료 제외 반영),
   // 납품표 교체 등으로 목록에서 사라진 항목은 완료 기록을 그대로 남깁니다.
   function syncTodayLog() {
     const tKey = todayStr();
@@ -737,7 +737,7 @@
     const pickupsDone = {};
     Object.entries(saved.pickups || {}).forEach(([id, v]) => {
       const cur = pickupById.get(String(id));
-      if (!cur || (cur.done && dayKeyOf(cur.doneAt) === dayKey)) {
+      if (!cur || (cur.done && !cur.worksClosedRemote && dayKeyOf(cur.doneAt) === dayKey)) {
         pickupsDone[id] = v;
       }
     });
@@ -773,7 +773,7 @@
 
     if (!doneList.length && !pkDoneList.length) {
       lines.push('');
-      lines.push('이 날짜에 완료 처리된 내역이 없습니다.');
+      lines.push('이 날짜에 납품 앱에서 완료 처리된 내역이 없습니다.');
     }
     return lines.join('\n');
   }
@@ -784,7 +784,7 @@
   reportDlg.innerHTML = `
     <div>
       <h2>📋 하루 납품·회수 결과 요약</h2>
-      <p class="nk-sub">선택한 날짜에 완료 처리한 납품·회수 내역만 기록됩니다. 카카오톡이나 네이버 웍스에 바로 붙여넣을 수 있습니다.</p>
+      <p class="nk-sub">선택한 날짜에 납품 앱에서 직접 완료 처리한 내역만 기록됩니다. (웍스에서 완료된 할 일 제외)</p>
       <div style="display:flex;gap:6px;align-items:center">
         <button id="nkReportPrevDay" type="button" aria-label="전날" style="min-width:44px;min-height:42px;border-radius:10px;background:#22324b;color:#e2e8f0;font-weight:800">◀</button>
         <input id="nkReportDate" type="date" aria-label="보고 날짜" style="flex:1;margin-top:0;text-align:center">
