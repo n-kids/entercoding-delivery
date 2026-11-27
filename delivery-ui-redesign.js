@@ -876,9 +876,11 @@
     const remainQty = schools.filter(s => !comp[s.id]).reduce((acc, s) => acc + (bridge().grandTotal ? bridge().grandTotal(s) : 0), 0);
 
     const lock = bridge().getNaviLock ? bridge().getNaviLock() : {};
-    const lockedSchool = lock.schoolId != null ? schools.find(s => s.id === Number(lock.schoolId) && !comp[s.id]) : null;
+    const isHid = (s) => typeof window.isSchoolHiddenInPopupToday === 'function' && window.isSchoolHiddenInPopupToday(s);
+    const lockedSchool = lock.schoolId != null ? schools.find(s => s.id === Number(lock.schoolId) && !comp[s.id] && !isHid(s)) : null;
     const pool = (Array.isArray(filtered) && filtered.length ? filtered : schools).filter(s => !comp[s.id]);
-    const next = lockedSchool || pool[0] || schools.find(s => !comp[s.id]) || null;
+    const activePool = pool.filter(s => !isHid(s));
+    const next = lockedSchool || activePool[0] || schools.find(s => !comp[s.id] && !isHid(s)) || pool[0] || schools.find(s => !comp[s.id]) || null;
 
     let nextHtml = '<div style="font-size:14px;font-weight:900;color:#34d399;text-align:center;padding:4px 0">🎉 모든 정규 납품이 완료되었습니다!</div>';
     if (next) {

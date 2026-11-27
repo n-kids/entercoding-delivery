@@ -109,21 +109,39 @@
     e.preventDefault();const p=taskById(activeId);const error=dialog.querySelector('#rwError');
     if(!p||p.done||snapshot!==JSON.stringify([p.done,p.fieldQuantities,p.manualWorkflow])){error.textContent='업무 내용이 변경되었습니다. 닫은 뒤 다시 확인하세요.';return;}
     const key=mode==='partial'?'fieldQuantities':'manualWorkflow';const previous=p[key];
+    const prevHidden = p.popupHiddenDate;
+    const prevFieldStatus = p.fieldStatus;
+    const isHoldHide = mode !== 'partial' && (selected === 'hold' || selected === 'revisit');
+    const todayKey = typeof window.nkLocalTodayKey === 'function' ? window.nkLocalTodayKey() : '';
+    const fieldStatusMap = { hold: '보류', revisit: '재방문', contact: '연락필요' };
     if(mode==='partial'){
       const inputs=[...dialog.querySelectorAll('[data-quantity-index]')];
       if(!quantities.length||inputs.some((input,i)=>input.value.trim()===''||!Number.isSafeInteger(Number(input.value))||Number(input.value)<0||Number(input.value)>Math.max(0,Number(quantities[i].qty)||0))){error.textContent='처리 수량을 0부터 전체 수량 사이의 정수로 입력하세요.';return;}
       p.fieldQuantities=quantities.map((q,i)=>({...q,done:Number(inputs[i].value)}));
-    }else if(selected){p.manualWorkflow={status:selected,note:dialog.querySelector('#rwNote').value.trim(),updatedAt:new Date().toISOString()};}else delete p.manualWorkflow;
+    }else if(selected){
+      p.manualWorkflow={status:selected,note:dialog.querySelector('#rwNote').value.trim(),popupHiddenDate:isHoldHide?todayKey:'',updatedAt:new Date().toISOString()};
+      p.fieldStatus=fieldStatusMap[selected]||'';
+      p.popupHiddenDate=isHoldHide?todayKey:'';
+      p.statusUpdatedAt=Date.now();
+    }else{
+      delete p.manualWorkflow;
+      p.fieldStatus='';
+      p.popupHiddenDate='';
+      p.statusUpdatedAt=Date.now();
+    }
     try{
       if(typeof savePickups==='function'){if(!savePickups())throw new Error('verify');}
       else{const raw=JSON.stringify(PICKUPS);localStorage.setItem(PICKUPS_KEY,raw);if(localStorage.getItem(PICKUPS_KEY)!==raw)throw new Error('verify');}
     }
-    catch(_){if(previous===undefined)delete p[key];else p[key]=previous;error.textContent='기기에 저장하지 못했습니다. 저장 공간·권한을 확인하고 다시 시도하세요.';return;}
+    catch(_){if(previous===undefined)delete p[key];else p[key]=previous;if(prevHidden===undefined)delete p.popupHiddenDate;else p.popupHiddenDate=prevHidden;if(prevFieldStatus===undefined)delete p.fieldStatus;else p.fieldStatus=prevFieldStatus;error.textContent='기기에 저장하지 못했습니다. 저장 공간·권한을 확인하고 다시 시도하세요.';return;}
     dialog.close();
+    if(isHoldHide&&typeof window.nkReleasePopupLockIfHidden==='function'){try{window.nkReleasePopupLockIfHidden('pickup',p.id);}catch(_){}}
     if(typeof renderPickups==='function')renderPickups();
+    if(typeof syncNativeAndDomOverlays==='function')syncNativeAndDomOverlays();
+    if(typeof updateBgMediaAndPip==='function')updateBgMediaAndPip();
     update();
     if(typeof scheduleSync==='function')scheduleSync();
-    if(typeof showToast==='function')showToast('기기에 저장했습니다. 서버 동기화는 별도로 진행됩니다.');
+    if(typeof showToast==='function')showToast(isHoldHide?'저장했습니다 · 오늘 팝업창에서 숨깁니다.':'기기에 저장했습니다. 서버 동기화는 별도로 진행됩니다.');
   });
   new MutationObserver(update).observe(box,{childList:true});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='hidden')update();});

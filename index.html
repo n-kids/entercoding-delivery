@@ -2297,14 +2297,15 @@ function markSchoolCompletion(schoolId, isDone, opts = {}) {
   if (isDone) {
     completedMap[id] = true;
     const completedAt = (prevDone && s.fieldOps && s.fieldOps.completedAt) ? s.fieldOps.completedAt : Date.now();
-    s.fieldOps = { ...(s.fieldOps || {}), deliveryStatus: '완료', completedAt, updatedAt: Date.now() };
+    s.fieldOps = { ...(s.fieldOps || {}), deliveryStatus: '완료', popupHiddenDate: '', completedAt, updatedAt: Date.now() };
     if (typeof activeNaviSchoolId !== 'undefined' && activeNaviSchoolId === id && !opts.keepNaviLock) {
       setNaviLockedSchool(null, { skipRender: true });
     }
   } else {
     completedMap[id] = false;
     if (s.fieldOps) {
-      s.fieldOps = { ...s.fieldOps, deliveryStatus: s.fieldOps.deliveryStatus === '완료' ? '대기' : (s.fieldOps.deliveryStatus || '대기'), completedAt: null, updatedAt: Date.now() };
+      const nextStatus = s.fieldOps.deliveryStatus === '완료' ? '대기' : (s.fieldOps.deliveryStatus || '대기');
+      s.fieldOps = { ...s.fieldOps, deliveryStatus: nextStatus, popupHiddenDate: nextStatus === '대기' ? '' : s.fieldOps.popupHiddenDate, completedAt: null, updatedAt: Date.now() };
     }
   }
   saveState();
@@ -2772,7 +2773,7 @@ function speakSchoolQuantity(school, opts = {}) {
       const accuracyOk = userAccuracy === null || userAccuracy <= Math.max(150, radiusMeters);
 
       if (userLat !== null && userLng !== null) {
-        const pendingWithDist = enriched.filter(s => !completedMap[s.id] && s.dist !== null);
+        const pendingWithDist = enriched.filter(s => !completedMap[s.id] && s.dist !== null && (typeof isSchoolHiddenInPopupToday !== 'function' || !isSchoolHiddenInPopupToday(s)));
         pendingWithDist.sort((a, b) => a.dist - b.dist);
 
         const banner = document.getElementById('nearestBanner');
@@ -2844,13 +2845,14 @@ function speakSchoolQuantity(school, opts = {}) {
         const isNear = s.dist !== null && s.dist <= radiusMeters;
         const fOps = s.fieldOps || {};
         const fStatus = !isDone && fOps.deliveryStatus && fOps.deliveryStatus !== '대기' && fOps.deliveryStatus !== '완료' ? fOps.deliveryStatus : '';
+        const hiddenToday = !isDone && typeof isSchoolHiddenInPopupToday === 'function' && isSchoolHiddenInPopupToday(s);
         const doneAtText = isDone && fOps.completedAt ? new Date(fOps.completedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
         const pendingPk = typeof pendingPickupsForSchool === 'function' && typeof PICKUPS !== 'undefined' ? pendingPickupsForSchool(s) : [];
         const phoneCleaned = String(s.phone || '').replace(/[^0-9+*#,]/g, '');
 
         const renderStepPill=n=>{const q=stepQty(s,n),t=teacherQty(s,n);return `<div class="dc-step ${q||t?'':'dc-step-empty'}"><span>${n}단계</span><strong>${q||'—'}</strong><small>교사 ${t||'—'}</small></div>`;};
         const dcProgress=itemProgress(s),dcState=isDone?'done':(fStatus==='재방문'||fStatus==='연락필요')?'revisit':(fStatus==='보류'||fStatus==='부분 완료')?'hold':!dcProgress.total?'empty':dcProgress.done===dcProgress.total?'ready':dcProgress.done?'checking':'pending';
-        const dcLabel=isDone?(doneAtText?`납품 완료 · ${doneAtText}`:'납품 완료'):fStatus?`${fStatus}`:{empty:'수량 미등록',ready:'품목 확인 완료',checking:'품목 확인 중',pending:'납품 대기'}[dcState];
+        const dcLabel=isDone?(doneAtText?`납품 완료 · ${doneAtText}`:'납품 완료'):fStatus?`${fStatus}${hiddenToday?' · 오늘 팝업 숨김':''}`:{empty:'수량 미등록',ready:'품목 확인 완료',checking:'품목 확인 중',pending:'납품 대기'}[dcState];
         const memoDisplayParts = [];
         if (fOps.memo) memoDisplayParts.push(`📝 ${fOps.memo}`);
         if (!isDone && fOps.reason) memoDisplayParts.push(`사유: ${fOps.reason}`);
@@ -5937,15 +5939,18 @@ function speakSchoolQuantity(school, opts = {}) {
         const inProgress = !p.done && handled > 0;
         const wf = (p && p.manualWorkflow) || {};
         const wfText = wfLabels[wf.status] || '';
+        const fieldStText = !wfText && p.fieldStatus && p.fieldStatus !== '대기' && p.fieldStatus !== '완료' ? p.fieldStatus : '';
+        const hiddenToday = !p.done && typeof isPickupHiddenInPopupToday === 'function' && isPickupHiddenInPopupToday(p);
         const doneAtText = p.done && p.doneAt ? new Date(p.doneAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
         const pkState = p.done ? 'done'
-          : (wf.status === 'revisit' || wf.status === 'contact' || ds === 'over') ? 'revisit'
-          : (wf.status === 'hold' || ds === 'soon') ? 'hold'
+          : (wf.status === 'revisit' || wf.status === 'contact' || fieldStText === '재방문' || fieldStText === '연락필요' || ds === 'over') ? 'revisit'
+          : (wf.status === 'hold' || fieldStText === '보류' || ds === 'soon') ? 'hold'
           : (inProgress || wf.status === 'moving' || wf.status === 'arrived' || wf.status === 'scheduled') ? 'checking'
           : (target === 0 && !(Number(p.qty) > 0)) ? 'empty' : 'pending';
+        const baseStatusText = wfText || fieldStText;
         const stateLabel = p.done
           ? (doneAtText ? `${isExtra ? '납품 완료' : '처리 완료'} · ${doneAtText}` : (isExtra ? '납품 완료' : '처리 완료'))
-          : wfText ? wfText
+          : baseStatusText ? `${baseStatusText}${hiddenToday ? ' · 오늘 팝업 숨김' : ''}`
           : inProgress ? '일부 처리 중'
           : ds === 'over' ? '기한 경과'
           : (isExtra ? '추가 납품 대기' : `${p.type || '회수'} 대기`);
@@ -7020,7 +7025,7 @@ function speakSchoolQuantity(school, opts = {}) {
       if (userLat === null || !accuracyOk) return;
       const near = [];
       PICKUPS.forEach(p => {
-        if (p.done || pkIsHiddenDup(p)) return;
+        if (p.done || pkIsHiddenDup(p) || (typeof isPickupHiddenInPopupToday === 'function' && isPickupHiddenInPopupToday(p))) return;
         const s = pkLinkedSchool(p);
         if (s && !completedMap[s.id]) return;       // 납품 도착 화면에서 함께 안내
         const d = pkDistance(p);
@@ -7031,7 +7036,7 @@ function speakSchoolQuantity(school, opts = {}) {
       if (!near.length || !document.getElementById('arrivalModal').classList.contains('hidden')) return;
       // group by place (same school name)
       const key = normName(near[0].school);
-      const group = PICKUPS.filter(p => !p.done && !pkIsHiddenDup(p) && normName(p.school) === key);
+      const group = PICKUPS.filter(p => !p.done && !pkIsHiddenDup(p) && (typeof isPickupHiddenInPopupToday !== 'function' || !isPickupHiddenInPopupToday(p)) && normName(p.school) === key);
       group.forEach(p => { pkShownSet[p.id] = true; });
       pkAlertIds = group.map(p => p.id);
       renderPkAlert();
@@ -7763,12 +7768,118 @@ function speakSchoolQuantity(school, opts = {}) {
       overlayRecentToggledPickupIds.clear();
     }
 
+    function nkLocalTodayKey(input) {
+      const d = (input !== undefined && input !== null && input !== '') ? new Date(input) : new Date();
+      if (Number.isNaN(d.getTime())) return '';
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function nkIsHoldOrRevisitStatus(status) {
+      const raw = String(status || '').trim();
+      if (!raw) return false;
+      const lower = raw.toLowerCase();
+      return raw === '보류' || raw === '재방문' || raw === '재방문 필요' || lower === 'hold' || lower === 'revisit';
+    }
+
+    function isSchoolHiddenInPopupToday(school) {
+      if (!school || completedMap[school.id]) return false;
+      const f = school.fieldOps;
+      if (!f || !nkIsHoldOrRevisitStatus(f.deliveryStatus)) return false;
+      const today = nkLocalTodayKey();
+      if (!today) return false;
+      if (typeof f.popupHiddenDate === 'string') {
+        if (f.popupHiddenDate === today) return true;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(f.revisitDate || '') && f.revisitDate > today) return true;
+        return false;
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(f.revisitDate || '') && f.revisitDate > today) return true;
+      if (f.updatedAt && nkLocalTodayKey(f.updatedAt) === today) return true;
+      return false;
+    }
+
+    function isPickupHiddenInPopupToday(pickup) {
+      if (!pickup || pickup.done) return false;
+      const wf = pickup.manualWorkflow || {};
+      const isHold = nkIsHoldOrRevisitStatus(wf.status) || nkIsHoldOrRevisitStatus(pickup.fieldStatus);
+      if (!isHold) return false;
+      const today = nkLocalTodayKey();
+      if (!today) return false;
+      const hasExplicitHidden = typeof pickup.popupHiddenDate === 'string' || typeof wf.popupHiddenDate === 'string';
+      const hidDate = (typeof pickup.popupHiddenDate === 'string' && pickup.popupHiddenDate)
+        || (typeof wf.popupHiddenDate === 'string' && wf.popupHiddenDate)
+        || '';
+      if (hidDate === today) return true;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(pickup.fieldRevisitDate || '') && pickup.fieldRevisitDate > today) return true;
+      if (hasExplicitHidden) return false;
+      const ts = wf.updatedAt || pickup.statusUpdatedAt;
+      if (ts && nkLocalTodayKey(ts) === today) return true;
+      return false;
+    }
+
+    function nkCountHiddenInPopupToday(mode) {
+      const m = mode || 'auto';
+      let count = 0;
+      if (m === 'auto' || m === 'delivery') {
+        if (Array.isArray(SCHOOLS)) {
+          SCHOOLS.forEach(s => { if (isSchoolHiddenInPopupToday(s)) count += 1; });
+        }
+      }
+      if (m === 'auto' || m === 'return' || m === 'extra') {
+        if (typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS)) {
+          PICKUPS.forEach(p => {
+            if (!p || p.done || (typeof pkIsHiddenDup === 'function' && pkIsHiddenDup(p))) return;
+            if (m !== 'auto' && typeof pkGroupOf === 'function' && pkGroupOf(p) !== m) return;
+            if (isPickupHiddenInPopupToday(p)) count += 1;
+          });
+        }
+      }
+      return count;
+    }
+
+    function nkReleasePopupLockIfHidden(kind, targetId) {
+      let released = false;
+      if (kind === 'school' && activeNaviSchoolId !== null && Number(activeNaviSchoolId) === Number(targetId)) {
+        activeNaviSchoolId = null;
+        released = true;
+      }
+      if (kind === 'pickup' && activeNaviPickupId !== null && String(activeNaviPickupId) === String(targetId)) {
+        activeNaviPickupId = null;
+        released = true;
+      }
+      if (typeof overlayChoiceId === 'string' && overlayChoiceId) {
+        if (kind === 'school' && overlayChoiceId === 'd:' + String(targetId)) {
+          overlayChoiceId = null;
+          released = true;
+        } else if (kind === 'pickup' && overlayChoiceId.startsWith('p:')) {
+          overlayChoiceId = null;
+          released = true;
+        }
+      }
+      if (released) {
+        clearOverlayRecentToggledPickups();
+        overlayLockBaseline = null;
+        saveNaviLockState();
+        nkSyncAutoOverlayTrackingKey();
+        updateNaviLockBanner();
+      }
+      return released;
+    }
+
+    window.nkLocalTodayKey = nkLocalTodayKey;
+    window.nkIsHoldOrRevisitStatus = nkIsHoldOrRevisitStatus;
+    window.isSchoolHiddenInPopupToday = isSchoolHiddenInPopupToday;
+    window.isPickupHiddenInPopupToday = isPickupHiddenInPopupToday;
+    window.nkCountHiddenInPopupToday = nkCountHiddenInPopupToday;
+    window.nkReleasePopupLockIfHidden = nkReleasePopupLockIfHidden;
+
     function overlayPickupsForSchool(school) {
       if (!school || typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return [];
-      const pending = typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(school) : [];
+      const pending = (typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(school) : [])
+        .filter(p => !isPickupHiddenInPopupToday(p));
       if (overlayRecentToggledSchoolId !== school.id || overlayRecentToggledPickupIds.size === 0) return pending;
       const seen = new Set(pending.map(p => String(p.id)));
       const recent = PICKUPS.filter(p => p && !seen.has(String(p.id))
+        && !isPickupHiddenInPopupToday(p)
         && overlayRecentToggledPickupIds.has(String(p.id))
         && (p.schoolId === school.id || (!p.schoolId && typeof nameScore === 'function' && nameScore(p.school, school.name) >= 0.9)));
       return [...pending, ...recent];
@@ -7901,13 +8012,15 @@ function speakSchoolQuantity(school, opts = {}) {
       let lockKey = '';
       let lockDist = null;
       if (activeNaviSchoolId !== null) {
-        const s = SCHOOLS.find(x => x.id === activeNaviSchoolId && !completedMap[x.id]);
+        const s = SCHOOLS.find(x => x.id === activeNaviSchoolId && !completedMap[x.id] && (typeof isSchoolHiddenInPopupToday !== 'function' || !isSchoolHiddenInPopupToday(x)));
         if (s) {
           lockKey = 'd:' + s.id;
           lockDist = distanceToSchool(s);
         } else {
           const sDone = SCHOOLS.find(x => x.id === activeNaviSchoolId);
-          const remPickups = sDone && typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(sDone) : [];
+          const remPickups = (sDone && completedMap[sDone.id] && typeof pendingPickupsForSchool === 'function')
+            ? pendingPickupsForSchool(sDone).filter(p => typeof isPickupHiddenInPopupToday !== 'function' || !isPickupHiddenInPopupToday(p))
+            : [];
           if (sDone && remPickups.length > 0) {
             const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(remPickups[0]) : 'return';
             lockKey = 'p:school_' + sDone.id + '_' + gMode;
@@ -7923,7 +8036,9 @@ function speakSchoolQuantity(school, opts = {}) {
           }
         }
       } else if (activeNaviPickupId !== null) {
-        const lockedP = typeof PICKUPS !== 'undefined' ? PICKUPS.find(p => p.id === activeNaviPickupId && !p.done) : null;
+        const lockedP = typeof PICKUPS !== 'undefined'
+          ? PICKUPS.find(p => p.id === activeNaviPickupId && !p.done && (typeof isPickupHiddenInPopupToday !== 'function' || !isPickupHiddenInPopupToday(p)))
+          : null;
         if (!lockedP) {
           activeNaviPickupId = null;
           if (typeof overlayChoiceId !== 'undefined') overlayChoiceId = null;
@@ -8004,7 +8119,7 @@ function speakSchoolQuantity(school, opts = {}) {
       if (typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return [];
       const map = new Map();
       PICKUPS.forEach(p => {
-        if (!p || p.done || (typeof pkIsHiddenDup === 'function' && pkIsHiddenDup(p))) return;
+        if (!p || p.done || (typeof pkIsHiddenDup === 'function' && pkIsHiddenDup(p)) || (typeof isPickupHiddenInPopupToday === 'function' && isPickupHiddenInPopupToday(p))) return;
         const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(p) : 'return';
         if (filterMode && gMode !== filterMode) return;
         const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(p) : null;
@@ -8040,7 +8155,7 @@ function speakSchoolQuantity(school, opts = {}) {
     function getBestPipTarget() {
       // 1. 사용자가 네이버 내비 출발 또는 PiP 고정을 누른 원(activeNaviSchoolId)이 있고 아직 미완료이면 최우선 표시
       if (activeNaviSchoolId !== null) {
-        const locked = SCHOOLS.find(s => s.id === activeNaviSchoolId && !completedMap[s.id]);
+        const locked = SCHOOLS.find(s => s.id === activeNaviSchoolId && !completedMap[s.id] && (typeof isSchoolHiddenInPopupToday !== 'function' || !isSchoolHiddenInPopupToday(s)));
         if (locked) {
           return {
             kind: 'delivery',
@@ -8052,7 +8167,9 @@ function speakSchoolQuantity(school, opts = {}) {
         } else {
           // 납품은 완료되었지만 해당 원에 미완료 회수·반품이 남아있는 경우
           const sDone = SCHOOLS.find(s => s.id === activeNaviSchoolId);
-          const remPickups = sDone && typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(sDone) : [];
+          const remPickups = (sDone && completedMap[sDone.id] && typeof pendingPickupsForSchool === 'function')
+            ? pendingPickupsForSchool(sDone).filter(p => typeof isPickupHiddenInPopupToday !== 'function' || !isPickupHiddenInPopupToday(p))
+            : [];
           if (sDone && remPickups.length > 0) {
             const d = distanceToSchool(sDone);
             const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(remPickups[0]) : 'return';
@@ -8082,7 +8199,7 @@ function speakSchoolQuantity(school, opts = {}) {
 
       // 1b. 사용자가 회수·반품 또는 추가 납품에서 선택한 항목(activeNaviPickupId)이 있으면 최우선 표시
       if (activeNaviPickupId !== null && typeof PICKUPS !== 'undefined') {
-        const lockedP = PICKUPS.find(p => p.id === activeNaviPickupId && !p.done);
+        const lockedP = PICKUPS.find(p => p.id === activeNaviPickupId && !p.done && (typeof isPickupHiddenInPopupToday !== 'function' || !isPickupHiddenInPopupToday(p)));
         if (lockedP) {
           const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(lockedP) : 'return';
           const groups = getPendingPickupGroupsWithDist(gMode);
@@ -8117,7 +8234,7 @@ function speakSchoolQuantity(school, opts = {}) {
       const orderedDeliveries = typeof orderedOverlayDeliveries === 'function'
         ? orderedOverlayDeliveries()
         : SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }))
-            .filter(s => !completedMap[s.id])
+            .filter(s => !completedMap[s.id] && (typeof isSchoolHiddenInPopupToday !== 'function' || !isSchoolHiddenInPopupToday(s)))
             .sort((a, b) => {
               const ad = (a.dist !== null && a.dist !== undefined && Number.isFinite(a.dist)) ? a.dist : Infinity;
               const bd = (b.dist !== null && b.dist !== undefined && Number.isFinite(b.dist)) ? b.dist : Infinity;
@@ -8167,6 +8284,11 @@ function speakSchoolQuantity(school, opts = {}) {
       const best = getBestPipTarget();
       if (best && best.kind === 'delivery' && best.school) return best.school;
       const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
+      const notHid = s => typeof isSchoolHiddenInPopupToday !== 'function' || !isSchoolHiddenInPopupToday(s);
+      const pendingVisibleWithDist = enriched.filter(s => !completedMap[s.id] && notHid(s) && s.dist !== null).sort((a, b) => a.dist - b.dist);
+      if (pendingVisibleWithDist.length > 0) return pendingVisibleWithDist[0];
+      const pendingVisible = enriched.filter(s => !completedMap[s.id] && notHid(s));
+      if (pendingVisible.length > 0) return pendingVisible[0];
       const pendingWithDist = enriched.filter(s => !completedMap[s.id] && s.dist !== null).sort((a, b) => a.dist - b.dist);
       if (pendingWithDist.length > 0) return pendingWithDist[0];
       const pending = enriched.filter(s => !completedMap[s.id]);
@@ -8250,7 +8372,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-27.8';
+    var NK_APP_VERSION = '2026-11-27.9';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-27.7';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
@@ -9090,9 +9212,15 @@ ${school.address || ''}`;
       ctx.fillText(statusStr, 16, 34);
 
       if (!best) {
+        const hiddenCnt = typeof nkCountHiddenInPopupToday === 'function' ? nkCountHiddenInPopupToday(overlayKindChoice) : 0;
         ctx.fillStyle = '#f8fafc';
         ctx.font = 'bold 28px "Noto Sans KR", sans-serif';
-        ctx.fillText('모든 납품·회수 완료!', 20, 130);
+        ctx.fillText(hiddenCnt > 0 ? '오늘 팝업 대상 완료!' : '모든 납품·회수 완료!', 20, 120);
+        if (hiddenCnt > 0) {
+          ctx.fillStyle = '#fcd34d';
+          ctx.font = 'bold 18px "Noto Sans KR", sans-serif';
+          ctx.fillText(`보류·재방문 ${hiddenCnt}건은 오늘 팝업에서 숨김`, 20, 155);
+        }
         return;
       }
 
@@ -9248,7 +9376,7 @@ ${school.address || ''}`;
 
     function orderedOverlayDeliveries() {
       const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
-      let pending = enriched.filter(s => !completedMap[s.id]);
+      let pending = enriched.filter(s => !completedMap[s.id] && (typeof isSchoolHiddenInPopupToday !== 'function' || !isSchoolHiddenInPopupToday(s)));
       if (typeof window.nkOverlayAllowSchool === 'function') {
         const scoped = pending.filter(s => s.id === activeNaviSchoolId || window.nkOverlayAllowSchool(s));
         if (scoped.length) pending = scoped;
@@ -9454,6 +9582,16 @@ ${school.address || ''}`;
       }
 
       if (!best) {
+        const hiddenTodayCount = typeof nkCountHiddenInPopupToday === 'function' ? nkCountHiddenInPopupToday(overlayKindChoice) : 0;
+        const emptyName = overlayKindChoice === 'auto'
+          ? (hiddenTodayCount > 0 ? '오늘 팝업 대상 완료!' : '모든 납품·회수 완료!')
+          : (hiddenTodayCount > 0 ? '오늘 표시할 대상 없음' : '선택한 종류의 미완료 업무 없음');
+        const emptyStepSummary = hiddenTodayCount > 0
+          ? `보류·재방문 ${hiddenTodayCount}건은 오늘 팝업에서 숨김`
+          : '남은 목적지가 없습니다';
+        const emptyCollapsed = hiddenTodayCount > 0
+          ? `오늘 완료 (보류 ${hiddenTodayCount})`
+          : '모든 업무 완료';
         return {
           kindChoice: overlayKindChoice,
           targetKind: 'none',
@@ -9464,19 +9602,19 @@ ${school.address || ''}`;
           radiusMeters,
           modeBadge: overlayKindChoice === 'auto' ? '✅ 완료' : ({ delivery: '납품', return: '반품·회수', extra: '추가 납품' }[overlayKindChoice] + ' ▾'),
           modeColor: '#059669',
-          name: overlayKindChoice === 'auto' ? '모든 납품·회수 완료!' : '선택한 종류의 미완료 업무 없음',
+          name: emptyName,
           distText: '완료',
           distShort: '완료',
           totalQtyLabel: '',
-          stepSummary: '남은 목적지가 없습니다',
+          stepSummary: emptyStepSummary,
           urgentBadge: '',
           urgentLevel: '',
           linkedNote: '',
           photoCount: 0,
           gpsState,
           gpsAccuracy,
-          progressText: '남은 목적지가 없습니다',
-          collapsedSummary: '모든 업무 완료',
+          progressText: emptyStepSummary,
+          collapsedSummary: emptyCollapsed,
           address: '',
           phone: '',
           memo: '',
@@ -9617,7 +9755,8 @@ ${school.address || ''}`;
       const dItems = deliveryItems(s);
       const pr = itemProgress(s);
       const pickups = best.pickups || [];
-      const linkedPendingPickups = typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(s) : [];
+      const linkedPendingPickups = (typeof pendingPickupsForSchool === 'function' ? pendingPickupsForSchool(s) : [])
+        .filter(p => typeof isPickupHiddenInPopupToday !== 'function' || !isPickupHiddenInPopupToday(p));
       const fOps = s.fieldOps || {};
       const deliveredMap = fOps.delivered || {};
       const distShort = formatOverlayDistShort(best.dist, s.subRegion || '');
@@ -10620,14 +10759,25 @@ ${school.address || ''}`;
       if (!best) return;
       clearOverlayRecentToggledPickups();
       const st = String(statusText || '보류').trim();
+      const isHoldHide = typeof nkIsHoldOrRevisitStatus === 'function' && nkIsHoldOrRevisitStatus(st);
+      const todayKey = typeof nkLocalTodayKey === 'function' ? nkLocalTodayKey() : '';
       if (best.kind === 'delivery' && best.school) {
         const s = SCHOOLS.find(x => x.id === best.school.id);
         if (s) {
-          s.fieldOps = { ...(s.fieldOps || {}), deliveryStatus: st, updatedAt: Date.now() };
+          s.fieldOps = { ...(s.fieldOps || {}), deliveryStatus: st, popupHiddenDate: isHoldHide ? todayKey : '', updatedAt: Date.now() };
+          if (isHoldHide && typeof nkReleasePopupLockIfHidden === 'function') {
+            nkReleasePopupLockIfHidden('school', s.id);
+          }
           saveState();
           renderList();
-          showToast(`[${s.name}] 상태를 '${st}'로 기록했습니다.`);
-          window.onNativeOverlayNextTarget();
+          if (isHoldHide) {
+            syncNativeAndDomOverlays();
+            updateBgMediaAndPip();
+            showToast(`[${s.name}] '${st}' 처리 · 오늘 팝업창에서 숨깁니다.`);
+          } else {
+            showToast(`[${s.name}] 상태를 '${st}'로 기록했습니다.`);
+            window.onNativeOverlayNextTarget();
+          }
         }
         return;
       }
@@ -10635,13 +10785,31 @@ ${school.address || ''}`;
         const mapStatus = st === '보류' ? 'hold' : st === '재방문' ? 'revisit' : st === '연락필요' ? 'contact' : '';
         best.pickupGroup.items.forEach(p => {
           p.fieldStatus = st;
-          if (mapStatus) p.manualWorkflow = { status: mapStatus, note: (p.manualWorkflow && p.manualWorkflow.note) || '', updatedAt: new Date().toISOString() };
+          p.popupHiddenDate = isHoldHide ? todayKey : '';
+          p.statusUpdatedAt = Date.now();
+          if (mapStatus) {
+            p.manualWorkflow = {
+              status: mapStatus,
+              note: (p.manualWorkflow && p.manualWorkflow.note) || '',
+              popupHiddenDate: isHoldHide ? todayKey : '',
+              updatedAt: new Date().toISOString()
+            };
+          }
+          if (isHoldHide && typeof nkReleasePopupLockIfHidden === 'function') {
+            nkReleasePopupLockIfHidden('pickup', p.id);
+          }
         });
         savePickups();
         if (typeof renderPickups === 'function') renderPickups();
         renderList();
-        showToast(`[${best.pickupGroup.name}] 상태를 '${st}'로 기록했습니다.`);
-        window.onNativeOverlayNextTarget();
+        if (isHoldHide) {
+          syncNativeAndDomOverlays();
+          updateBgMediaAndPip();
+          showToast(`[${best.pickupGroup.name}] '${st}' 처리 · 오늘 팝업창에서 숨깁니다.`);
+        } else {
+          showToast(`[${best.pickupGroup.name}] 상태를 '${st}'로 기록했습니다.`);
+          window.onNativeOverlayNextTarget();
+        }
       }
     };
 
@@ -11913,7 +12081,7 @@ ${school.address || ''}`;
           localError='';localAt=Date.now();renderList();renderPickups();status();return true;
         }catch(e){localError=e.message;status();showToast('기기 저장 실패. 창을 닫지 말고 저장을 다시 시도하세요.');return false;}
       }
-      const stateOptions=(value)=>['대기','부분 완료','재방문','완료'].map(v=>`<option ${v===value?'selected':''}>${v}</option>`).join('');
+      const stateOptions=(value)=>['대기','부분 완료','보류','재방문','완료'].map(v=>`<option ${v===value?'selected':''}>${v}</option>`).join('');
       function draw(){
         panel.innerHTML=btn('close','닫기')+btn('visit','원별 업무')+btn('load','상차 체크')+btn('retry','서버·웍스 재시도')+'<p id="opsInnerStatus" role="status"></p><p class="opsWarn">입력 후 해당 저장 버튼을 눌러주세요. 다른 화면으로 이동하면 미저장 입력은 반영되지 않습니다.</p>';
         if(mode==='load'){drawLoad();status();return;}
@@ -11951,7 +12119,10 @@ ${school.address || ''}`;
         const g=groups().find(x=>x.key===selected);if(!g)return;
         if(a==='saveDelivery'&&g.s){const s=g.s,items=deliveryItems(s),done={};let valid=true;items.forEach((it,i)=>{const raw=panel.querySelector(`[data-delivery="${i}"]`).value,n=Number(raw);if(raw===''||!Number.isInteger(n)||n<0||n>Number(it.qty))valid=false;done[it.key]=n;});const state=panel.querySelector('#opsDeliveryState').value,reason=panel.querySelector('#opsReason').value.trim();
           if(!valid){showToast('주문 수량 이내의 정수를 입력하세요.');return;}if(state==='완료'&&items.some(it=>done[it.key]!==Number(it.qty))){showToast('전체 수량을 전달해야 완료할 수 있습니다.');return;}if(['부분 완료','재방문'].includes(state)&&!reason){showToast('미처리 사유를 입력하세요.');return;}
-          s.fieldOps={...s.fieldOps,delivered:done,deliveryStatus:state,reason,revisitDate:panel.querySelector('#opsDate').value,memo:panel.querySelector('#opsMemo').value,completedAt:state==='완료'?(s.fieldOps&&s.fieldOps.completedAt||Date.now()):null,updatedAt:Date.now()};completedMap[s.id]=state==='완료';if(commit()){draw();showToast('기기 저장 완료. 서버 반영은 상태 표시를 확인하세요.');}return;
+          const isHoldHide=state!=='완료'&&typeof nkIsHoldOrRevisitStatus==='function'&&nkIsHoldOrRevisitStatus(state);const todayKey=typeof nkLocalTodayKey==='function'?nkLocalTodayKey():'';
+          s.fieldOps={...s.fieldOps,delivered:done,deliveryStatus:state,popupHiddenDate:isHoldHide?todayKey:'',reason,revisitDate:panel.querySelector('#opsDate').value,memo:panel.querySelector('#opsMemo').value,completedAt:state==='완료'?(s.fieldOps&&s.fieldOps.completedAt||Date.now()):null,updatedAt:Date.now()};completedMap[s.id]=state==='완료';
+          if(isHoldHide&&typeof nkReleasePopupLockIfHidden==='function')nkReleasePopupLockIfHidden('school',s.id);
+          if(commit()){if(typeof syncNativeAndDomOverlays==='function')syncNativeAndDomOverlays();draw();showToast(isHoldHide?`[${s.name}] '${state}' 저장 · 오늘 팝업창에서 숨깁니다.`:'기기 저장 완료. 서버 반영은 상태 표시를 확인하세요.');}return;
         }
         const p=PICKUPS.find(p=>String(p.id)===b.dataset.id),box=b.closest('[data-task]');if(!p||!box)return;
         if(a==='setRows'){
@@ -11965,9 +12136,13 @@ ${school.address || ''}`;
           if(state==='부분 완료'&&!rows.length){showToast('부분 처리는 품목·예정수량을 먼저 설정하세요.');return;}
           if(state==='완료'&&rows.some(r=>r.done!==r.qty)){showToast('모든 수량을 처리해야 완료할 수 있습니다.');return;}
           if(['부분 완료','재방문'].includes(state)&&!reason){showToast('미처리 사유를 입력하세요.');return;}
-          const changed=!!p.done!==(state==='완료');p.fieldQuantities=rows;p.fieldStatus=state;p.fieldReason=reason;p.fieldRevisitDate=box.querySelector('[data-taskdate]').value;p.done=state==='완료';p.doneAt=p.done?Date.now():null;
+          const isHoldHide=state!=='완료'&&typeof nkIsHoldOrRevisitStatus==='function'&&nkIsHoldOrRevisitStatus(state);const todayKey=typeof nkLocalTodayKey==='function'?nkLocalTodayKey():'';
+          const changed=!!p.done!==(state==='완료');p.fieldQuantities=rows;p.fieldStatus=state;p.fieldReason=reason;p.fieldRevisitDate=box.querySelector('[data-taskdate]').value;p.done=state==='완료';p.doneAt=p.done?Date.now():null;p.popupHiddenDate=isHoldHide?todayKey:'';p.statusUpdatedAt=Date.now();
+          if(isHoldHide){p.manualWorkflow={status:state==='보류'?'hold':'revisit',note:(p.manualWorkflow&&p.manualWorkflow.note)||reason||'',popupHiddenDate:todayKey,updatedAt:new Date().toISOString()};}
+          else if(p.manualWorkflow&&typeof nkIsHoldOrRevisitStatus==='function'&&nkIsHoldOrRevisitStatus(p.manualWorkflow.status)){delete p.manualWorkflow;}
+          if(isHoldHide&&typeof nkReleasePopupLockIfHidden==='function')nkReleasePopupLockIfHidden('pickup',p.id);
           if(p.worksTaskId&&changed){p.worksSyncPending=true;p.worksClosedRemote=false;}
-          if(!commit())return;if(p.worksTaskId&&p.worksSyncPending)await worksPushDone(p);draw();showToast('업무 처리 결과를 저장했습니다.');
+          if(!commit())return;if(typeof syncNativeAndDomOverlays==='function')syncNativeAndDomOverlays();if(p.worksTaskId&&p.worksSyncPending)await worksPushDone(p);draw();showToast(isHoldHide?`[${p.school||p.title}] '${state}' 저장 · 오늘 팝업창에서 숨깁니다.`:'업무 처리 결과를 저장했습니다.');
         }
       };
       panel.onkeydown=e=>{if(e.key==='Escape'){panel.hidden=true;focusBack?.focus();}if(e.key==='Tab'){const list=[...panel.querySelectorAll('button,input,textarea,select')].filter(x=>!x.disabled),first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}};

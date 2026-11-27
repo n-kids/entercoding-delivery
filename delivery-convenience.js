@@ -470,7 +470,7 @@
         completedMap[s.id] = !!st.prevDone;
         if (st.prevFieldOps) s.fieldOps = st.prevFieldOps;
         else if (s.fieldOps) {
-          s.fieldOps = { ...s.fieldOps, deliveryStatus: '대기', completedAt: null, updatedAt: Date.now() };
+          s.fieldOps = { ...s.fieldOps, deliveryStatus: '대기', popupHiddenDate: '', completedAt: null, updatedAt: Date.now() };
         }
         if (typeof saveState === 'function') saveState();
         if (bridge().restoreNaviLock) bridge().restoreNaviLock(s.id, null);
@@ -694,9 +694,13 @@
       : memoSelectedVisit;
     s.phone = document.getElementById('nkMemoPhoneInput').value.trim();
     s.assignee = document.getElementById('nkMemoAssigneeInput').value.trim();
+    const finalStatus = completedMap[s.id] ? '완료' : memoSelectedStatus;
+    const isHoldHide = !completedMap[s.id] && typeof window.nkIsHoldOrRevisitStatus === 'function' && window.nkIsHoldOrRevisitStatus(finalStatus);
+    const todayKey = typeof window.nkLocalTodayKey === 'function' ? window.nkLocalTodayKey() : '';
     s.fieldOps = {
       ...(s.fieldOps || {}),
-      deliveryStatus: completedMap[s.id] ? '완료' : memoSelectedStatus,
+      deliveryStatus: finalStatus,
+      popupHiddenDate: isHoldHide ? todayKey : '',
       visitWindow: visitWindowVal,
       avoidWindow: document.getElementById('nkMemoAvoidInput').value.trim(),
       memo: document.getElementById('nkMemoInput').value.trim(),
@@ -708,6 +712,9 @@
       try { window.nkRecordSchoolsToMaster([s]); } catch (err) {}
     }
     if (typeof saveState === 'function') saveState();
+    if (isHoldHide && typeof window.nkReleasePopupLockIfHidden === 'function') {
+      try { window.nkReleasePopupLockIfHidden('school', s.id); } catch (err) {}
+    }
     if (typeof renderList === 'function') renderList();
     if (typeof syncNativeAndDomOverlays === 'function') syncNativeAndDomOverlays();
     const arrivalOpen = !document.getElementById('arrivalModal')?.classList.contains('hidden');
@@ -726,7 +733,11 @@
       }
     }
     memoDlg.close();
-    if (typeof showToast === 'function') showToast(`[${s.name}] 현장 메모와 상태를 저장했습니다.`);
+    if (typeof showToast === 'function') {
+      showToast(isHoldHide
+        ? `[${s.name}] '${finalStatus}' 저장 · 오늘 팝업창에서 숨깁니다.`
+        : `[${s.name}] 현장 메모와 상태를 저장했습니다.`);
+    }
   });
 
   // ---- 6. 하루 단위 납품 결과 요약 보고서 ----

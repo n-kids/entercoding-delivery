@@ -671,6 +671,7 @@
     const nearby = [];
     getPickups().forEach(p => {
       if (!p || p.done) return;
+      if (typeof window.isPickupHiddenInPopupToday === 'function' && window.isPickupHiddenInPopupToday(p)) return;
       if (p.schoolId && Number(p.schoolId) === s.id) return;
       const pc = typeof pkCoords === 'function' ? pkCoords(p) : null;
       if (!pc || !hasCoords(pc)) return;
