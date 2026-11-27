@@ -1933,7 +1933,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
     }
     function saveState() {
       const saved=persistEntries([[SCHOOLS_KEY,SCHOOLS],['entercoding_completed_v1',completedMap],['entercoding_coords_v1',customCoords]],'원 정보');
-      if(saved)scheduleSync();return saved;
+      if(saved){scheduleSync();if(typeof window.nkOnSaveState==='function'){try{window.nkOnSaveState();}catch(e){}}}return saved;
     }
 
     function buildQuantityLabel(school) {
@@ -2259,6 +2259,9 @@ function markSchoolCompletion(schoolId, isDone, opts = {}) {
     }
   }
   saveState();
+  if (typeof window.nkOnSchoolCompleted === 'function') {
+    try { window.nkOnSchoolCompleted(s, !!isDone, prevDone); } catch (e) {}
+  }
   if (isDone && !prevDone && !opts.skipUndo && typeof window.nkRecordCompletionUndo === 'function') {
     window.nkRecordCompletionUndo({ kind: 'delivery', id, label: s.name, prevDone, prevFieldOps });
   }
@@ -2629,6 +2632,9 @@ function speakSchoolQuantity(school, opts = {}) {
       // Automatically wake up from Blackout standby when arrival modal opens
       document.getElementById('blackoutOverlay').classList.add('hidden');
       document.getElementById('arrivalModal').classList.remove('hidden');
+      if (typeof window.nkOnArrivalModalOpen === 'function') {
+        try { window.nkOnArrivalModalOpen(school); } catch (e) {}
+      }
     }
 
     function closeArrivalModal() {
@@ -2778,6 +2784,9 @@ function speakSchoolQuantity(school, opts = {}) {
         if (typeof renderDeliveryWorksSection === 'function') {
           try { renderDeliveryWorksSection(); } catch (e) {}
         }
+        if (typeof window.nkDecorateDeliveryUi === 'function') {
+          try { window.nkDecorateDeliveryUi([]); } catch (e) {}
+        }
         return;
       }
       container.innerHTML = filtered.map(s => {
@@ -2808,6 +2817,9 @@ function speakSchoolQuantity(school, opts = {}) {
       }).join('');
       if (typeof renderDeliveryWorksSection === 'function') {
         try { renderDeliveryWorksSection(); } catch (e) {}
+      }
+      if (typeof window.nkDecorateDeliveryUi === 'function') {
+        try { window.nkDecorateDeliveryUi(filtered); } catch (e) {}
       }
     }
 
@@ -4595,12 +4607,14 @@ function speakSchoolQuantity(school, opts = {}) {
           if (extrasAll.length || mode === 'replace') m.extras = extrasAll;
           if (r.address && !m.address) m.address = r.address;
           if (isFinite(r.lat) && isFinite(r.lng)) { m.lat = r.lat; m.lng = r.lng; delete customCoords[m.id]; }
+          if (typeof window.nkHydrateSchoolFromMaster === 'function') { try { window.nkHydrateSchoolFromMaster(m); } catch (e) {} }
           if (mode === 'replace') { m.order = ++order; nextList.push(m); }
         } else {
           SCHOOLS = nextList; // so createSchool computes ids/orders over the list being built
           const s = createSchool({ ...qtyFields(r), extras: extrasAll, product: r.product, name: r.name.trim(), address: r.address, phone: r.phone, lat: r.lat, lng: r.lng, regionGroup: r.regionGroup, subRegion: r.subRegion });
           if (prods.length > 1) s.moreProducts = normalizeMoreProducts(prods.slice(1));
           s.id = Math.max(nextSchoolId(), oldList.reduce((mx, x) => Math.max(mx, Number(x.id) || 0), 0) + 1 + newOnes.length);
+          if (typeof window.nkHydrateSchoolFromMaster === 'function') { try { window.nkHydrateSchoolFromMaster(s); } catch (e) {} }
           if (mode === 'replace') s.order = ++order;
           nextList.push(s);
           newOnes.push(s);
@@ -4632,6 +4646,7 @@ function speakSchoolQuantity(school, opts = {}) {
         resultList.push({ id: s.id, name: s.name });
       }
       newOnes.filter(s => !toFind.includes(s)).forEach(s => resultList.push({ id: s.id, name: s.name }));
+      if (typeof window.nkRecordSchoolsToMaster === 'function') { try { window.nkRecordSchoolsToMaster(SCHOOLS); } catch (e) {} }
       saveState();
       renderList();
       importResults = resultList;
@@ -6593,6 +6608,9 @@ function speakSchoolQuantity(school, opts = {}) {
           });
         }
       } catch (e) {}
+      if (typeof window.nkSyncCollectMeta === 'function') {
+        try { window.nkSyncCollectMeta(m); } catch (e) {}
+      }
       return m;
     }
 
@@ -6644,6 +6662,9 @@ function speakSchoolQuantity(school, opts = {}) {
           localStorage.setItem('nk_daily_result_log_v1', JSON.stringify(localLog));
         }
       } catch (e) {}
+      if (typeof window.nkSyncApplyMeta === 'function') {
+        try { window.nkSyncApplyMeta(m); } catch (e) {}
+      }
       if (currentCursorIndex >= SCHOOLS.length) currentCursorIndex = 0;
     }
 
@@ -6658,6 +6679,7 @@ function speakSchoolQuantity(school, opts = {}) {
             const s = SCHOOLS.find(x => x.id === activeModalSchoolId);
             if (s) renderModalItems(s);
           }
+          if (typeof window.nkOnProDataUpdated === 'function') window.nkOnProDataUpdated();
         } catch (e) { console.warn('sync render', e); }
       }, 120);
     }
@@ -7252,6 +7274,9 @@ function speakSchoolQuantity(school, opts = {}) {
       }
       updateNaviLockBanner();
       updateBgMediaAndPip();
+      if (activeNaviSchoolId !== null && !opts.skipRender && typeof window.nkCheckNearbyDetour === 'function') {
+        try { window.nkCheckNearbyDetour(activeNaviSchoolId); } catch (e) {}
+      }
       if (!opts.skipRender) renderList();
     }
 
@@ -7690,12 +7715,13 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-27.4';
+    var NK_APP_VERSION = '2026-11-27.5';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.2';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
       'index.html',
       'delivery-convenience.js',
+      'delivery-pro-features.js',
       'save-sync-status.js',
       'pickup-extra-ui.js',
       'return-card-status.js',
@@ -8686,7 +8712,11 @@ ${school.address || ''}`;
 
     function orderedOverlayDeliveries() {
       const enriched = SCHOOLS.map(s => ({ ...s, dist: distanceToSchool(s) }));
-      const pending = enriched.filter(s => !completedMap[s.id]);
+      let pending = enriched.filter(s => !completedMap[s.id]);
+      if (typeof window.nkOverlayAllowSchool === 'function') {
+        const scoped = pending.filter(s => s.id === activeNaviSchoolId || window.nkOverlayAllowSchool(s));
+        if (scoped.length) pending = scoped;
+      }
       if (userLat !== null && userLng !== null) {
         const rank = (sortMode === 'route' && typeof window.nkGetRouteRank === 'function')
           ? window.nkGetRouteRank(pending)
@@ -9067,7 +9097,7 @@ ${school.address || ''}`;
         collapsedSummary: `${s.name}${distShort ? ' · ' + distShort : ''} · ${totalLabel(s)}`,
         address: s.address || '',
         phone: s.phone || '',
-        memo: statusPrefix + (fOps.memo || fOps.reason || ''),
+        memo: [statusPrefix.trim(), fOps.visitWindow ? `⏰ ${fOps.visitWindow}` : '', fOps.avoidWindow ? `⚠️ ${fOps.avoidWindow}` : '', fOps.memo || fOps.reason || ''].filter(Boolean).join(' · '),
         pickupNote: linkedPendingPickups.length ? `↩️ 회수·추가 ${linkedPendingPickups.length}건 함께 확인` : '',
         undoLabel,
         naviUrl: buildNaverNaviSchemeUrl(s),
@@ -10912,7 +10942,7 @@ ${school.address || ''}`;
     document.addEventListener('pointerdown', (e) => {
       if (Date.now() - lastOverlayOpenedAt < 1200) return;
       if (mainAppScreenOff) return;
-      if (e.target.closest('#domFloatingOverlay, #popupScreenOffBackdrop, #nkUndoToast, #nkMemoDialog, #nkDailyReportDialog, #togglePipHudBtn, #bannerPipHudBtn, #pkPipHudBtn, #modalPipHudBtn, #modalTestTouchOverlayBtn, [data-action="naver-speech"], [data-action="lock-pip"], #hudNaverNaviLink, #modalNaverAppLink, [data-pk-navi], [data-pk-pip], [data-pkd-navi], [data-pkd-pip]')) return;
+      if (e.target.closest('dialog[open], #domFloatingOverlay, #popupScreenOffBackdrop, #nkUndoToast, #nkMemoDialog, #nkDailyReportDialog, #togglePipHudBtn, #bannerPipHudBtn, #pkPipHudBtn, #modalPipHudBtn, #modalTestTouchOverlayBtn, [data-action="naver-speech"], [data-action="lock-pip"], #hudNaverNaviLink, #modalNaverAppLink, [data-pk-navi], [data-pk-pip], [data-pkd-navi], [data-pkd-pip]')) return;
       if (hasAndroidNativeOverlay() && window.AndroidOverlay.isOverlayShowing()) {
         closeAllPopupWindows({ silent: true });
       }
@@ -11210,7 +11240,41 @@ window.__nkBridge = {
   getAutoNearest: () => !!overlayFollowNearest,
   getOverlayTarget: () => getOverlayDisplayTarget(),
   getOverlayPayload: () => buildOverlayPayload(),
-  syncOverlay: () => syncNativeAndDomOverlays()
+  syncOverlay: () => syncNativeAndDomOverlays(),
+  getSchools: () => SCHOOLS,
+  getPickups: () => (typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) ? PICKUPS : []),
+  getCompletedMap: () => completedMap,
+  getCustomCoords: () => customCoords,
+  getSyncUser: () => (typeof syncUser !== 'undefined' ? syncUser : null),
+  getWorksMembers: () => (typeof worksMembers !== 'undefined' && Array.isArray(worksMembers) ? worksMembers : []),
+  loadWorksMembers: () => (typeof worksLoadMembers === 'function' ? worksLoadMembers() : Promise.resolve([])),
+  loadScriptOnce: (url, check) => (typeof loadScriptOnce === 'function' ? loadScriptOnce(url, check) : Promise.reject(new Error('no loader'))),
+  idbGet: (k) => (typeof idbGet === 'function' ? idbGet(k) : Promise.resolve(null)),
+  idbPut: (k, v) => (typeof idbPut === 'function' ? idbPut(k, v) : Promise.resolve()),
+  sendSmsDirect: (phone, body) => {
+    const cleaned = String(phone || '').replace(/[^0-9+*#,]/g, '');
+    if (!cleaned) return false;
+    if (hasAndroidNativeOverlay() && typeof window.AndroidOverlay.sendSms === 'function') {
+      try { window.AndroidOverlay.sendSms(cleaned, body || ''); return true; } catch (e) {}
+    }
+    const sep = IS_IOS ? '&body=' : '?body=';
+    const href = 'sms:' + cleaned + (body ? sep + encodeURIComponent(body) : '');
+    try {
+      const a = document.createElement('a'); a.href = href; a.style.display = 'none';
+      document.body.appendChild(a); a.click(); a.remove();
+    } catch (e) { window.location.href = href; }
+    return true;
+  },
+  openNaviToSchool: (s) => {
+    if (!s) return;
+    setNaviLockedSchool(s.id);
+    openNaverMapApp(buildNaverNaviSchemeUrl(s), buildNaverWebUrl(s));
+  },
+  openNaviToPickup: (p) => {
+    if (!p) return;
+    if (typeof setNaviLockedPickup === 'function') setNaviLockedPickup(p.id);
+    openNaverMapApp(pkNaviUrl(p), `https://map.naver.com/p/search/${encodeURIComponent(p.address || p.school || '')}`);
+  }
 };
 </script>
   <script src="save-sync-status.js"></script>
@@ -11219,5 +11283,6 @@ window.__nkBridge = {
   <script src="return-manual-status.js"></script>
   <script src="map-view-no-popup.js"></script>
   <script src="delivery-convenience.js"></script>
+  <script src="delivery-pro-features.js"></script>
 </body>
 </html>

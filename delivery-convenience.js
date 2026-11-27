@@ -117,13 +117,15 @@
   }
 
   window.nkFilterSchool = function (s) {
+    if (typeof window.nkProFilterSchool === 'function' && !window.nkProFilterSchool(s)) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     const fOps = s.fieldOps || {};
     const extras = typeof extrasToText === 'function' ? extrasToText(s.extras) : '';
     const hay = [
-      s.name, s.regionGroup, s.subRegion, s.address, s.phone,
-      s.product, extras, fOps.memo, fOps.reason, fOps.deliveryStatus
+      s.name, s.regionGroup, s.subRegion, s.address, s.phone, s.assignee,
+      s.product, extras, fOps.memo, fOps.reason, fOps.deliveryStatus,
+      fOps.visitWindow, fOps.avoidWindow
     ].filter(Boolean).join(' ').toLowerCase();
     return hay.includes(q);
   };
@@ -244,37 +246,31 @@
     pkDetObs.observe(pkDetailBox, { childList: true });
   }
 
-  // ---- 3. 연쇄 동선 최적화 (Nearest Neighbor + 2-opt) ----
-  function computeOptimizedRoute(list) {
-    const pendingWithCoords = [];
-    const others = [];
-    list.forEach(s => {
-      const c = typeof getSchoolCoords === 'function' ? getSchoolCoords(s) : null;
-      if (!completedMap[s.id] && typeof hasCoords === 'function' && hasCoords(c)) {
-        pendingWithCoords.push({ s, c });
-      } else {
-        others.push(s);
-      }
-    });
-    others.sort((a, b) => (!!completedMap[a.id] - !!completedMap[b.id]) || (a.order - b.order));
-    if (pendingWithCoords.length <= 1) {
-      return { ordered: [...pendingWithCoords.map(x => x.s), ...others], totalMeters: 0, count: pendingWithCoords.length };
+  // ---- 3. 연쇄 동선 최적화 (방문 시간대 우선순위 + Nearest Neighbor + 2-opt) ----
+  function visitPriorityOf(s) {
+    const vw = String((s && s.fieldOps && s.fieldOps.visitWindow) || '').trim();
+    if (!vw || vw === '상관없음') return 1;
+    if (vw.includes('오전')) return 0;
+    if (vw.includes('오후')) return 2;
+    const m = vw.match(/(\d{1,2})\s*[:시]/);
+    if (m) {
+      const h = parseInt(m[1], 10);
+      if (h < 12) return 0;
+      if (h >= 13) return 2;
     }
+    return 1;
+  }
 
-    const pos = bridge().getUserPos ? bridge().getUserPos() : null;
-    const distBetween = (c1, c2) => computeHaversineMeters(c1.lat, c1.lng, c2.lat, c2.lng);
-
-    const remaining = [...pendingWithCoords];
-    remaining.sort((a, b) => a.s.order - b.s.order);
-
+  function optimizeBucket(bucket, startCoord, distBetween) {
+    if (bucket.length <= 1) return [...bucket];
+    const remaining = [...bucket].sort((a, b) => a.s.order - b.s.order);
     const route = [];
-    let curCoord = pos;
+    let curCoord = startCoord;
     if (!curCoord) {
       const first = remaining.shift();
       route.push(first);
       curCoord = first.c;
     }
-
     while (remaining.length) {
       let bestIdx = 0;
       let bestDist = Infinity;
@@ -289,8 +285,6 @@
       route.push(next);
       curCoord = next.c;
     }
-
-    // 2-opt 개선 (경로 교차 제거)
     if (route.length >= 4) {
       let improved = true;
       let guard = 0;
@@ -310,6 +304,37 @@
         }
       }
     }
+    return route;
+  }
+
+  function computeOptimizedRoute(list) {
+    const pendingWithCoords = [];
+    const others = [];
+    list.forEach(s => {
+      const c = typeof getSchoolCoords === 'function' ? getSchoolCoords(s) : null;
+      if (!completedMap[s.id] && typeof hasCoords === 'function' && hasCoords(c)) {
+        pendingWithCoords.push({ s, c, prio: visitPriorityOf(s) });
+      } else {
+        others.push(s);
+      }
+    });
+    others.sort((a, b) => (!!completedMap[a.id] - !!completedMap[b.id]) || (visitPriorityOf(a) - visitPriorityOf(b)) || (a.order - b.order));
+    if (pendingWithCoords.length <= 1) {
+      return { ordered: [...pendingWithCoords.map(x => x.s), ...others], totalMeters: 0, count: pendingWithCoords.length };
+    }
+
+    const pos = bridge().getUserPos ? bridge().getUserPos() : null;
+    const distBetween = (c1, c2) => computeHaversineMeters(c1.lat, c1.lng, c2.lat, c2.lng);
+
+    const route = [];
+    let curCoord = pos;
+    [0, 1, 2].forEach(prio => {
+      const bucket = pendingWithCoords.filter(x => x.prio === prio);
+      if (!bucket.length) return;
+      const seg = optimizeBucket(bucket, curCoord, distBetween);
+      route.push(...seg);
+      curCoord = seg[seg.length - 1].c;
+    });
 
     let totalMeters = 0;
     if (pos && route.length) totalMeters += distBetween(pos, route[0].c);
@@ -517,6 +542,24 @@
         <button type="button" data-st="재방문">🔁 재방문</button>
         <button type="button" data-st="연락필요">📞 연락필요</button>
       </div>
+      <label>방문 가능 시간대 (동선 우선 배치)</label>
+      <div id="nkMemoVisitPills" class="nk-status-pills" role="group" aria-label="방문 시간대">
+        <button type="button" data-vw="">상관없음</button>
+        <button type="button" data-vw="오전 필수 (~11:30)">🌅 오전 필수</button>
+        <button type="button" data-vw="오후 선호 (13:30~)">🌤️ 오후 선호</button>
+        <button type="button" data-vw="custom">⏰ 직접 입력</button>
+      </div>
+      <input id="nkMemoVisitCustom" type="text" class="hidden" placeholder="예: 09:30~11:30 또는 10:30 전 마감">
+      <label for="nkMemoAvoidInput">피해야 할 시간 (등원·낮잠·하원 경고)</label>
+      <input id="nkMemoAvoidInput" type="text" placeholder="예: 낮잠 (13:00~15:00)">
+      <div class="nk-chips" id="nkMemoAvoidChips">
+        <button type="button" data-avoid="등원 혼잡 (08:30~09:30)">+ 등원 (08:30~09:30)</button>
+        <button type="button" data-avoid="낮잠 시간 (13:00~15:00)">+ 낮잠 (13:00~15:00)</button>
+        <button type="button" data-avoid="하원 혼잡 (15:30~16:30)">+ 하원 (15:30~16:30)</button>
+      </div>
+      <label for="nkMemoAssigneeInput">담당 기사 (선택)</label>
+      <input id="nkMemoAssigneeInput" type="text" list="nkAssigneeDatalist" placeholder="예: 홍길동 (비우면 공통)">
+      <datalist id="nkAssigneeDatalist"></datalist>
       <label for="nkMemoPhoneInput">원 전화번호</label>
       <input id="nkMemoPhoneInput" type="tel" placeholder="예: 031-987-2730">
       <label for="nkMemoInput">현장 메모 (주차 · 공동현관 비번 · 전달 장소)</label>
@@ -532,9 +575,10 @@
       <input id="nkMemoReasonInput" type="text" placeholder="예: 담당 선생님 외출, 내일 오전 재방문">
       <label for="nkMemoDateInput">재방문 예정일 (선택)</label>
       <input id="nkMemoDateInput" type="date">
-      <div class="nk-dlg-actions">
+      <div class="nk-dlg-actions" style="flex-wrap:wrap">
         <button id="nkMemoCancelBtn" type="button" class="nk-btn-cancel">취소</button>
         <a id="nkMemoCallLink" href="tel:" class="nk-btn-call hidden">📞 전화</a>
+        <button id="nkMemoPhotoBtn" type="button" style="background:#312e81;color:#e0e7ff;border:1px solid #6366f1">📷 증빙사진</button>
         <button id="nkMemoSaveBtn" type="submit" class="nk-btn-save">저장</button>
       </div>
     </form>
@@ -543,11 +587,23 @@
 
   let memoTargetId = null;
   let memoSelectedStatus = '대기';
+  let memoSelectedVisit = '';
 
   function syncMemoDialogPills() {
     memoDlg.querySelectorAll('#nkMemoStatusPills button').forEach(b => {
       b.setAttribute('aria-pressed', String(b.getAttribute('data-st') === memoSelectedStatus));
     });
+  }
+
+  function syncMemoVisitPills() {
+    const presetVals = ['', '오전 필수 (~11:30)', '오후 선호 (13:30~)'];
+    const isCustom = memoSelectedVisit === 'custom' || (memoSelectedVisit && !presetVals.includes(memoSelectedVisit));
+    memoDlg.querySelectorAll('#nkMemoVisitPills button').forEach(b => {
+      const v = b.getAttribute('data-vw');
+      b.setAttribute('aria-pressed', String(v === 'custom' ? isCustom : (!isCustom && v === memoSelectedVisit)));
+    });
+    const customInp = document.getElementById('nkMemoVisitCustom');
+    if (customInp) customInp.classList.toggle('hidden', !isCustom);
   }
 
   function syncMemoCallLink() {
@@ -569,13 +625,24 @@
     const fOps = s.fieldOps || {};
     memoSelectedStatus = (completedMap[s.id] ? '완료' : fOps.deliveryStatus) || '대기';
     if (memoSelectedStatus === '완료') memoSelectedStatus = '대기';
+    const vw = String(fOps.visitWindow || '').trim();
+    const presetVals = ['', '오전 필수 (~11:30)', '오후 선호 (13:30~)'];
+    memoSelectedVisit = presetVals.includes(vw) ? vw : (vw ? 'custom' : '');
     document.getElementById('nkMemoTitle').textContent = `${s.name} · 메모 및 상태`;
     document.getElementById('nkMemoSub').textContent = `[${s.regionGroup || ''} ${s.subRegion || ''}] ${s.address || ''}`;
+    document.getElementById('nkMemoVisitCustom').value = presetVals.includes(vw) ? '' : vw;
+    document.getElementById('nkMemoAvoidInput').value = fOps.avoidWindow || '';
+    document.getElementById('nkMemoAssigneeInput').value = s.assignee || '';
+    const dl = document.getElementById('nkAssigneeDatalist');
+    if (dl && typeof window.nkGetKnownAssignees === 'function') {
+      dl.innerHTML = window.nkGetKnownAssignees().map(n => `<option value="${esc(n)}">`).join('');
+    }
     document.getElementById('nkMemoPhoneInput').value = s.phone || '';
     document.getElementById('nkMemoInput').value = fOps.memo || '';
     document.getElementById('nkMemoReasonInput').value = fOps.reason || '';
     document.getElementById('nkMemoDateInput').value = fOps.revisitDate || '';
     syncMemoDialogPills();
+    syncMemoVisitPills();
     syncMemoCallLink();
     memoDlg.showModal();
   };
@@ -585,6 +652,26 @@
     if (!b) return;
     memoSelectedStatus = b.getAttribute('data-st');
     syncMemoDialogPills();
+  });
+  document.getElementById('nkMemoVisitPills').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-vw]');
+    if (!b) return;
+    memoSelectedVisit = b.getAttribute('data-vw');
+    syncMemoVisitPills();
+    if (memoSelectedVisit === 'custom') document.getElementById('nkMemoVisitCustom')?.focus();
+  });
+  document.getElementById('nkMemoAvoidChips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-avoid]');
+    if (!b) return;
+    const inp = document.getElementById('nkMemoAvoidInput');
+    const chip = b.getAttribute('data-avoid');
+    const cur = inp.value.trim();
+    if (!cur.includes(chip)) inp.value = cur ? `${cur}, ${chip}` : chip;
+  });
+  document.getElementById('nkMemoPhotoBtn').addEventListener('click', () => {
+    if (memoTargetId != null && typeof window.nkOpenPhotoModal === 'function') {
+      window.nkOpenPhotoModal(memoTargetId);
+    }
   });
   document.getElementById('nkMemoPhoneInput').addEventListener('input', syncMemoCallLink);
   document.getElementById('nkMemoQuickChips').addEventListener('click', (e) => {
@@ -602,15 +689,24 @@
     e.preventDefault();
     const s = SCHOOLS.find(x => x.id === memoTargetId);
     if (!s) { memoDlg.close(); return; }
+    const visitWindowVal = memoSelectedVisit === 'custom'
+      ? document.getElementById('nkMemoVisitCustom').value.trim()
+      : memoSelectedVisit;
     s.phone = document.getElementById('nkMemoPhoneInput').value.trim();
+    s.assignee = document.getElementById('nkMemoAssigneeInput').value.trim();
     s.fieldOps = {
       ...(s.fieldOps || {}),
       deliveryStatus: completedMap[s.id] ? '완료' : memoSelectedStatus,
+      visitWindow: visitWindowVal,
+      avoidWindow: document.getElementById('nkMemoAvoidInput').value.trim(),
       memo: document.getElementById('nkMemoInput').value.trim(),
       reason: document.getElementById('nkMemoReasonInput').value.trim(),
       revisitDate: document.getElementById('nkMemoDateInput').value,
       updatedAt: Date.now()
     };
+    if (typeof window.nkRecordSchoolsToMaster === 'function') {
+      try { window.nkRecordSchoolsToMaster([s]); } catch (err) {}
+    }
     if (typeof saveState === 'function') saveState();
     if (typeof renderList === 'function') renderList();
     if (typeof syncNativeAndDomOverlays === 'function') syncNativeAndDomOverlays();
@@ -620,6 +716,8 @@
       if (box) {
         const parts = [];
         if (s.fieldOps.deliveryStatus && s.fieldOps.deliveryStatus !== '대기' && !completedMap[s.id]) parts.push(`[${s.fieldOps.deliveryStatus}]`);
+        if (s.fieldOps.visitWindow) parts.push(`⏰ ${s.fieldOps.visitWindow}`);
+        if (s.fieldOps.avoidWindow) parts.push(`⚠️ 피할 시간: ${s.fieldOps.avoidWindow}`);
         if (s.fieldOps.memo) parts.push(`📝 ${s.fieldOps.memo}`);
         if (s.fieldOps.reason) parts.push(`사유: ${s.fieldOps.reason}`);
         if (s.fieldOps.revisitDate) parts.push(`재방문: ${s.fieldOps.revisitDate}`);
@@ -637,6 +735,8 @@
   // 납품표 교체·완료 초기화 뒤에도 지난 날짜를 볼 수 있도록 하루 기록을 기기에 따로 보관합니다.
   const DAY_LOG_KEY = 'nk_daily_result_log_v1';
   const DAY_LOG_KEEP_DAYS = 60;
+  const REPORT_SENT_KEY = 'nk_daily_report_sent_v1';
+  const REPORT_CHANNEL_PREF_KEY = 'nk_daily_report_channel_v1';
   const dayKeyOf = (ms) => {
     if (!ms) return '';
     const d = new Date(ms);
@@ -686,13 +786,17 @@
       if (!completedMap[s.id]) return;
       const at = schoolDoneAt(s);
       if (dayKeyOf(at) !== dayKey) return;
-      deliveries[s.id] = { name: s.name, qty: qtyOf(s), at };
+      const rec = { name: s.name, qty: qtyOf(s), at };
+      if (s.assignee) rec.assignee = s.assignee;
+      deliveries[s.id] = rec;
     });
     const pickups = {};
     if (typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS)) {
       PICKUPS.forEach(p => {
         if (!p.done || p.worksClosedRemote || dayKeyOf(p.doneAt) !== dayKey) return;
-        pickups[p.id] = { type: p.type || '', school: p.school || '', items: p.items || p.title || '', at: p.doneAt };
+        const rec = { type: p.type || '', school: p.school || '', items: p.items || p.title || '', at: p.doneAt };
+        if (p.assignee) rec.assignee = p.assignee;
+        pickups[p.id] = rec;
       });
     }
     return { deliveries, pickups };
@@ -724,8 +828,9 @@
     saveDayLog(log);
     return log;
   }
+  window.nkSyncTodayLog = syncTodayLog;
 
-  function buildDailyReportText(dayKey) {
+  function buildDailyReportText(dayKey, opts = {}) {
     const tKey = todayStr();
     const isToday = dayKey === tKey;
     const log = isToday ? syncTodayLog() : loadDayLog();
@@ -733,6 +838,7 @@
     const saved = log[dayKey] || { deliveries: {}, pickups: {} };
     const schoolById = new Map(SCHOOLS.map(s => [String(s.id), s]));
     const pickupById = new Map((typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS) ? PICKUPS : []).map(p => [String(p.id), p]));
+    const filterAssignee = String(opts.assignee || '').trim();
 
     const deliveries = {};
     Object.entries(saved.deliveries || {}).forEach(([id, v]) => {
@@ -752,13 +858,14 @@
     });
     Object.assign(pickupsDone, live.pickups);
 
+    const matchWho = (who) => !filterAssignee || String(who || '').includes(filterAssignee);
     const byTime = (a, b) => (a.at || 0) - (b.at || 0);
-    const doneList = Object.values(deliveries).sort(byTime);
+    const doneList = Object.values(deliveries).filter(d => matchWho(d.assignee)).sort(byTime);
     const doneQty = doneList.reduce((a, d) => a + (Number(d.qty) || 0), 0);
-    const pkDoneList = Object.values(pickupsDone).sort(byTime);
+    const pkDoneList = Object.values(pickupsDone).filter(p => matchWho(p.assignee)).sort(byTime);
 
     const lines = [];
-    lines.push(`[엔터코딩 납품 결과 보고] ${dayLabel(dayKey)}`);
+    lines.push(`[엔터코딩 납품 결과 보고] ${dayLabel(dayKey)}${filterAssignee ? ` · 담당: ${filterAssignee}` : ''}`);
     lines.push(`• 정규 납품 완료: ${doneList.length}곳 (${doneQty}개)`);
     lines.push(`• 회수·추가 처리 완료: ${pkDoneList.length}건`);
 
@@ -767,7 +874,8 @@
       lines.push(`■ 납품 완료 원 (${doneList.length}곳)`);
       doneList.forEach((d, i) => {
         const tm = d.at ? ` (${fmtHm(d.at)})` : '';
-        lines.push(`${i + 1}. ${d.name} · ${Number(d.qty) || 0}개${tm}`);
+        const who = !filterAssignee && d.assignee ? ` [${d.assignee}]` : '';
+        lines.push(`${i + 1}. ${d.name} · ${Number(d.qty) || 0}개${tm}${who}`);
       });
     }
 
@@ -778,6 +886,24 @@
         const tm = p.at ? ` (${fmtHm(p.at)})` : '';
         lines.push(`${i + 1}. [${p.type}] ${p.school} · ${p.items}${tm}`);
       });
+    }
+
+    if (opts.includeHolds && isToday) {
+      const holds = SCHOOLS.filter(s => {
+        if (completedMap[s.id]) return false;
+        if (!matchWho(s.assignee)) return false;
+        const st = s.fieldOps && s.fieldOps.deliveryStatus;
+        return st === '보류' || st === '재방문' || st === '부분 완료' || st === '연락필요';
+      });
+      if (holds.length) {
+        lines.push('');
+        lines.push(`■ 보류·재방문 참고 (${holds.length}곳)`);
+        holds.forEach((s, i) => {
+          const f = s.fieldOps || {};
+          const extra = [f.deliveryStatus, f.reason, f.revisitDate ? `재방문 ${f.revisitDate}` : ''].filter(Boolean).join(' · ');
+          lines.push(`${i + 1}. ${s.name} (${extra})`);
+        });
+      }
     }
 
     if (!doneList.length && !pkDoneList.length) {
@@ -792,15 +918,40 @@
   reportDlg.className = 'nk-dialog';
   reportDlg.innerHTML = `
     <div>
-      <h2>📋 하루 납품·회수 결과 요약</h2>
-      <p class="nk-sub">선택한 날짜에 납품 앱에서 직접 완료 처리한 내역만 기록됩니다. (웍스에서 완료된 할 일 제외)</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <h2 style="margin:0">📋 하루 납품·회수 결과 요약</h2>
+        <button id="nkReportStatsShortcutBtn" type="button" style="min-height:34px;padding:4px 10px;border-radius:9px;background:#1e3a5f;color:#bae6fd;border:1px solid #38bdf8;font-size:11px;font-weight:800;white-space:nowrap">📊 주간·월간 통계</button>
+      </div>
+      <p class="nk-sub" style="margin-top:4px">선택한 날짜에 납품 앱에서 직접 완료 처리한 내역만 기록됩니다. (웍스에서 완료된 할 일 제외)</p>
       <div style="display:flex;gap:6px;align-items:center">
         <button id="nkReportPrevDay" type="button" aria-label="전날" style="min-width:44px;min-height:42px;border-radius:10px;background:#22324b;color:#e2e8f0;font-weight:800">◀</button>
         <input id="nkReportDate" type="date" aria-label="보고 날짜" style="flex:1;margin-top:0;text-align:center">
         <button id="nkReportNextDay" type="button" aria-label="다음 날" style="min-width:44px;min-height:42px;border-radius:10px;background:#22324b;color:#e2e8f0;font-weight:800">▶</button>
         <button id="nkReportToday" type="button" style="min-width:52px;min-height:42px;border-radius:10px;background:#065f46;color:#d1fae5;font-size:13px;font-weight:800">오늘</button>
       </div>
-      <textarea id="nkReportTextarea" rows="12" readonly style="min-height:240px;font-size:13px;line-height:1.55;margin-top:10px"></textarea>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:#cbd5e1">
+        <label style="display:inline-flex;align-items:center;gap:5px;margin:0;cursor:pointer">
+          <input id="nkReportIncludeHolds" type="checkbox" style="width:16px;height:16px;margin:0">
+          <span>보류·재방문 참고 포함</span>
+        </label>
+        <select id="nkReportAssigneeFilter" aria-label="담당자별 요약" style="width:auto;min-width:110px;margin:0;padding:5px 8px;font-size:12px">
+          <option value="">전체 담당자</option>
+        </select>
+      </div>
+      <textarea id="nkReportTextarea" rows="11" readonly style="min-height:210px;font-size:13px;line-height:1.55;margin-top:8px"></textarea>
+      <div id="nkReportPhotoStrip" style="display:none;margin-top:8px"></div>
+      <div style="margin-top:10px;padding:10px;border-radius:12px;background:#0c1728;border:1px solid #2b4464">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:800;color:#86efac">📤 네이버 웍스 방으로 원클릭 보고</span>
+          <span id="nkReportSentBadge" style="font-size:11px;color:#94a3b8"></span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="nkReportChannelSelect" aria-label="웍스 보고 대상 방" style="flex:1;margin:0;padding:8px 10px;font-size:13px">
+            <option value="">기본 보고 방 (불러오는 중...)</option>
+          </select>
+          <button id="nkReportSendWorksBtn" type="button" style="min-height:40px;padding:0 14px;border-radius:10px;background:#03C75A;color:#022c22;font-size:13px;font-weight:900;white-space:nowrap">📤 웍스 전송</button>
+        </div>
+      </div>
       <div class="nk-dlg-actions">
         <button id="nkReportCloseBtn" type="button" class="nk-btn-cancel">닫기</button>
         <button id="nkReportCopyBtn" type="button" class="nk-btn-copy">📋 결과 복사하기</button>
@@ -810,6 +961,46 @@
   document.body.appendChild(reportDlg);
 
   let reportDayKey = todayStr();
+  let reportChannelsLoaded = false;
+
+  function loadSentMap() {
+    try { return JSON.parse(localStorage.getItem(REPORT_SENT_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function updateSentBadge() {
+    const el = document.getElementById('nkReportSentBadge');
+    if (!el) return;
+    const sent = loadSentMap()[reportDayKey];
+    el.textContent = sent ? `✓ 전송됨 ${fmtHm(sent.at)} (${sent.label || '웍스'})` : '';
+  }
+
+  async function loadWorksReportChannels() {
+    const sel = document.getElementById('nkReportChannelSelect');
+    if (!sel || typeof worksApi !== 'function') return;
+    try {
+      const res = await worksApi('/app/report/channels', 'GET');
+      const list = Array.isArray(res && res.channels) ? res.channels : [];
+      if (!list.length) return;
+      let savedPref = '';
+      try { savedPref = localStorage.getItem(REPORT_CHANNEL_PREF_KEY) || ''; } catch (e) {}
+      sel.innerHTML = list.map(c => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join('');
+      if (savedPref && list.some(c => c.id === savedPref)) sel.value = savedPref;
+      reportChannelsLoaded = true;
+    } catch (e) {
+      if (!reportChannelsLoaded) {
+        sel.innerHTML = '<option value="">기본 보고 방 (공유 로그인 필요)</option>';
+      }
+    }
+  }
+
+  function refreshReportAssigneeOptions() {
+    const sel = document.getElementById('nkReportAssigneeFilter');
+    if (!sel) return;
+    const prev = sel.value;
+    const names = typeof window.nkGetKnownAssignees === 'function' ? window.nkGetKnownAssignees() : [];
+    sel.innerHTML = '<option value="">전체 담당자</option>' + names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    if (prev && names.includes(prev)) sel.value = prev;
+  }
+
   function renderReportDay(key) {
     const tKey = todayStr();
     reportDayKey = key > tKey ? tKey : key;
@@ -818,17 +1009,66 @@
     input.max = tKey;
     document.getElementById('nkReportNextDay').disabled = reportDayKey >= tKey;
     document.getElementById('nkReportNextDay').style.opacity = reportDayKey >= tKey ? '.4' : '1';
-    document.getElementById('nkReportTextarea').value = buildDailyReportText(reportDayKey);
+    const includeHolds = !!document.getElementById('nkReportIncludeHolds')?.checked;
+    const assignee = document.getElementById('nkReportAssigneeFilter')?.value || '';
+    document.getElementById('nkReportTextarea').value = buildDailyReportText(reportDayKey, { includeHolds, assignee });
+    updateSentBadge();
+    if (typeof window.nkRenderReportPhotos === 'function') {
+      try { window.nkRenderReportPhotos(reportDayKey, document.getElementById('nkReportPhotoStrip')); } catch (e) {}
+    }
   }
   function openDailyReportDialog() {
+    refreshReportAssigneeOptions();
     renderReportDay(todayStr());
+    loadWorksReportChannels();
     reportDlg.showModal();
   }
+  window.nkOpenDailyReport = openDailyReportDialog;
+
   document.getElementById('nkReportPrevDay').addEventListener('click', () => renderReportDay(shiftDay(reportDayKey, -1)));
   document.getElementById('nkReportNextDay').addEventListener('click', () => renderReportDay(shiftDay(reportDayKey, 1)));
   document.getElementById('nkReportToday').addEventListener('click', () => renderReportDay(todayStr()));
   document.getElementById('nkReportDate').addEventListener('change', (e) => {
     if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) renderReportDay(e.target.value);
+  });
+  document.getElementById('nkReportIncludeHolds').addEventListener('change', () => renderReportDay(reportDayKey));
+  document.getElementById('nkReportAssigneeFilter').addEventListener('change', () => renderReportDay(reportDayKey));
+  document.getElementById('nkReportChannelSelect').addEventListener('change', (e) => {
+    try { localStorage.setItem(REPORT_CHANNEL_PREF_KEY, e.target.value || ''); } catch (err) {}
+  });
+  document.getElementById('nkReportStatsShortcutBtn').addEventListener('click', () => {
+    reportDlg.close();
+    if (typeof window.nkOpenStatsDialog === 'function') window.nkOpenStatsDialog();
+  });
+  document.getElementById('nkReportSendWorksBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('nkReportSendWorksBtn');
+    const txt = document.getElementById('nkReportTextarea').value.trim();
+    if (!txt) return;
+    const sent = loadSentMap()[reportDayKey];
+    if (sent && typeof confirm === 'function' && !confirm(`${reportDayKey} 결과는 이미 ${fmtHm(sent.at)}에 [${sent.label || '웍스'}]로 전송했습니다. 다시 전송할까요?`)) {
+      return;
+    }
+    if (typeof worksApi !== 'function') {
+      if (typeof showToast === 'function') showToast('웍스 연동 모듈을 찾을 수 없습니다.');
+      return;
+    }
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = '전송 중...';
+    try {
+      const channelId = document.getElementById('nkReportChannelSelect').value || '';
+      const res = await worksApi('/app/report/send', 'POST', { text: txt, channelId });
+      const map = loadSentMap();
+      map[reportDayKey] = { at: res.sentAt || Date.now(), label: res.targetLabel || '웍스' };
+      try { localStorage.setItem(REPORT_SENT_KEY, JSON.stringify(map)); } catch (e) {}
+      updateSentBadge();
+      if (typeof showToast === 'function') showToast(`📤 [${res.targetLabel || '네이버 웍스'}]에 ${reportDayKey} 결과를 전송했습니다!`);
+    } catch (e) {
+      if (typeof showToast === 'function') showToast(`✕ 웍스 전송 실패: ${e.message || e}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
   });
 
   // 보고서를 열지 않아도 오늘 기록이 남도록 주기적으로, 그리고 앱을 벗어날 때 저장합니다.
