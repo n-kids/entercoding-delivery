@@ -2,7 +2,7 @@
 // 앱 파일 캐시와 시스템 알림을 담당합니다.
 // 원 정보·수량을 Service Worker가 직접 저장했다고 간주하지 않습니다.
 
-const BUILD = 'integrated-20261127-profeatures1';
+const BUILD = 'integrated-20261127-uiredesign1';
 
 const SCOPE = new URL(self.registration.scope);
 
@@ -22,6 +22,7 @@ const OPTIONAL_FILES = [
   'overlay.html',
   'delivery-convenience.js',
   'delivery-pro-features.js',
+  'delivery-ui-redesign.js',
   'save-sync-status.js',
   'pickup-extra-ui.js',
   'return-card-status.js',

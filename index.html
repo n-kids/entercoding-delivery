@@ -6545,6 +6545,7 @@ function speakSchoolQuantity(school, opts = {}) {
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
       try { localStorage.setItem('entercoding_view_v1', tabKey); } catch (e) {}
+      if (typeof window.nkOnViewChanged === 'function') { try { window.nkOnViewChanged(tabKey); } catch (e) {} }
       if (currentView === 'pickup') {
         renderPickups();
         if (typeof worksFetchPickups === 'function' && typeof syncUser !== 'undefined' && syncUser && Date.now() - worksLastFetchAt > 180000) worksFetchPickups(true);
@@ -7715,13 +7716,14 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-27.5';
+    var NK_APP_VERSION = '2026-11-27.6';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-18.2';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
       'index.html',
       'delivery-convenience.js',
       'delivery-pro-features.js',
+      'delivery-ui-redesign.js',
       'save-sync-status.js',
       'pickup-extra-ui.js',
       'return-card-status.js',
@@ -11274,7 +11276,13 @@ window.__nkBridge = {
     if (!p) return;
     if (typeof setNaviLockedPickup === 'function') setNaviLockedPickup(p.id);
     openNaverMapApp(pkNaviUrl(p), `https://map.naver.com/p/search/${encodeURIComponent(p.address || p.school || '')}`);
-  }
+  },
+  setView: (v) => { if (typeof setView === 'function') setView(v); },
+  getViewState: () => ({ currentView, pkMode }),
+  stepLabelParts: (s) => (typeof stepLabelParts === 'function' ? stepLabelParts(s) : []),
+  grandTotal: (s) => (typeof grandTotal === 'function' ? grandTotal(s) : 0),
+  distanceToSchool: (s) => (typeof distanceToSchool === 'function' ? distanceToSchool(s) : null),
+  formatDistance: (m) => (typeof formatDistance === 'function' ? formatDistance(m) : '')
 };
 </script>
   <script src="save-sync-status.js"></script>
@@ -11284,5 +11292,6 @@ window.__nkBridge = {
   <script src="map-view-no-popup.js"></script>
   <script src="delivery-convenience.js"></script>
   <script src="delivery-pro-features.js"></script>
+  <script src="delivery-ui-redesign.js"></script>
 </body>
 </html>
