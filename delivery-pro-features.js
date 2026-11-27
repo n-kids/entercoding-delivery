@@ -287,6 +287,7 @@
     });
     return out.sort((a, b) => (b.at || 0) - (a.at || 0));
   }
+  window.nkGetSchoolPhotoCount = (schoolId, dayKey) => photosForSchool(schoolId, dayKey).length;
   function photosForDay(dayKey) {
     const store = loadPhotoStore();
     const out = [];
@@ -1471,6 +1472,7 @@
         if (typeof renderList === 'function') renderList();
         const modalBtn = document.getElementById('nkModalPhotoBtn');
         if (modalBtn) modalBtn.textContent = `📷 증빙사진 (${photosForSchool(activePhotoSchoolId).length})`;
+        if (typeof syncNativeAndDomOverlays === 'function') syncNativeAndDomOverlays();
         toast('📷 납품 증빙 사진을 저장했습니다.');
       }
     } catch (err) {

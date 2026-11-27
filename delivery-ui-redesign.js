@@ -740,9 +740,13 @@
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) metaTheme.setAttribute('content', isSun ? '#eef2f7' : '#0f172a');
 
-    // Sync floating DOM overlay light class too
-    const domOv = document.getElementById('domFloatingOverlay');
-    if (domOv) domOv.classList.toggle('nk-dom-light', isSun);
+    // Sync floating overlays with main app theme when auto-sync is enabled
+    let ovThemeSync = true;
+    try { ovThemeSync = localStorage.getItem('nk_overlay_theme_sync') !== '0'; } catch (e) {}
+    if (ovThemeSync) {
+      const domOv = document.getElementById('domFloatingOverlay');
+      if (domOv) domOv.classList.toggle('nk-dom-light', isSun);
+    }
 
     const tBtn = document.getElementById('nkHdrThemeBtn');
     if (tBtn) {
@@ -758,6 +762,7 @@
     if (tsTheme) tsTheme.textContent = isSun ? '🌙 야간 다크로 전환' : '☀️ 주간 햇빛 고대비';
     const tsCompact = document.getElementById('nkTsCompactBtn');
     if (tsCompact) tsCompact.textContent = uiCompact ? '📋 표준 카드로 보기' : '▦ 컴팩트 카드로 보기';
+    if (typeof syncNativeAndDomOverlays === 'function') syncNativeAndDomOverlays();
   }
   function toggleTheme() {
     uiTheme = uiTheme === 'sunlight' ? 'dark' : 'sunlight';
