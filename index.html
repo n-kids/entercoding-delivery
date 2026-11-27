@@ -4868,7 +4868,8 @@ function speakSchoolQuantity(school, opts = {}) {
     // 추가 납품 탭: 정규 납품(주문앱)과 별개로 웍스에서 오는 [추가] 교재 수량 추가, [교구], [A/S]
     const PK_EXTRA_TYPES = ['추가', '교구', 'A/S'];
     function pkGroupOf(p) { return PK_EXTRA_TYPES.includes(p && p.type) ? 'extra' : 'return'; }
-    function pkInMode(p) { return pkGroupOf(p) === pkMode; }
+    function pkIsHiddenDup(p) { return !!(p && p.duplicateMergedInto); }
+    function pkInMode(p) { return !pkIsHiddenDup(p) && pkGroupOf(p) === pkMode; }
     function pkIcon(t) { return t === '추가' ? '➕' : t === '교구' ? '📦' : t === 'A/S' ? '🔧' : t === '증정' ? '🎁' : t === '방문' ? '🚪' : '↩️'; }
     function pkDoneLabel(t) { return t === '증정' ? '전달' : t === '방문' ? '방문' : t === '교구' ? '교구 납품' : t === '추가' ? '추가 납품' : t; }
     const PK_TYPE_CLASS = {
@@ -4894,15 +4895,15 @@ function speakSchoolQuantity(school, opts = {}) {
     // ---- text analysis & user-registered Works task item parser ----
     function stripWorksUserId(str) {
       return String(str || '')
-        .replace(/\s*\(\s*userId\s+[0-9a-fA-F\-]+\s*\)/gi, '')
-        .replace(/\buserId\s+[0-9a-fA-F\-]+/gi, '')
+        .replace(/\s*\(\s*userId\s*[:=]?\s*[A-Za-z0-9_.\-]+\s*\)/gi, '')
+        .replace(/\buserId\s*[:=]?\s*[A-Za-z0-9_.\-]+/gi, '')
         .trim();
     }
 
     function isWorksMetaSegment(str) {
       const s = stripWorksUserId(str).trim();
       if (!s) return true;
-      if (/^(미완료된\s*할\s*일|완료된\s*할\s*일|기한|없음|기한\s*없음|메시지방|발주\/추가\/취소\s*방|카테고리|미분류\s*할\s*일|요청자|담당자|완료하기|미완료로\s*변경)$/i.test(s)) return true;
+      if (/^(미완료된\s*할\s*일|완료된\s*할\s*일|할\s*일\s*상세|기한|없음|기한\s*없음|메시지방|발주\/추가\/취소\s*방|카테고리|미분류\s*할\s*일|요청자|담당자|완료하기|미완료로\s*변경)$/i.test(s)) return true;
       if (/^(요청자|담당자|보낸\s*사람|기한|메시지방|카테고리|생성일|등록자|원\s*이름)\s*[:：]/i.test(s)) return true;
       if (/^DATA\s*:/i.test(s)) return true;
       return false;
@@ -4918,12 +4919,20 @@ function speakSchoolQuantity(school, opts = {}) {
 
     function cleanWorksContentDisplay(str) {
       if (!str) return '';
-      return String(str)
-        .split(/\r?\n/)
-        .map(line => stripWorksUserId(line))
-        .filter(line => !/^DATA\s*:/i.test(line))
-        .join('\n')
-        .trim();
+      const out = [];
+      const seen = new Set();
+      String(str).split(/\r?\n/).forEach(raw => {
+        const line = stripWorksUserId(raw).replace(/[ \t]+/g, ' ').trim();
+        if (!line || /^DATA\s*:/i.test(line)) return;
+        const k = line
+          .replace(/^(?:원문|내용|품목|메모)\s*[:：]\s*/i, '')
+          .replace(/[\s()\[\]·.,:：\-!?~]+/g, '')
+          .toLowerCase();
+        if (k && seen.has(k)) return;
+        if (k) seen.add(k);
+        out.push(line);
+      });
+      return out.join('\n').trim();
     }
 
     function normalizeFieldQuantities(fqs, isDone) {
@@ -4971,14 +4980,267 @@ function speakSchoolQuantity(school, opts = {}) {
     // 품목 이름 앞에 붙은 원 이름 떼기 ("시립풍무푸르지오 만3세 영어" → "만3세 영어")
     function pkStripSchoolPrefix(label, schoolHints) {
       let out = String(label || '');
-      (schoolHints || []).forEach(h => {
+      (Array.isArray(schoolHints) ? schoolHints : [schoolHints]).forEach(h => {
         const core = String(h || '').replace(/\s+/g, '');
         if (core.length < 2) return;
-        const re = new RegExp('^\\s*' + core.split('').map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*') + '(?:어린이집|유치원)?\\s*');
-        const cut = out.replace(re, '');
-        if (cut !== out && cut.trim()) out = cut;
+        const shortCore = core.replace(/(?:어린이집|유치원|초등학교|병설유치원|병설)$/, '');
+        for (const cand of [core, shortCore]) {
+          if (cand.length < 2) continue;
+          const re = new RegExp('^\\s*' + cand.split('').map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*') + '(?:어린이집|유치원|병설유치원|병설)?\\s*');
+          const cut = out.replace(re, '');
+          if (cut !== out && cut.trim()) { out = cut; break; }
+        }
       });
       return out.trim();
+    }
+
+    // ---- 웍스 원문 핵심 요약 & 중복 자동 필터링 ----
+    const PK_GREETING_LEAD_RE = /^(?:(?:안녕하세요|안녕하십니까|수고하십니다|수고\s*많으십니다|고생하십니다|좋은\s*아침입니다|대표님|팀장님|실장님|부장님|과장님|대리님|주임님|선생님|매니저님|원장님|방금|혹시|다름이\s*아니라|죄송하지만|죄송한데|잠시만요|말씀드립니다|연락드립니다)[\s,!.~^ㅎㅋㅜㅠ]*)+/i;
+    const PK_POLITE_TAIL_RE = /(?:[\s,!.~^ㅎㅋㅜㅠ]*(?:감사합니다|감사해요|고맙습니다|수고하세요|고생하세요|잘\s*부탁드립니다|확인\s*부탁드립니다|확인\s*부탁드려요|확인\s*부탁해요|처리\s*부탁드립니다|부탁드립니다|부탁드려요|부탁해요|부탁합니다|요청드립니다|요청드려요|요청합니다|주시면\s*감사하겠습니다|드리겠습니다|하겠습니다|입니다|합니다|해요|주세요|해주세요))+$/i;
+    const PK_EMOTICON_NOISE_RE = /(\^\^+|ㅎㅎ+|ㅋㅋ+|ㅠㅠ+|ㅜㅜ+|~{2,}|!{2,})/g;
+    const PK_CANON_STOP_RE = /(추가\s*납품|납품\s*요청|회수\s*요청|반품\s*요청|추가|납품|회수|반품|반송|수거|전달|배송|발송|출고|발주|교체|수리|요청|부탁|필요|확인)/gi;
+    const PK_UNIT_SUFFIX_RE = /(\d+)\s*(?:개|권|부|세트|박스|통|장|매|조|점|대|팩|종|set|ea)(?=\s|$|[^가-힣A-Za-z0-9])/gi;
+    const PK_PARTICLE_TAIL_RE = /(에서|에게|으로|이랑|이라|라서|하셔서|해서|입니다|합니다|됩니다|드려요|드립니다|해요|하세요|은|는|이|가|을|를|의|에|로|도|만|과|와|랑)$/;
+    const PK_PROSE_NOISE_RE = /(요망|바랍니다|부탁|원장님|선생님|연락|통화|확인|예정|때문에|으로\s|에서\s|에게\s|안녕|감사|수고)/;
+    const PK_GENERIC_REST_RE = /^(?:추가\s*납품|납품|추가|교구|선물용품\s*납품|선물\s*납품|발주|배송|회수|반품|수거|방문|증정|A\s*\/?\s*S|에이에스)?$/i;
+
+    function pkStripSchoolMentions(text, schoolHints) {
+      let s = String(text || '');
+      const hints = (Array.isArray(schoolHints) ? schoolHints : [schoolHints]).filter(Boolean);
+      hints.forEach(h => {
+        const core = String(h || '').replace(/\s+/g, '');
+        const shortCore = core.replace(/(?:어린이집|유치원|초등학교|병설유치원|병설)$/, '');
+        [core, shortCore].forEach(cand => {
+          if (cand.length < 2) return;
+          const re = new RegExp(cand.split('').map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*') + '(?:어린이집|유치원|병설유치원|병설)?', 'g');
+          s = s.replace(re, ' ');
+        });
+      });
+      return s;
+    }
+
+    function pkCanonicalCompareKey(str, schoolHints) {
+      let s = stripWorksUserId(str)
+        .replace(/^\s*\[[^\]]*\]\s*/, '')
+        .replace(/^(?:원문|내용|요청\s*내용|품목|메모|참고|원)\s*[:：]\s*/i, '');
+      s = pkStripSchoolMentions(s, schoolHints);
+      s = s.replace(PK_UNIT_SUFFIX_RE, '$1').replace(PK_CANON_STOP_RE, ' ');
+      return s.replace(/[\s()\[\]·.,:：\/\-!?~^"'\u3000]+/g, '').toLowerCase();
+    }
+
+    function pkMeaningfulTokens(str, schoolHints) {
+      let s = stripWorksUserId(str)
+        .replace(/^\s*\[[^\]]*\]\s*/, '')
+        .replace(/^(?:원문|내용|요청\s*내용|품목|메모|참고)\s*[:：]\s*/i, '');
+      s = pkStripSchoolMentions(s, schoolHints);
+      s = s.replace(PK_UNIT_SUFFIX_RE, '$1').replace(PK_CANON_STOP_RE, ' ');
+      const toks = new Set();
+      const matches = s.toLowerCase().match(/[가-힣a-z0-9]+/g) || [];
+      matches.forEach(w => {
+        const w2 = w.length >= 3 ? w.replace(PK_PARTICLE_TAIL_RE, '') : w;
+        if (w2.length >= 2 || /^\d+$/.test(w2)) toks.add(w2);
+      });
+      return toks;
+    }
+
+    function pkCleanChatClause(str, schoolHints) {
+      let s = stripWorksUserId(str)
+        .replace(PK_EMOTICON_NOISE_RE, ' ')
+        .replace(/^(?:원문|내용|요청\s*내용|참고|메모)\s*[:：]\s*/i, '')
+        .replace(/^[\s\-·•*▶▷►]+/, '')
+        .trim();
+      s = s.replace(PK_GREETING_LEAD_RE, '').trim();
+      s = pkStripSchoolPrefix(s, schoolHints);
+      s = s.replace(PK_GREETING_LEAD_RE, '').trim();
+      s = s.replace(PK_POLITE_TAIL_RE, '').trim();
+      s = s.replace(/\s{2,}/g, ' ').replace(/^[\s,.:;·\-|!~]+|[\s,.:;·\-|!~]+$/g, '');
+      return s;
+    }
+
+    function summarizeWorksContent(title, worksContent, schoolHints, itemsStr, fieldQuantities, maxLen) {
+      const limit = Number(maxLen) > 20 ? Number(maxLen) : 180;
+      const cleaned = cleanWorksContentDisplay(worksContent);
+      if (!cleaned) return '';
+      const hints = (Array.isArray(schoolHints) ? schoolHints : [schoolHints]).filter(Boolean);
+      const refParts = [String(title || ''), String(itemsStr || '')];
+      (Array.isArray(fieldQuantities) ? fieldQuantities : []).forEach(fq => {
+        if (fq && typeof fq === 'object') {
+          const lbl = fq.label || fq.item || '';
+          const q = fq.qty || fq.plannedQty || '';
+          if (lbl) refParts.push(`${lbl} ${q}`);
+        }
+      });
+      const refText = refParts.filter(Boolean).join(' ');
+      const refCanon = pkCanonicalCompareKey(refText, hints);
+      const refTokens = pkMeaningfulTokens(refText, hints);
+      const refNums = new Set(refText.match(/\d+/g) || []);
+
+      const kept = [];
+      const keptCanons = [];
+      const keptTokens = new Set();
+      const keptNums = new Set();
+
+      const rawLines = cleaned.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+      const orderedLines = [
+        ...rawLines.filter(ln => !/^원문\s*[:：]/i.test(ln)),
+        ...rawLines.filter(ln => /^원문\s*[:：]/i.test(ln))
+      ];
+
+      for (const ln of orderedLines) {
+        if (isWorksMetaSegment(ln) || /^원\s*[:：]/.test(ln)) continue;
+        const bodyLn = ln.replace(/^(?:원문|내용|요청\s*내용|품목)\s*[:：]\s*/i, '').trim();
+        const clauses = bodyLn.length > 36
+          ? bodyLn.split(/(?<=[.!?])\s+|\s+\/\s+/).map(c => c.trim()).filter(Boolean)
+          : [ln];
+        for (const rawClause of clauses) {
+          if (isWorksMetaSegment(rawClause) || /^원\s*[:：]/.test(rawClause)) continue;
+          const cand = pkCleanChatClause(rawClause, hints);
+          if (!cand || cand.length < 2) continue;
+          const candCanon = pkCanonicalCompareKey(cand, hints);
+          if (!candCanon || candCanon.length < 2) continue;
+
+          const candNums = new Set(cand.match(/\d+/g) || []);
+          const hasNewRefNum = [...candNums].some(n => !refNums.has(n));
+          if (refCanon && (candCanon && refCanon.includes(candCanon) || (candCanon.length >= 6 && candCanon.includes(refCanon) && !hasNewRefNum))) {
+            if (candCanon.length <= refCanon.length + 6) continue;
+          }
+          if (keptCanons.some(kc => candCanon === kc || kc.includes(candCanon))) continue;
+
+          const candTokens = pkMeaningfulTokens(cand, hints);
+          const hasNewAnyNum = [...candNums].some(n => !refNums.has(n) && !keptNums.has(n));
+          if (candTokens.size && !hasNewAnyNum) {
+            let shared = 0;
+            candTokens.forEach(tk => { if (refTokens.has(tk) || keptTokens.has(tk)) shared++; });
+            if (shared / candTokens.size >= 0.78) continue;
+          }
+
+          kept.push(cand);
+          keptCanons.push(candCanon);
+          candTokens.forEach(tk => keptTokens.add(tk));
+          candNums.forEach(n => keptNums.add(n));
+          if (kept.length >= 4) break;
+        }
+        if (kept.length >= 4) break;
+      }
+      if (!kept.length) return '';
+      let summary = kept.join(' · ');
+      if (summary.length > limit) summary = summary.slice(0, limit - 1).replace(/[\s,·\-]+$/, '') + '…';
+      return summary;
+    }
+
+    function pkSchoolDedupCore(name) {
+      return normName(name || '').replace(/(?:초등학교병설유치원|초병설유치원|병설유치원|어린이집|유치원|초등학교|초병설)$/, '');
+    }
+
+    function pkDedupKey(rec) {
+      if (!rec || typeof rec !== 'object') return '';
+      const schoolName = String(rec.school || rec.target || '').trim();
+      const core = pkSchoolDedupCore(schoolName);
+      let schoolKey = '';
+      if (core.length >= 2) {
+        schoolKey = 'sn:' + core;
+      } else if (rec.schoolId) {
+        schoolKey = 'sid:' + String(rec.schoolId);
+      } else {
+        return '';
+      }
+      const groupKind = pkGroupOf(rec);
+      const fqs = normalizeFieldQuantities(rec.fieldQuantities, false);
+      const fqPairs = [];
+      fqs.forEach(q => {
+        const lbl = pkCanonicalCompareKey(q.label || q.item, [schoolName]);
+        const qty = Math.max(0, parseInt(q.qty || q.plannedQty || 0, 10) || 0);
+        if (lbl && qty > 0) fqPairs.push(`${lbl}:${qty}`);
+      });
+      let itemSig = '';
+      if (fqPairs.length) {
+        itemSig = 'fq:' + [...new Set(fqPairs)].sort().join('|');
+      } else {
+        const coreTxt = pkCanonicalCompareKey(rec.items || rec.title || '', [schoolName]);
+        if (coreTxt.length < 2) return '';
+        itemSig = 'txt:' + coreTxt;
+      }
+      return `${schoolKey}::${groupKind}::${itemSig}`;
+    }
+
+    function pkDueCompatible(d1, d2) {
+      const a = String(d1 || '').trim().slice(0, 10);
+      const b = String(d2 || '').trim().slice(0, 10);
+      return !a || !b || a === b;
+    }
+
+    function pkIsSemanticDuplicate(a, b) {
+      if (!a || !b) return false;
+      const ka = pkDedupKey(a);
+      const kb = pkDedupKey(b);
+      if (!ka || !kb || ka !== kb) return false;
+      if (a.schoolId && b.schoolId && String(a.schoolId) !== String(b.schoolId)) return false;
+      return pkDueCompatible(a.due, b.due);
+    }
+
+    function pkMergeSummaryNotes(baseSummary, extraSummary, ctx) {
+      const a = String(baseSummary || '').trim();
+      const b = String(extraSummary || '').trim();
+      if (!b) return a;
+      if (!a) return b;
+      const c = ctx || {};
+      return summarizeWorksContent(c.title || '', `${a}\n${b}`, c.schoolHints || [c.school || ''], c.items || '', c.fieldQuantities || []) || a;
+    }
+
+    function pkPickPrimaryScore(p) {
+      const fqLen = Array.isArray(p.fieldQuantities) ? p.fieldQuantities.length : 0;
+      const doneSum = Array.isArray(p.fieldQuantities) ? p.fieldQuantities.reduce((s, q) => s + (Number(q && q.done) || 0), 0) : 0;
+      return (p.worksTaskId ? 1000 : 0)
+        + (p.schoolId ? 200 : 0)
+        + (doneSum > 0 ? 150 : 0)
+        + (p.memo ? 50 : 0)
+        + fqLen * 10
+        + (p.due ? 8 : 0)
+        + (p.assignee ? 4 : 0);
+    }
+
+    function pkFilterDuplicatePickups() {
+      if (typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return { merged: 0 };
+      const pending = PICKUPS.filter(p => p && !p.done && !pkIsHiddenDup(p));
+      const buckets = new Map();
+      let merged = 0;
+      const now = Date.now();
+      const ordered = [...pending].sort((a, b) => (pkPickPrimaryScore(b) - pkPickPrimaryScore(a)) || ((a.createdAt || 0) - (b.createdAt || 0)));
+      ordered.forEach(p => {
+        const dk = pkDedupKey(p);
+        if (!dk) return;
+        const list = buckets.get(dk) || [];
+        const primary = list.find(cand => pkIsSemanticDuplicate(cand, p));
+        if (primary && primary !== p) {
+          const dupIds = new Set(Array.isArray(primary.duplicateWorksTaskIds) ? primary.duplicateWorksTaskIds.filter(Boolean) : []);
+          if (p.worksTaskId && p.worksTaskId !== primary.worksTaskId) dupIds.add(String(p.worksTaskId));
+          if (Array.isArray(p.duplicateWorksTaskIds)) p.duplicateWorksTaskIds.forEach(id => { if (id && id !== primary.worksTaskId) dupIds.add(String(id)); });
+          primary.duplicateWorksTaskIds = [...dupIds];
+          const pSummary = p.worksSummary || summarizeWorksContent(p.title || '', p.worksContent || '', [p.school], p.items || '', p.fieldQuantities);
+          if (pSummary) {
+            primary.worksSummary = pkMergeSummaryNotes(primary.worksSummary || '', pSummary, {
+              title: primary.title || '',
+              schoolHints: [primary.school, p.school],
+              items: primary.items || '',
+              fieldQuantities: primary.fieldQuantities
+            });
+          }
+          if (!primary.due && p.due) primary.due = p.due;
+          if (!primary.assignee && p.assignee) primary.assignee = p.assignee;
+          if (!primary.memo && p.memo) primary.memo = p.memo;
+          p.done = true;
+          p.doneAt = p.doneAt || now;
+          p.worksStatus = 'DONE';
+          p.worksClosedRemote = true;
+          p.worksSyncPending = false;
+          p.duplicateMergedInto = primary.id;
+          merged++;
+          return;
+        }
+        list.push(p);
+        buckets.set(dk, list);
+      });
+      return { merged };
     }
 
     function parseWorksTaskItems(titleRest, worksContent, schoolHints) {
@@ -4994,6 +5256,7 @@ function speakSchoolQuantity(school, opts = {}) {
           .trim();
         const qty = parseInt(rawQty, 10);
         if (!label || !Number.isFinite(qty) || qty <= 0) return false;
+        if (label.length > 25 || PK_PROSE_NOISE_RE.test(label)) return false;
         if (isWorksMetaSegment(label) || /^(기한|메시지방|카테고리|요청자|담당자|월|일|시|분|층|호)$/.test(label)) return false;
         const key = normName(label);
         if (!key) return false;
@@ -5008,7 +5271,7 @@ function speakSchoolQuantity(school, opts = {}) {
         return true;
       };
 
-      const itemLineRe = /^(.+?)\s*[:：=|×xX\-]?\s*(\d+)\s*(?:개|권|부|세트|박스|통|장|매|조|점|명|달|set|ea)?(?:\s*(?:추가\s*납품|추가|납품|배송|발송|회수|반품|수거|요청|전달|더))?$/i;
+      const itemLineRe = /^(.+?)\s*[:：=|×xX\-]?\s*(\d+)\s*(?:개|권|부|세트|박스|통|장|매|조|점|대|팩|종|명|달|set|ea)?(?:\s*(?:추가\s*납품|납품\s*요청|회수\s*요청|반품\s*요청|수거\s*요청|추가\s*요청|추가|납품|배송|발송|출고|발주|회수|반품|반송|수거|요청|전달|교체|수리|더|부탁(?:드립니다|드려요|해요|합니다)?))*[\s.!]*$/i;
 
       const cleanTitleRest = cleanWorksItemsSummary(titleRest || '');
       if (cleanTitleRest) {
@@ -5023,14 +5286,18 @@ function speakSchoolQuantity(school, opts = {}) {
 
       const titleRowCount = rows.length;
       const contentSummaryParts = [];
-      const titleKey = normName(cleanTitleRest);
-      const pushSummary = (part) => {
-        const k = normName(part);
-        if (!k || (titleKey && titleKey.includes(k))) return;
-        if (contentSummaryParts.some(x => normName(x) === k)) return;
+      const seenPartCanons = new Set();
+      const titleCanon = pkCanonicalCompareKey(cleanTitleRest, hints);
+      const pushSummary = (part, labelOnly) => {
+        const ck = pkCanonicalCompareKey(part, hints);
+        const lk = labelOnly ? pkCanonicalCompareKey(labelOnly, hints) : '';
+        if (!ck || (titleCanon && (titleCanon.includes(ck) || (lk && titleCanon.includes(lk))))) return;
+        if (seenPartCanons.has(ck)) return;
+        seenPartCanons.add(ck);
         contentSummaryParts.push(part);
       };
-      if (worksContent) {
+      const cleanedContent = cleanWorksContentDisplay(worksContent || '');
+      if (cleanedContent) {
         const originalLines = [];
         const handleSeg = (seg, fromOriginal) => {
           let s = seg.trim();
@@ -5038,17 +5305,16 @@ function speakSchoolQuantity(school, opts = {}) {
           if (!fromOriginal && /^원문\s*[:：]/i.test(s)) { originalLines.push(s.replace(/^원문\s*[:：]\s*/i, '').trim()); return; }
           if (/^원\s*[:：]/.test(s)) return;                       // "원: 시립풍무푸르지오" → 원 이름 (품목 아님)
           s = s.replace(/^품목\s*[:：]\s*/, '').trim();           // "품목: 만3세 영어 1개" → "만3세 영어 1개"
-          if (!s || isWorksMetaSegment(s)) return;
+          if (!s || isWorksMetaSegment(s) || PK_PROSE_NOISE_RE.test(s)) return;
           const m = s.match(itemLineRe);
           if (m && !/^\d+\s*[월일층호]$/.test(s) && !/번\s*배송/.test(s)) {
             if (addRow(m[1], m[2]) && (!fromOriginal || !titleRowCount)) {
-              pushSummary(`${pkStripSchoolPrefix(m[1].trim(), hints)} ${parseInt(m[2], 10)}`);
+              const strippedLbl = pkStripSchoolPrefix(m[1].trim(), hints);
+              pushSummary(`${strippedLbl} ${parseInt(m[2], 10)}`, strippedLbl);
             }
-          } else if (!fromOriginal) {
-            pushSummary(s);
           }
         };
-        String(worksContent).split(/\r?\n/).map(s => stripWorksUserId(s).trim()).filter(Boolean).forEach(line => {
+        cleanedContent.split(/\r?\n/).map(s => stripWorksUserId(s).trim()).filter(Boolean).forEach(line => {
           if (isWorksMetaSegment(line)) return;
           // "원문: …" 은 제목·품목과 같은 내용을 한 번 더 적은 것 → 다른 곳에서 품목을 못 찾았을 때만 사용
           if (/^원문\s*[:：]/i.test(line)) { originalLines.push(line.replace(/^원문\s*[:：]\s*/i, '').trim()); return; }
@@ -5064,17 +5330,22 @@ function speakSchoolQuantity(school, opts = {}) {
       }
 
       const totalQty = rows.reduce((sum, r) => sum + r.qty, 0);
-      let baseItems = cleanTitleRest;
+      const baseItems = cleanTitleRest;
       const contentStr = cleanWorksItemsSummary(contentSummaryParts.join(', '));
       let combinedItems = baseItems;
       if (contentStr) {
-        if (!baseItems || /^(납품|추가\s*납품|추가|교구|선물용품\s*납품|선물\s*납품|발주|배송)$/.test(baseItems)) {
+        if (!baseItems || PK_GENERIC_REST_RE.test(baseItems)) {
           combinedItems = baseItems ? `${baseItems} (${contentStr})` : contentStr;
         } else if (!normName(baseItems).includes(normName(contentStr)) && !normName(contentStr).includes(normName(baseItems))) {
           combinedItems = `${baseItems} · ${contentStr}`;
         }
+      } else if ((!baseItems || PK_GENERIC_REST_RE.test(baseItems)) && !rows.length && cleanedContent) {
+        const fbNote = summarizeWorksContent(baseItems, cleanedContent, hints, '', rows, 100);
+        if (fbNote) combinedItems = baseItems ? `${baseItems} · ${fbNote}` : fbNote;
       }
-      return { fieldQuantities: rows, totalQty, combinedItems: cleanWorksItemsSummary(combinedItems || baseItems) };
+      const finalItems = cleanWorksItemsSummary(combinedItems || baseItems);
+      const worksSummary = summarizeWorksContent(titleRest || '', cleanedContent, hints, finalItems, rows);
+      return { fieldQuantities: rows, totalQty, combinedItems: finalItems, worksSummary };
     }
 
     function pkMergeFieldQuantities(existingRows, parsedRows, isDone) {
@@ -5180,26 +5451,39 @@ function speakSchoolQuantity(school, opts = {}) {
       const parsed = parseWorksTaskItems(rest, worksContent, [first, school]);
       const qtyM = t.match(/(\d+)\s*(개|권|부|세트|박스|set)/i);
       const qty = parsed.totalQty || (qtyM ? parseInt(qtyM[1], 10) : 0);
+      const items = parsed.combinedItems || rest;
+      const worksSummary = parsed.worksSummary || summarizeWorksContent(rawTitle, worksContent, [first, school], items, parsed.fieldQuantities);
       return {
         school,
         schoolId: match ? match.id : null,
-        items: parsed.combinedItems || rest,
+        items,
         qty,
-        fieldQuantities: parsed.fieldQuantities
+        fieldQuantities: parsed.fieldQuantities,
+        worksSummary
       };
     }
     function pkMakeRow(o) {
       const rawContent = cleanWorksContentDisplay(o.worksContent || o.content || '');
       const a = analyzePickupTitle(o.title, rawContent);
       const detectedType = worksTypeFromTitle(o.title, rawContent);
+      const school = (o.school && String(o.school).trim()) || a.school;
+      const items = (o.items && String(o.items).trim() && !rawContent) ? cleanWorksItemsSummary(o.items) : a.items;
+      const fieldQuantities = Array.isArray(o.fieldQuantities) && o.fieldQuantities.length ? normalizeFieldQuantities(o.fieldQuantities, false) : a.fieldQuantities;
+      const serverSum = typeof (o.worksSummary ?? o.summary) === 'string' ? String(o.worksSummary ?? o.summary).trim() : '';
+      const worksSummary = serverSum || summarizeWorksContent(o.title || '', rawContent, [school, a.school], items, fieldQuantities) || a.worksSummary || '';
+      const dupIds = Array.isArray(o.duplicateWorksTaskIds)
+        ? o.duplicateWorksTaskIds.filter(Boolean)
+        : (Array.isArray(o.duplicateTaskIds) ? o.duplicateTaskIds.filter(Boolean) : []);
       return {
         include: true, title: stripWorksUserId(o.title || ''),
-        school: (o.school && String(o.school).trim()) || a.school, schoolId: a.schoolId,
+        school, schoolId: a.schoolId,
         type: PK_TYPES.includes(o.type) ? o.type : (t => pkMode === 'extra' && !PK_EXTRA_TYPES.includes(t) ? '추가' : t)(detectedType),
-        items: (o.items && String(o.items).trim() && !rawContent) ? cleanWorksItemsSummary(o.items) : a.items,
+        items,
         qty: o.qty || a.qty,
-        fieldQuantities: Array.isArray(o.fieldQuantities) && o.fieldQuantities.length ? normalizeFieldQuantities(o.fieldQuantities, false) : a.fieldQuantities,
+        fieldQuantities,
         worksContent: rawContent,
+        worksSummary,
+        duplicateWorksTaskIds: dupIds,
         due: o.due && /^\d{4}-\d{2}-\d{2}$/.test(o.due) ? o.due : pkDueFrom(o.due || ''),
         assignee: stripWorksUserId(o.assignee || ''), memo: String(o.memo || '').trim()
       };
@@ -5351,14 +5635,43 @@ function speakSchoolQuantity(school, opts = {}) {
     }
     function pkIsDuplicate(r) {
       const k = normName(r.title);
-      return PICKUPS.some(p => normName(p.title) === k && !p.done);
+      return PICKUPS.some(p => !p.done && !pkIsHiddenDup(p) && ((k && normName(p.title) === k) || pkIsSemanticDuplicate(p, r)));
+    }
+    function pkDedupeImportBatch(rows) {
+      const kept = [];
+      let merged = 0;
+      (Array.isArray(rows) ? rows : []).forEach(r => {
+        if (!r) return;
+        const rk = normName(r.title);
+        const dupOf = kept.find(x => (rk && normName(x.title) === rk) || pkIsSemanticDuplicate(x, r));
+        if (dupOf) {
+          merged++;
+          if (r.worksSummary) {
+            dupOf.worksSummary = pkMergeSummaryNotes(dupOf.worksSummary || '', r.worksSummary, {
+              title: dupOf.title || '',
+              schoolHints: [dupOf.school, r.school],
+              items: dupOf.items || '',
+              fieldQuantities: dupOf.fieldQuantities
+            });
+          }
+          if (!dupOf.due && r.due) dupOf.due = r.due;
+          if (!dupOf.assignee && r.assignee) dupOf.assignee = r.assignee;
+          return;
+        }
+        kept.push({ ...r });
+      });
+      return { rows: kept, merged };
     }
     function pkShowReview(rows, label) {
-      pkReviewRows = rows.map(r => ({ ...r, include: !pkIsDuplicate(r), dup: pkIsDuplicate(r) }));
+      const { rows: uniqRows, merged: batchMerged } = pkDedupeImportBatch(rows);
+      pkReviewRows = uniqRows.map(r => {
+        const dup = pkIsDuplicate(r);
+        return { ...r, include: !dup, dup };
+      });
       const box = document.getElementById('pkReview');
       if (!pkReviewRows.length) { box.classList.add('hidden'); pkSetStatus('err', `${label}에서 할 일을 찾지 못했습니다. 웍스 [할 일] 목록이나 상세 화면이 보이도록 캡처했는지 확인해 주세요.`); return; }
       const dups = pkReviewRows.filter(r => r.dup).length;
-      pkSetStatus('ok', `✓ ${label}에서 <strong>${pkReviewRows.length}건</strong>을 읽었습니다.${dups ? ` 이미 목록에 있는 ${dups}건은 선택 해제했습니다.` : ''} 원 이름과 종류를 확인한 뒤 추가하세요.`);
+      pkSetStatus('ok', `✓ ${label}에서 <strong>${pkReviewRows.length}건</strong>을 읽었습니다.${batchMerged ? ` 중복 ${batchMerged}건 자동 통합.` : ''}${dups ? ` 이미 목록에 있는 ${dups}건은 선택 해제했습니다.` : ''} 원 이름과 종류를 확인한 뒤 추가하세요.`);
       pkRenderReview();
       box.classList.remove('hidden');
       box.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -5373,14 +5686,15 @@ function speakSchoolQuantity(school, opts = {}) {
             <select data-pkr="${i}" data-f="type" class="shrink-0 bg-slate-900 text-white text-sm rounded-lg px-1.5 py-1.5 border border-slate-700" aria-label="종류">${PK_TYPES.map(t => `<option ${t === r.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
             <button type="button" data-pkr-del="${i}" class="shrink-0 w-8 h-8 rounded-lg bg-slate-900 text-rose-300 border border-slate-700 font-bold" aria-label="이 줄 삭제">✕</button>
           </div>
-          <div class="text-xs text-slate-300 pl-7 leading-snug">${escapeHtml(r.title)}</div>
-          ${r.worksContent ? `<div class="text-[11px] text-amber-200 pl-7 whitespace-pre-line leading-snug">${escapeHtml(r.worksContent)}</div>` : ''}
+          <div class="text-xs text-slate-300 pl-7 leading-snug">${escapeHtml(r.items || r.title)}</div>
+          ${r.worksSummary ? `<div class="text-[11px] text-amber-200 pl-7 leading-snug">✨ ${escapeHtml(r.worksSummary)}</div>` : ''}
+          ${r.worksContent && (!r.worksSummary || pkCanonicalCompareKey(r.worksContent, [r.school]) !== pkCanonicalCompareKey(r.worksSummary, [r.school])) ? `<details class="pl-7 text-[11px] text-slate-400"><summary class="cursor-pointer select-none">원문 보기</summary><div class="mt-1 whitespace-pre-line leading-snug text-slate-300">${escapeHtml(r.worksContent)}</div></details>` : ''}
           ${Array.isArray(r.fieldQuantities) && r.fieldQuantities.length ? `<div class="flex flex-wrap gap-1 pl-7">${r.fieldQuantities.map(q => `<span class="px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-200 border border-violet-500/40 text-[11px] font-bold">${escapeHtml(q.label)} ${q.qty}</span>`).join('')}</div>` : ''}
           <div class="flex flex-wrap gap-1 pl-7 text-[11px]">
             ${r.schoolId ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-200 border border-emerald-500/30">📦 납품 목록의 원과 연결</span>' : ''}
             ${r.due ? `<span class="px-1.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">기한 ${pkDueLabel(r.due)}</span>` : ''}
             ${r.assignee ? `<span class="px-1.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">담당 ${escapeHtml(r.assignee)}</span>` : ''}
-            ${r.dup ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-200 border border-amber-500/30">이미 등록됨</span>' : ''}
+            ${r.dup ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-200 border border-amber-500/30">이미 등록됨 (중복 자동 해제)</span>' : ''}
           </div>
         </div>`).join('');
     }
@@ -5418,6 +5732,8 @@ function speakSchoolQuantity(school, opts = {}) {
         type: r.type, items: r.items || '', qty: r.qty || 0,
         fieldQuantities: Array.isArray(r.fieldQuantities) && r.fieldQuantities.length ? r.fieldQuantities : [],
         worksContent: r.worksContent || '',
+        worksSummary: r.worksSummary || '',
+        duplicateWorksTaskIds: [],
         due: r.due || '', assignee: r.assignee || '', memo: r.memo || '',
         address: '', lat: null, lng: null, done: false, doneAt: null, createdAt: now + i, source: 'works'
       }));
@@ -5481,8 +5797,6 @@ function speakSchoolQuantity(school, opts = {}) {
           return;
         }
       }
-      // merge duplicates across multiple screenshots (overlapping captures)
-      const seen = new Set(); rows = rows.filter(r => { const k = normName(r.title); if (seen.has(k)) return false; seen.add(k); return true; });
       pkShowReview(rows, files.length > 1 ? `사진 ${files.length}장` : '사진');
     });
     document.getElementById('pkTextToggleBtn').addEventListener('click', () => {
@@ -5528,7 +5842,7 @@ function speakSchoolQuantity(school, opts = {}) {
       const c = pkCoords(p); return hasCoords(c) ? computeHaversineMeters(userLat, userLng, c.lat, c.lng) : null;
     }
     function pendingPickupsForSchool(school) {
-      return PICKUPS.filter(p => !p.done && (p.schoolId === school.id || (!p.schoolId && nameScore(p.school, school.name) >= 0.9)));
+      return PICKUPS.filter(p => !p.done && !pkIsHiddenDup(p) && (p.schoolId === school.id || (!p.schoolId && nameScore(p.school, school.name) >= 0.9)));
     }
     function renderDeliveryWorksSection() {
       const sec = document.getElementById('deliveryWorksSection');
@@ -5561,7 +5875,7 @@ function speakSchoolQuantity(school, opts = {}) {
       document.getElementById('pkAssigneeSelect').innerHTML = `<option value="">담당자 전체</option>` + names.map(n => `<option value="${escapeHtml(n)}" ${n === pkAssignee ? 'selected' : ''}>${escapeHtml(n)} (${pend.filter(p => pkAssigneeList(p).includes(n)).length})</option>`).join('');
       document.getElementById('pkPendingCount').textContent = cnt.pending;
       document.getElementById('pkTotalCount').textContent = cnt.all;
-      const nRet = PICKUPS.filter(p => !p.done && pkGroupOf(p) === 'return').length, nEx = PICKUPS.filter(p => !p.done && pkGroupOf(p) === 'extra').length;
+      const nRet = PICKUPS.filter(p => !p.done && !pkIsHiddenDup(p) && pkGroupOf(p) === 'return').length, nEx = PICKUPS.filter(p => !p.done && !pkIsHiddenDup(p) && pkGroupOf(p) === 'extra').length;
       const tab = document.getElementById('pkTabCount'); tab.textContent = nRet; tab.classList.toggle('hidden', !nRet);
       const tab2 = document.getElementById('exTabCount'); if (tab2) { tab2.textContent = nEx; tab2.classList.toggle('hidden', !nEx); }
       const ex = pkMode === 'extra';
@@ -5584,7 +5898,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
     function renderPickups() {
       { const w = document.getElementById('pkKeyWarn'); if (w) { const bad = SETTINGS.kakaoKey && kakaoKeyProblem(SETTINGS.kakaoKey);
-        const noLoc = PICKUPS.filter(p => !p.done && !hasCoords(pkCoords(p))).length;
+        const noLoc = PICKUPS.filter(p => !p.done && !pkIsHiddenDup(p) && !hasCoords(pkCoords(p))).length;
         if (bad) { w.innerHTML = `⚠️ <strong>카카오 지도 키가 잘못 입력되어 있어 위치 검색이 거의 안 됩니다.</strong> 지금 키 칸에 사이트 주소(${escapeHtml(SETTINGS.kakaoKey.slice(0, 40))})가 들어가 있습니다. <button type="button" data-open-settings class="underline font-bold text-amber-300">⚙️ 연동 설정 열기</button> → 카카오 [앱 키]의 <strong>JavaScript 키(32자리)</strong>로 바꿔 주세요.`; w.classList.remove('hidden'); }
         else if (!SETTINGS.kakaoKey && noLoc) { w.innerHTML = `📍 위치 없는 할 일 ${noLoc}건 · 카카오 키가 없어 무료 지도로만 찾고 있어 유치원·어린이집이 잘 안 나옵니다. <button type="button" data-open-settings class="underline font-bold text-amber-300">⚙️ 카카오 키 넣기</button>`; w.classList.remove('hidden'); }
         else w.classList.add('hidden'); } }
@@ -5642,11 +5956,23 @@ function speakSchoolQuantity(school, opts = {}) {
         const addrText = (s && s.address) || p.address || (ok ? '위치 확인됨' : '주소 미등록');
         const phoneStr = (s && s.phone) || p.phone || '';
         const phoneCleaned = String(phoneStr).replace(/[^0-9+*#,]/g, '');
+        const schoolHints = [p.school, s && s.name].filter(Boolean);
+        const summaryText = (typeof p.worksSummary === 'string' && p.worksSummary.trim())
+          ? p.worksSummary.trim()
+          : summarizeWorksContent(p.title || '', p.worksContent || '', schoolHints, p.items || '', fqs);
+        const dupCnt = Array.isArray(p.duplicateWorksTaskIds) ? p.duplicateWorksTaskIds.filter(Boolean).length : 0;
         const memoParts = [];
         if (p.memo) memoParts.push(`📝 ${p.memo}`);
         if (wf.note) memoParts.push(`메모: ${wf.note}`);
-        if (p.title && normName(p.title) !== normName((p.school || '') + (p.items || ''))) memoParts.push(`원문: ${p.title}`);
-        if (p.worksContent && !fqs.length) memoParts.push(String(p.worksContent).trim().replace(/\s+/g, ' ').slice(0, 120));
+        if (summaryText) memoParts.push(`✨ ${summaryText}`);
+        if (p.title) {
+          const titleCk = pkCanonicalCompareKey(p.title, schoolHints);
+          const itemsCk = pkCanonicalCompareKey(p.items || '', schoolHints);
+          const sumCk = pkCanonicalCompareKey(summaryText, schoolHints);
+          if (titleCk && titleCk !== itemsCk && !itemsCk.includes(titleCk) && (!sumCk || !sumCk.includes(titleCk))) {
+            memoParts.push(`원문: ${p.title}`);
+          }
+        }
         return `
         <article class="dc-card ${!p.done && ds === 'over' ? 'dc-near' : ''}" data-pk-card="${p.id}" data-delivery-state="${pkState}">
           <div class="dc-state-row">
@@ -5660,6 +5986,7 @@ function speakSchoolQuantity(school, opts = {}) {
               ${p.assignee ? `<span>· 👤 ${escapeHtml(p.assignee)}</span>` : ''}
               ${ds === 'over' && !p.done ? '<span class="dc-tag dc-tag-warn">기한 경과</span>' : ds === 'soon' && !p.done ? '<span class="dc-tag">기한 임박</span>' : ''}
               ${p.worksTaskId ? (p.worksSyncPending ? '<span class="dc-tag dc-tag-warn">웍스 대기</span>' : `<span class="dc-tag">${p.worksClosedRemote ? '웍스 완료' : '🔗 웍스'}</span>`) : ''}
+              ${dupCnt ? `<span class="dc-tag">중복 ${dupCnt}건 병합</span>` : ''}
               <span class="nk-pk-meta-tags"></span>
             </div>
             <div class="dc-name-row">
@@ -5800,6 +6127,20 @@ function speakSchoolQuantity(school, opts = {}) {
       const addr = (s && s.address) || p.address || '';
       const delivered = s && completedMap[s.id];
       const fqs = normalizeFieldQuantities(p.fieldQuantities, !!p.done);
+      const schoolHints = [p.school, s && s.name].filter(Boolean);
+      const cleanRaw = cleanWorksContentDisplay(p.worksContent || '');
+      const summaryText = (typeof p.worksSummary === 'string' && p.worksSummary.trim())
+        ? p.worksSummary.trim()
+        : summarizeWorksContent(p.title || '', cleanRaw, schoolHints, p.items || '', fqs);
+      const dupCnt = Array.isArray(p.duplicateWorksTaskIds) ? p.duplicateWorksTaskIds.filter(Boolean).length : 0;
+      const titleCk = pkCanonicalCompareKey(p.title || '', schoolHints);
+      const itemsCk = pkCanonicalCompareKey(p.items || '', schoolHints);
+      const rawCk = pkCanonicalCompareKey(cleanRaw, schoolHints);
+      const sumCk = pkCanonicalCompareKey(summaryText, schoolHints);
+      const showRawToggle = Boolean(
+        (cleanRaw && rawCk && rawCk !== sumCk && rawCk !== itemsCk) ||
+        (p.title && titleCk && titleCk !== itemsCk && !itemsCk.includes(titleCk))
+      );
       const row = (k, v) => v ? `<div class="flex gap-2 py-1.5 border-b border-slate-800 last:border-0"><span class="shrink-0 w-16 text-slate-400">${k}</span><span class="flex-1 min-w-0 text-slate-100 break-keep">${v}</span></div>` : '';
       document.getElementById('pkDetailBox').className = 'bg-[#142238] border border-[#3c5272] rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3 max-h-[94dvh] overflow-y-auto overscroll-contain pb-safe';
       document.getElementById('pkDetailBox').innerHTML = `
@@ -5809,6 +6150,7 @@ function speakSchoolQuantity(school, opts = {}) {
               <span class="px-2 py-0.5 rounded-full border ${PK_TYPE_CLASS[p.type] || PK_TYPE_CLASS['기타']}">${pkIcon(p.type)} ${escapeHtml(p.type)}</span>
               <span class="px-2 py-0.5 rounded-full border ${ds === 'over' ? 'bg-rose-500 text-white border-rose-400' : ds === 'soon' ? 'bg-amber-500/20 text-amber-200 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'}">기한 ${escapeHtml(pkDueLabel(p.due))}${ds === 'over' ? ' 지남' : ''}</span>
               ${p.done ? '<span class="px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-200 border-emerald-500/40">✓ 완료</span>' : ''}
+              ${dupCnt ? `<span class="px-2 py-0.5 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30">중복 ${dupCnt}건 자동 병합</span>` : ''}
             </div>
             <h2 id="pkDtName" class="text-2xl font-black text-white mt-2 leading-tight break-keep">${escapeHtml(s ? s.name : (p.school || '원 이름 없음'))}</h2>
             <p class="text-xs mt-1 ${ok ? 'text-slate-400' : 'text-amber-300'}">${addr ? escapeHtml(addr) : ok ? '📍 위치 확인됨' : '⚠️ 위치 미등록'}${dist !== null ? ' · ' + formatDistance(dist) : ''}</p>
@@ -5824,16 +6166,23 @@ function speakSchoolQuantity(school, opts = {}) {
           ${fqs.length ? `<div class="grid grid-cols-2 gap-1.5 pt-1">${fqs.map(q => `<div class="flex items-center justify-between rounded-xl bg-slate-900 border border-slate-800 px-2.5 py-1.5 text-xs"><span class="font-bold text-slate-200 truncate">${escapeHtml(q.label)}</span><span class="font-black text-amber-300 ml-1">${q.qty}개</span></div>`).join('')}</div>` : ''}
           ${p.memo ? `<p class="text-sm text-sky-200 mt-2">📝 ${escapeHtml(p.memo)}</p>` : ''}
         </div>
-        ${p.worksContent || (p.title && normName(p.title) !== normName((p.school || '') + (p.items || ''))) ? `
-        <div class="bg-[#0e1b2e] border border-[#314661] rounded-2xl p-3.5 space-y-1.5">
-          <div class="text-xs font-bold text-emerald-300">🔗 웍스 할 일 원문</div>
-          ${p.title ? `<p class="text-sm font-bold text-slate-100 break-keep">${escapeHtml(p.title)}</p>` : ''}
-          ${p.worksContent ? `<p class="text-[13px] text-slate-300 leading-relaxed whitespace-pre-line break-keep">${escapeHtml(String(p.worksContent).slice(0, 3000))}</p>` : ''}
+        ${summaryText ? `
+        <div class="bg-[#0e1b2e] border border-emerald-500/30 rounded-2xl p-3.5 space-y-1">
+          <div class="text-xs font-bold text-emerald-300">✨ 웍스 핵심 요약</div>
+          <p class="text-[13px] text-slate-100 leading-relaxed break-keep">${escapeHtml(summaryText)}</p>
         </div>` : ''}
+        ${showRawToggle ? `
+        <details class="bg-[#0e1b2e] border border-[#314661] rounded-2xl px-3.5 py-2.5">
+          <summary class="cursor-pointer text-xs font-bold text-slate-300 select-none">🔗 웍스 원문 전체 보기</summary>
+          <div class="mt-2 pt-2 border-t border-slate-800 space-y-1.5">
+            ${p.title ? `<p class="text-xs font-bold text-slate-200 break-keep">${escapeHtml(p.title)}</p>` : ''}
+            ${cleanRaw ? `<p class="text-xs text-slate-400 leading-relaxed whitespace-pre-line break-keep">${escapeHtml(cleanRaw.slice(0, 3000))}</p>` : ''}
+          </div>
+        </details>` : ''}
         <div class="bg-[#0e1b2e] border border-[#314661] rounded-2xl px-3.5 py-1.5 text-[13px]">
           ${row('담당자', p.assignee ? escapeHtml(p.assignee) : '')}
           ${row('납품 목록', s ? `${escapeHtml(s.name)}${delivered ? ' · <span class="text-emerald-300">납품완료</span>' : ' · 납품 갈 때 함께 처리'}` : '연결 안 됨 (수정에서 원 이름을 맞추면 연결됩니다)')}
-          ${row('웍스', p.worksTaskId ? (p.worksSyncPending ? '<span class="text-amber-300">⚠️ 반영 대기</span>' : p.worksClosedRemote ? '웍스에서 완료됨' : (p.done ? '완료 반영됨' : '연동 중')) : '')}
+          ${row('웍스', p.worksTaskId ? (p.worksSyncPending ? '<span class="text-amber-300">⚠️ 반영 대기</span>' : p.worksClosedRemote ? '웍스에서 완료됨' : (p.done ? '완료 반영됨' : '연동 중')) + (dupCnt ? ` · 중복 ${dupCnt}건 함께 처리` : '') : '')}
           ${row('등록', p.source === 'works-api' || p.source === 'works' ? '웍스에서 자동' : '직접 추가')}
           ${row('완료 시각', p.done ? pkFmtTime(p.doneAt) : '')}
         </div>
@@ -5877,7 +6226,8 @@ function speakSchoolQuantity(school, opts = {}) {
       }
       if (e.target.closest('[data-pkd-speak]')) {
         const s = pkLinkedSchool(p);
-        const t = `${s ? s.name : p.school}. ${p.type === '추가' ? '추가 납품' : p.type}입니다. ${p.items || p.title || ''}${p.qty && !/\d+\s*(개|권|부|세트|박스)/.test(p.items || '') ? ', 총 ' + p.qty + '개' : ''}.${p.memo ? ' 메모, ' + p.memo : ''}`;
+        const noteSpoken = p.memo || p.worksSummary || '';
+        const t = `${s ? s.name : p.school}. ${p.type === '추가' ? '추가 납품' : p.type}입니다. ${p.items || p.title || ''}${p.qty && !/\d+\s*(개|권|부|세트|박스)/.test(p.items || '') ? ', 총 ' + p.qty + '개' : ''}.${noteSpoken ? ' 참고, ' + noteSpoken : ''}`;
         if (typeof speakDeliveryText === 'function') speakDeliveryText(t); else showToast('음성 안내를 쓸 수 없는 기기입니다.');
         return;
       }
@@ -5957,13 +6307,16 @@ function speakSchoolQuantity(school, opts = {}) {
     }
     function worksRowFromTask(t) {
       const title = String(t.title || '').trim();
-      const content = String(t.content || t.description || t.body || '').trim();
+      const content = cleanWorksContentDisplay(t.content || t.description || t.body || '');
       const body = title.replace(/^\s*\[[^\]]*\]\s*/, '');
       const a = analyzePickupTitle(body, content);
       const assignees = Array.isArray(t.assignees) && t.assignees.length
         ? t.assignees.join(', ')
         : String(t.assignee || t.requester || t.creator || '').trim();
+      const serverSum = typeof t.summary === 'string' ? t.summary.trim() : '';
+      const dupIds = Array.isArray(t.duplicateTaskIds) ? t.duplicateTaskIds.map(x => String(x || '').trim()).filter(Boolean) : [];
       return {
+        title: body,
         type: worksTypeFromTitle(title, content),
         school: a.school,
         schoolId: a.schoolId,
@@ -5971,6 +6324,8 @@ function speakSchoolQuantity(school, opts = {}) {
         qty: a.qty,
         fieldQuantities: a.fieldQuantities,
         worksContent: content,
+        worksSummary: serverSum || a.worksSummary || '',
+        duplicateWorksTaskIds: dupIds,
         due: t.dueDate && /^\d{4}-\d{2}-\d{2}/.test(t.dueDate) ? String(t.dueDate).slice(0, 10) : pkDueFrom(t.dueDate || ''),
         assignee: stripWorksUserId(assignees),
         assigneeIds: Array.isArray(t.assigneeIds) ? t.assigneeIds.filter(Boolean) : null
@@ -6036,8 +6391,15 @@ function speakSchoolQuantity(school, opts = {}) {
     async function worksPushDone(p) {
       if (!p || !p.worksTaskId) return false;
       const want = !!p.done;
+      const dupIds = Array.isArray(p.duplicateWorksTaskIds)
+        ? p.duplicateWorksTaskIds.map(x => String(x || '').trim()).filter(x => x && x !== String(p.worksTaskId))
+        : [];
       try {
-        await worksApi(`/app/pickups/${encodeURIComponent(p.worksTaskId)}/${want ? 'complete' : 'incomplete'}`, 'POST');
+        await worksApi(
+          `/app/pickups/${encodeURIComponent(p.worksTaskId)}/${want ? 'complete' : 'incomplete'}`,
+          'POST',
+          dupIds.length ? { duplicateTaskIds: dupIds } : {}
+        );
         const cur = PICKUPS.find(x => x.id === p.id) || p;
         if (!!cur.done === want) {
           cur.worksSyncPending = false;
@@ -6045,7 +6407,8 @@ function speakSchoolQuantity(school, opts = {}) {
           cur.worksDoneAt = want ? Date.now() : null;
         }
         savePickups(); renderPickups(); renderList();
-        showToast(want ? '웍스 할 일도 완료 처리했습니다.' : '웍스 할 일도 미완료로 되돌렸습니다.');
+        const dupTag = dupIds.length ? `(병합 중복 ${dupIds.length}건 포함)` : '';
+        showToast(want ? `웍스 할 일${dupTag}도 완료 처리했습니다.` : `웍스 할 일${dupTag}도 미완료로 되돌렸습니다.`);
         return true;
       } catch (e) {
         savePickups(); renderPickups(); renderList();
@@ -6054,22 +6417,24 @@ function speakSchoolQuantity(school, opts = {}) {
       }
     }
     async function worksRetryPending() {
-      const list = PICKUPS.filter(p => p.worksTaskId && p.worksSyncPending);
+      const list = PICKUPS.filter(p => p.worksTaskId && p.worksSyncPending && !pkIsHiddenDup(p));
       for (const p of list) { await worksPushDone(p); }
-      const al = PICKUPS.filter(p => p.worksTaskId && p.worksAssigneePending);
+      const al = PICKUPS.filter(p => p.worksTaskId && p.worksAssigneePending && !pkIsHiddenDup(p));
       for (const p of al) { await worksPushAssignee(p); }
     }
-    // 봇 서버 또는 웍스에서 들어온 항목: 원 목록 매칭 + 본문(worksContent) 품목/수량 파싱 + 사용자 직접 등록 할 일 분류 보정 + 위치 자동 탐색
+    // 봇 서버 또는 웍스에서 들어온 항목: 원 목록 매칭 + 본문(worksContent) 품목/수량 파싱 + 핵심 요약 + 중복 자동 필터 + 위치 자동 탐색
     function pkEnrichWorks() {
       if (typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return;
       const geo = []; let changed = false;
       PICKUPS.forEach(p => {
-        if (!p) return;
+        if (!p || pkIsHiddenDup(p)) return;
+        let itemChanged = false;
         if (p.worksContent) {
           const cleanedWc = cleanWorksContentDisplay(p.worksContent);
           if (cleanedWc !== p.worksContent) {
             p.worksContent = cleanedWc;
             changed = true;
+            itemChanged = true;
           }
         }
         if (p.items) {
@@ -6077,6 +6442,7 @@ function speakSchoolQuantity(school, opts = {}) {
           if (cleanedIt !== p.items) {
             p.items = cleanedIt;
             changed = true;
+            itemChanged = true;
           }
         }
         if (p.assignee) {
@@ -6112,12 +6478,14 @@ function speakSchoolQuantity(school, opts = {}) {
           if (a.items && !p.userEditedItems && p.items !== a.items) {
             p.items = a.items;   // 예전 파서가 원·품목·원문을 이어붙여 중복된 요약도 다시 정리
             changed = true;
+            itemChanged = true;
           }
           const fqKey = rows => normalizeFieldQuantities(rows, false).map(r => normName(r.label) + ':' + r.qty).sort().join('|');
           if (!p.userEditedRows && Array.isArray(a.fieldQuantities) && a.fieldQuantities.length) {
             if (fqKey(p.fieldQuantities) !== fqKey(a.fieldQuantities)) {
               p.fieldQuantities = pkMergeFieldQuantities(normalizeFieldQuantities(p.fieldQuantities, !!p.done), a.fieldQuantities, !!p.done);
               changed = true;
+              itemChanged = true;
             }
             if (a.qty && p.qty !== a.qty) { p.qty = a.qty; changed = true; }
           } else if (a.qty && (!p.qty || p.qty < a.qty)) {
@@ -6134,6 +6502,14 @@ function speakSchoolQuantity(school, opts = {}) {
               changed = true;
             }
           }
+          const hasMergedDups = Array.isArray(p.duplicateWorksTaskIds) && p.duplicateWorksTaskIds.length > 0;
+          if (typeof p.worksSummary !== 'string' || (itemChanged && !hasMergedDups)) {
+            const nextSum = summarizeWorksContent(p.title || '', p.worksContent || '', [p.school, a.school], p.items || '', p.fieldQuantities);
+            if (p.worksSummary !== nextSum) {
+              p.worksSummary = nextSum;
+              changed = true;
+            }
+          }
         }
         if (p.source === 'works-api' && p.schoolChecked === false) {
           p.schoolChecked = true;
@@ -6144,33 +6520,113 @@ function speakSchoolQuantity(school, opts = {}) {
           geo.push(p);
         }
       });
+      const dupRes = pkFilterDuplicatePickups();
+      if (dupRes && dupRes.merged) changed = true;
       if (!changed && !geo.length) return;
       if (changed) savePickups();
       if (geo.length) setTimeout(() => { try { pkAutoGeocode(geo); } catch (e) {} }, 500);
     }
     function worksUpsertTasks(tasks, opts = {}) {
-      if (!Array.isArray(tasks) || !tasks.length) return { added: [], closed: 0, reopened: 0, updated: 0 };
-      const remote = {};
-      tasks = tasks.filter(t => t && !worksTaskDone(t));
+      if (!Array.isArray(tasks) || !tasks.length) return { added: [], closed: 0, reopened: 0, updated: 0, deduped: 0 };
+      const openRaw = [];
+      const seenTid = new Set();
       tasks.forEach(t => {
-        const tid = t && (t.taskId || t.id);
-        if (tid) remote[tid] = t;
+        if (!t || worksTaskDone(t)) return;
+        const tid = String(t.taskId || t.id || '').trim();
+        if (!tid || seenTid.has(tid)) return;
+        seenTid.add(tid);
+        openRaw.push({ tid, task: t, row: worksRowFromTask(t) });
       });
+
+      // 같은 원·유형·품목의 중복 미완료 웍스 할 일을 사전에 자동 병합
+      const existingByTid = new Map();
+      PICKUPS.forEach(p => { if (p && p.worksTaskId) existingByTid.set(String(p.worksTaskId), p); });
+      const entryScore = (e) => {
+        const ex = existingByTid.get(e.tid);
+        return (ex && !ex.done && !pkIsHiddenDup(ex) ? 1000 : (ex ? 400 : 0))
+          + (e.row.schoolId ? 100 : 0)
+          + ((e.row.fieldQuantities || []).length * 10)
+          + (e.row.due ? 5 : 0)
+          + (e.row.assignee ? 2 : 0);
+      };
+      const sortedEntries = [...openRaw].sort((a, b) => entryScore(b) - entryScore(a));
+      const dedupedEntries = [];
+      const buckets = new Map();
+      const mergedInto = {};
+      sortedEntries.forEach(e => {
+        const dk = pkDedupKey(e.row);
+        if (dk) {
+          const list = buckets.get(dk) || [];
+          const primary = list.find(cand => pkIsSemanticDuplicate(cand.row, e.row));
+          if (primary) {
+            mergedInto[e.tid] = primary.tid;
+            if (!primary.dupIds.includes(e.tid)) primary.dupIds.push(e.tid);
+            (e.row.duplicateWorksTaskIds || []).forEach(d => {
+              if (d && d !== primary.tid && !primary.dupIds.includes(d)) primary.dupIds.push(d);
+            });
+            if (e.row.worksSummary) {
+              primary.row.worksSummary = pkMergeSummaryNotes(primary.row.worksSummary || '', e.row.worksSummary, {
+                title: primary.row.title || '',
+                schoolHints: [primary.row.school, e.row.school],
+                items: primary.row.items || '',
+                fieldQuantities: primary.row.fieldQuantities
+              });
+            }
+            if (!primary.row.due && e.row.due) primary.row.due = e.row.due;
+            if (!primary.row.assignee && e.row.assignee) primary.row.assignee = e.row.assignee;
+            return;
+          }
+          const wrapped = { tid: e.tid, task: e.task, row: e.row, dupIds: [...(e.row.duplicateWorksTaskIds || []).filter(d => d !== e.tid)] };
+          list.push(wrapped);
+          buckets.set(dk, list);
+          dedupedEntries.push(wrapped);
+          return;
+        }
+        dedupedEntries.push({ tid: e.tid, task: e.task, row: e.row, dupIds: [...(e.row.duplicateWorksTaskIds || []).filter(d => d !== e.tid)] });
+      });
+
+      const remote = {};
+      dedupedEntries.forEach(e => { remote[e.tid] = e.task; });
       const now = Date.now();
       const added = [];
       let closed = 0, reopened = 0, updated = 0;
-      tasks.forEach((t, i) => {
-        const tid = t && (t.taskId || t.id);
-        if (!tid) return;
+      const deduped = Object.keys(mergedInto).length;
+
+      // 이미 로컬에 올라와 있던 중복 행은 자동 숨김(병합 완료) 처리
+      Object.keys(mergedInto).forEach(dupTid => {
+        const primaryTid = mergedInto[dupTid];
+        const dupRow = PICKUPS.find(x => x && (String(x.worksTaskId || '') === dupTid || x.id === 'w_' + dupTid));
+        if (!dupRow) return;
+        const primaryRow = PICKUPS.find(x => x && (String(x.worksTaskId || '') === primaryTid || x.id === 'w_' + primaryTid));
+        const primaryId = (primaryRow && primaryRow.id) || ('w_' + primaryTid);
+        if (dupRow.duplicateMergedInto !== primaryId || !dupRow.done) {
+          dupRow.done = true;
+          dupRow.doneAt = dupRow.doneAt || now;
+          dupRow.worksStatus = 'DONE';
+          dupRow.worksClosedRemote = true;
+          dupRow.worksSyncPending = false;
+          dupRow.duplicateMergedInto = primaryId;
+          updated++;
+        }
+      });
+
+      dedupedEntries.forEach((entry, i) => {
+        const tid = entry.tid;
+        const t = entry.task;
+        const r = entry.row;
+        const dupIds = entry.dupIds;
         let p = PICKUPS.find(x => x.worksTaskId === tid || x.id === 'w_' + tid);
-        const r = worksRowFromTask(t);
         if (!p) {
-          // 웍스 캡처·붙여넣기로 넣은 같은 제목 할 일이 있으면 새로 만들지 않고 연결 (완료 상태가 서로 맞춰짐)
+          // 웍스 캡처·붙여넣기로 넣은 같은 제목 또는 동일 의미 할 일이 있으면 새로 만들지 않고 연결
           const key = worksTitleKey(t.title);
-          const twin = key && PICKUPS.find(x => !x.worksTaskId && x.source === 'works' && worksTitleKey(x.title) === key);
+          const twin = PICKUPS.find(x => !x.worksTaskId && !pkIsHiddenDup(x) && x.source === 'works'
+            && ((key && worksTitleKey(x.title) === key) || (!x.done && pkIsSemanticDuplicate(x, r))));
           if (twin) {
             twin.worksTaskId = tid; twin.worksStatus = 'TODO'; twin.worksSyncPending = !!twin.done; twin.worksClosedRemote = false;
+            twin.duplicateMergedInto = '';
+            twin.duplicateWorksTaskIds = dupIds;
             if (!twin.assignee) twin.assignee = r.assignee;
+            if (!twin.worksSummary && r.worksSummary) twin.worksSummary = r.worksSummary;
             p = twin; updated++;
             if (twin.done) worksPushDone(twin);
           }
@@ -6199,27 +6655,38 @@ function speakSchoolQuantity(school, opts = {}) {
             worksTaskId: tid,
             worksStatus: 'TODO',
             worksContent: r.worksContent || '',
+            worksSummary: r.worksSummary || '',
+            duplicateWorksTaskIds: dupIds,
             worksSyncPending: false
           };
           PICKUPS.push(p);
           added.push(p);
           return;
         }
+        if (p.duplicateMergedInto) {
+          p.duplicateMergedInto = '';
+          updated++;
+        }
+        if (stableStr(p.duplicateWorksTaskIds || []) !== stableStr(dupIds)) {
+          p.duplicateWorksTaskIds = dupIds;
+          updated++;
+        }
         if (!p.worksAssigneePending && (p.assignee !== r.assignee || (r.assigneeIds && stableStr(p.assigneeIds || []) !== stableStr(r.assigneeIds)))) {
           p.assignee = r.assignee;
           if (r.assigneeIds) p.assigneeIds = r.assigneeIds;
           updated++;
         }
-        if (p.due !== r.due || (p.worksContent || '') !== (r.worksContent || '')) {
+        if (p.due !== r.due || (p.worksContent || '') !== (r.worksContent || '') || (p.worksSummary || '') !== (r.worksSummary || '')) {
           p.due = r.due;
           p.worksContent = r.worksContent || '';
+          p.worksSummary = r.worksSummary || '';
           updated++;
         }
         if (!p.userEditedType && r.type && (p.type === '기타' || (p.type === '증정' && r.type === '추가')) && p.type !== r.type) {
           p.type = r.type;
           updated++;
         }
-        if (r.items && (!p.items || (r.worksContent && p.items.length < r.items.length && !p.userEditedItems))) {
+        if (r.items && !p.userEditedItems && p.items !== r.items) {
           p.items = r.items;
           updated++;
         }
@@ -6248,7 +6715,7 @@ function speakSchoolQuantity(school, opts = {}) {
       });
       if (opts.checkClosed) {
         PICKUPS.forEach(p => {
-          if (p.worksTaskId && !remote[p.worksTaskId] && !p.done && !p.worksSyncPending) {
+          if (p.worksTaskId && !remote[p.worksTaskId] && !mergedInto[p.worksTaskId] && !pkIsHiddenDup(p) && !p.done && !p.worksSyncPending) {
             p.done = true;
             p.doneAt = now;
             p.worksStatus = 'DONE';
@@ -6257,13 +6724,14 @@ function speakSchoolQuantity(school, opts = {}) {
           }
         });
       }
-      return { added, closed, reopened, updated };
+      return { added, closed, reopened, updated, deduped };
     }
     var worksServerSync = null; // null=모름, true=봇 서버 실시간 동기화 켜짐, false=꺼짐(앱이 직접 맞춤)
     function worksSummary(r) {
       const tm = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
       const by = r.byType || {};
       const parts = [`웍스 ${r.tasks || 0}건 확인${r.tasks ? ' (' + Object.keys(by).map(k => k + ' ' + by[k]).join(', ') + ')' : ''}`];
+      if (r.deduped) parts.push(`중복 ${r.deduped}건 자동 필터`);
       if (r.added) parts.push(`새로 ${r.added}건 추가`);
       if (r.closed) parts.push(`웍스에서 완료된 ${r.closed}건 완료 표시`);
       if (r.reopened) parts.push(`웍스에서 되돌린 ${r.reopened}건 다시 표시`);
@@ -6283,7 +6751,7 @@ function speakSchoolQuantity(school, opts = {}) {
           worksServerSync = true; worksLastFetchAt = Date.now();
           if (typeof syncPullAll === 'function') { try { await syncPullAll(); } catch (e) {} }
           // 수동 불러오기(!auto)일 때만 추가 /app/pickups 조회로 누락 보정 (자동 주기 동기화는 서버 30초 동기화 + syncPullAll 로 충분)
-          let extraAdded = 0;
+          let extraAdded = 0, extraDeduped = 0;
           if (!auto) {
             try {
               const listData = await worksApi('/app/pickups?all=1&include_manual=1&unfiltered=1');
@@ -6296,6 +6764,7 @@ function speakSchoolQuantity(school, opts = {}) {
               if (rawTasks.length) {
                 const up = worksUpsertTasks(rawTasks, { checkClosed: false });
                 extraAdded = up.added.length;
+                extraDeduped = Math.max(Number(listData.deduped) || 0, up.deduped || 0);
                 if (up.added.length) pkAutoGeocode(up.added.filter(p => !pkLinkedSchool(p)));
               }
             } catch (e) {}
@@ -6303,8 +6772,9 @@ function speakSchoolQuantity(school, opts = {}) {
           pkEnrichWorks();
           savePickups(); renderPickups(); renderList();
           const totalAdded = (r.added || 0) + extraAdded;
-          worksInfo('ok', r.busy ? '✓ 다른 기기에서 맞추는 중입니다 · 실시간 자동 반영 중' : worksSummary({ ...r, added: totalAdded }));
-          if (!auto || totalAdded) showToast(totalAdded ? `웍스에서 할 일 ${totalAdded}건을 새로 가져왔습니다.` : '웍스 할 일을 최신으로 맞췄습니다.');
+          const totalDeduped = Math.max(Number(r.deduped) || 0, extraDeduped);
+          worksInfo('ok', r.busy ? '✓ 다른 기기에서 맞추는 중입니다 · 실시간 자동 반영 중' : worksSummary({ ...r, added: totalAdded, deduped: totalDeduped }));
+          if (!auto || totalAdded) showToast(totalAdded ? `웍스에서 할 일 ${totalAdded}건을 새로 가져왔습니다.${totalDeduped ? ` (중복 ${totalDeduped}건 자동 필터)` : ''}` : `웍스 할 일을 최신으로 맞췄습니다.${totalDeduped ? ` (중복 ${totalDeduped}건 자동 필터)` : ''}`);
         } catch (e) {
           if (/NK_SHEET_KEY|실시간 동기화 설정|HTTP 404|Not Found/.test(e.message || '')) { worksServerSync = false; fallback = true; }
           else { worksInfo('err', '✕ ' + (e.message || e)); if (!auto) showToast('웍스 할 일을 불러오지 못했습니다.'); }
@@ -6333,20 +6803,22 @@ function speakSchoolQuantity(school, opts = {}) {
           ...(Array.isArray(data.allTasks) ? data.allTasks : []),
           ...(Array.isArray(data.manualTasks) ? data.manualTasks : [])
         ];
-        const { added, closed, reopened } = worksUpsertTasks(tasks, { checkClosed: true });
+        const { added, closed, reopened, deduped } = worksUpsertTasks(tasks, { checkClosed: true });
         pkEnrichWorks();
         savePickups(); renderPickups(); renderList();
         worksLastFetchAt = Date.now();
         const tm = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
         const byType = {}; tasks.forEach(t => { const k = worksTypeFromTitle(t.title, t.content); byType[k] = (byType[k] || 0) + 1; });
+        const totalDeduped = (Number(data.deduped) || 0) + (deduped || 0);
         const parts = [`웍스 ${tasks.length}건 확인${tasks.length ? ' (' + Object.keys(byType).map(k => k + ' ' + byType[k]).join(', ') + ')' : ''}`];
+        if (totalDeduped) parts.push(`중복 ${totalDeduped}건 자동 필터`);
         if (added.length) parts.push(`새로 ${added.length}건 추가`);
         if (closed) parts.push(`웍스에서 완료된 ${closed}건 완료 표시`);
         if (reopened) parts.push(`웍스에서 되돌린 ${reopened}건 다시 표시`);
-        const pend = PICKUPS.filter(p => p.worksSyncPending).length;
+        const pend = PICKUPS.filter(p => p.worksSyncPending && !pkIsHiddenDup(p)).length;
         if (pend) parts.push(`웍스 반영 대기 ${pend}건`);
         worksInfo(pend ? 'warn' : 'ok', `✓ ${tm} · ${parts.join(' · ')}`);
-        if (!auto || added.length) showToast(added.length ? `웍스에서 할 일 ${added.length}건을 새로 가져왔습니다.` : '웍스 할 일을 최신으로 맞췄습니다.');
+        if (!auto || added.length) showToast(added.length ? `웍스에서 할 일 ${added.length}건을 새로 가져왔습니다.${totalDeduped ? ` (중복 ${totalDeduped}건 자동 필터)` : ''}` : `웍스 할 일을 최신으로 맞췄습니다.${totalDeduped ? ` (중복 ${totalDeduped}건 자동 필터)` : ''}`);
         if (added.length) pkAutoGeocode(added.filter(p => !pkLinkedSchool(p)));
       } catch (e) {
         worksInfo('err', '✕ ' + (e.message || e));
@@ -6395,9 +6867,21 @@ function speakSchoolQuantity(school, opts = {}) {
       document.getElementById('pkEdAddress').value = p ? p.address || '' : '';
       document.getElementById('pkEdMemo').value = p ? p.memo || '' : '';
       const raw = document.getElementById('pkEdRaw');
-      raw.textContent = p && (p.title || p.worksContent) ? ('웍스 원문: ' + (p.title || '') + (p.worksContent ? '\n' + p.worksContent : '')) : '';
-      raw.className = 'text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 whitespace-pre-line';
-      raw.classList.toggle('hidden', !(p && (p.title || p.worksContent)));
+      if (p && (p.worksSummary || p.title || p.worksContent)) {
+        const cleanRaw = cleanWorksContentDisplay(p.worksContent || '');
+        const lines = [];
+        if (p.worksSummary) lines.push('✨ 핵심 요약: ' + p.worksSummary);
+        if (p.title) lines.push('웍스 제목: ' + p.title);
+        if (cleanRaw && pkCanonicalCompareKey(cleanRaw, [p.school]) !== pkCanonicalCompareKey(p.worksSummary || '', [p.school])) {
+          lines.push('웍스 원문:\n' + cleanRaw);
+        }
+        raw.textContent = lines.join('\n');
+        raw.className = 'text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 whitespace-pre-line';
+        raw.classList.remove('hidden');
+      } else {
+        raw.textContent = '';
+        raw.classList.add('hidden');
+      }
       document.getElementById('pkEdDeleteBtn').classList.toggle('hidden', !p);
       pkUpdateEditLoc();
       document.getElementById('pkEditModal').classList.remove('hidden');
@@ -6502,14 +6986,14 @@ function speakSchoolQuantity(school, opts = {}) {
       const box = document.getElementById('modalPickups'); if (!box) return;
       if (!school || typeof pendingPickupsForSchool !== 'function') { box.classList.add('hidden'); box.innerHTML = ''; return; }
       const list = pendingPickupsForSchool(school);
-      const doneList = PICKUPS.filter(p => p.done && p.schoolId === school.id && p.doneAt && Date.now() - p.doneAt < 12 * 3600 * 1000);
+      const doneList = PICKUPS.filter(p => p.done && !pkIsHiddenDup(p) && p.schoolId === school.id && p.doneAt && Date.now() - p.doneAt < 12 * 3600 * 1000);
       if (!list.length && !doneList.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
       box.classList.remove('hidden');
       box.innerHTML = `<div class="text-xs font-extrabold text-rose-200 mb-2">📌 이 원에서 처리할 회수·반품·추가 납품 ${list.length}건</div>
         <div class="space-y-1.5">${list.concat(doneList).map(p => `
           <div class="flex items-center gap-2 rounded-xl px-2.5 py-2 border ${p.done ? 'bg-slate-900/60 border-slate-800 opacity-60' : 'bg-slate-950/80 border-rose-500/30'}">
             <span class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${PK_TYPE_CLASS[p.type] || PK_TYPE_CLASS['기타']}">${escapeHtml(p.type)}</span>
-            <span class="flex-1 min-w-0 text-sm font-bold ${p.done ? 'line-through text-slate-400' : 'text-white'}">${escapeHtml(p.items || p.title)}${p.memo ? `<span class="block text-[11px] font-medium text-sky-200">📝 ${escapeHtml(p.memo)}</span>` : ''}</span>
+            <span class="flex-1 min-w-0 text-sm font-bold ${p.done ? 'line-through text-slate-400' : 'text-white'}">${escapeHtml(p.items || p.title)}${p.memo ? `<span class="block text-[11px] font-medium text-sky-200">📝 ${escapeHtml(p.memo)}</span>` : ''}${p.worksSummary ? `<span class="block text-[11px] font-medium text-emerald-200">✨ ${escapeHtml(p.worksSummary)}</span>` : ''}</span>
             <button type="button" data-pk-done="${p.id}" class="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-extrabold ${p.done ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-rose-500 text-white'}">${p.done ? '취소' : '✓ 완료'}</button>
           </div>`).join('')}</div>`;
     }
@@ -6518,7 +7002,7 @@ function speakSchoolQuantity(school, opts = {}) {
     // ---- GPS: 회수 장소 근처 도착 알림 (납품 목록에 없는 곳) ----
     var pkAlertIds = [];
     function renderPkAlert() {
-      const list = pkAlertIds.map(id => PICKUPS.find(p => p.id === id)).filter(Boolean);
+      const list = pkAlertIds.map(id => PICKUPS.find(p => p.id === id)).filter(p => p && !pkIsHiddenDup(p));
       if (!list.length) { document.getElementById('pkAlertModal').classList.add('hidden'); return; }
       const p0 = list[0]; const d = pkDistance(p0);
       document.getElementById('pkAlertName').textContent = pkGuessFullName(p0.school);
@@ -6528,6 +7012,7 @@ function speakSchoolQuantity(school, opts = {}) {
           <div class="flex items-center gap-1.5 text-[11px] font-bold"><span class="px-2 py-0.5 rounded-full border ${PK_TYPE_CLASS[p.type]}">${escapeHtml(p.type)}</span>${p.assignee ? `<span class="text-slate-400">👤 ${escapeHtml(p.assignee)}</span>` : ''}</div>
           <div class="text-lg font-black text-amber-200 leading-snug ${p.done ? 'line-through' : ''}">${escapeHtml(p.items || p.title)}</div>
           ${p.memo ? `<div class="text-xs text-sky-200">📝 ${escapeHtml(p.memo)}</div>` : ''}
+          ${p.worksSummary ? `<div class="text-xs text-emerald-200">✨ ${escapeHtml(p.worksSummary)}</div>` : ''}
           <button type="button" data-pk-done="${p.id}" class="w-full py-3 rounded-xl text-sm font-extrabold ${p.done ? 'bg-slate-800 text-slate-300' : 'bg-rose-500 text-white'}">${p.done ? '↺ 완료 취소' : '✓ 완료'}</button>
         </div>`).join('');
     }
@@ -6535,7 +7020,7 @@ function speakSchoolQuantity(school, opts = {}) {
       if (userLat === null || !accuracyOk) return;
       const near = [];
       PICKUPS.forEach(p => {
-        if (p.done) return;
+        if (p.done || pkIsHiddenDup(p)) return;
         const s = pkLinkedSchool(p);
         if (s && !completedMap[s.id]) return;       // 납품 도착 화면에서 함께 안내
         const d = pkDistance(p);
@@ -6546,7 +7031,7 @@ function speakSchoolQuantity(school, opts = {}) {
       if (!near.length || !document.getElementById('arrivalModal').classList.contains('hidden')) return;
       // group by place (same school name)
       const key = normName(near[0].school);
-      const group = PICKUPS.filter(p => !p.done && normName(p.school) === key);
+      const group = PICKUPS.filter(p => !p.done && !pkIsHiddenDup(p) && normName(p.school) === key);
       group.forEach(p => { pkShownSet[p.id] = true; });
       pkAlertIds = group.map(p => p.id);
       renderPkAlert();
@@ -7519,7 +8004,7 @@ function speakSchoolQuantity(school, opts = {}) {
       if (typeof PICKUPS === 'undefined' || !Array.isArray(PICKUPS)) return [];
       const map = new Map();
       PICKUPS.forEach(p => {
-        if (!p || p.done) return;
+        if (!p || p.done || (typeof pkIsHiddenDup === 'function' && pkIsHiddenDup(p))) return;
         const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(p) : 'return';
         if (filterMode && gMode !== filterMode) return;
         const s = typeof pkLinkedSchool === 'function' ? pkLinkedSchool(p) : null;
@@ -7765,7 +8250,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-27.7';
+    var NK_APP_VERSION = '2026-11-27.8';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-27.7';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
@@ -9065,7 +9550,7 @@ ${school.address || ''}`;
             }));
         const doneCnt = overlayItems.filter(it => it.checked).length;
         const allChecked = overlayItems.length > 0 && overlayItems.every(it => it.checked);
-        const memoList = grp.items.map(p => (p.memo || p.fieldReason || (p.manualWorkflow && p.manualWorkflow.note) || '').trim()).filter(Boolean);
+        const memoList = grp.items.map(p => (p.memo || p.fieldReason || (p.manualWorkflow && p.manualWorkflow.note) || p.worksSummary || '').trim()).filter(Boolean);
         const totalQty = singleFq
           ? (firstP.qty || singleFq.reduce((a, r) => a + r.qty, 0))
           : grp.items.reduce((a, p) => a + (Number(p.qty) || 0), 0);
@@ -11383,7 +11868,7 @@ ${school.address || ''}`;
       }
       function groups(){
         const a=SCHOOLS.map(s=>({key:'s:'+s.id,name:s.name,s,ps:[]}));
-        PICKUPS.forEach(p=>{const s=linked(p);let g=s?a.find(g=>g.s===s):a.find(g=>!g.s&&g.key==='p:'+norm(p.school||p.id));if(!g){g={key:'p:'+norm(p.school||p.id),name:p.school||'미지정 원',s:null,ps:[]};a.push(g);}g.ps.push(p);});return a;
+        PICKUPS.filter(p=>p&&!p.duplicateMergedInto).forEach(p=>{const s=linked(p);let g=s?a.find(g=>g.s===s):a.find(g=>!g.s&&g.key==='p:'+norm(p.school||p.id));if(!g){g={key:'p:'+norm(p.school||p.id),name:p.school||'미지정 원',s:null,ps:[]};a.push(g);}g.ps.push(p);});return a;
       }
       const remaining=(qty,done)=>Math.max(0,Number(qty)-Number(done||0));
       function delivered(s,it){return completedMap[s.id]?Number(it.qty):Math.min(Number(it.qty),Math.max(0,Number(s.fieldOps?.delivered?.[it.key]||0)));}
@@ -11402,7 +11887,7 @@ ${school.address || ''}`;
       function loads(){
         const a=[];
         SCHOOLS.filter(s=>!completedMap[s.id]).forEach(s=>deliveryItems(s).forEach(it=>{const q=remaining(it.qty,delivered(s,it));if(q)a.push({owner:s,key:'s:'+s.id+':'+it.key,label:it.label,school:s.name,qty:q});}));
-        PICKUPS.filter(p=>!p.done&&extra(p)).forEach(p=>{const rows=pickupRows(p);if(rows.length)rows.forEach((r,i)=>{const q=remaining(r.qty,r.done);if(q)a.push({owner:p,key:'p:'+p.id+':'+i,label:r.label,school:p.school,qty:q});});else a.push({owner:p,key:'p:'+p.id,label:p.items||p.title||p.type,school:p.school,qty:null});});return a;
+        PICKUPS.filter(p=>p&&!p.done&&!p.duplicateMergedInto&&extra(p)).forEach(p=>{const rows=pickupRows(p);if(rows.length)rows.forEach((r,i)=>{const q=remaining(r.qty,r.done);if(q)a.push({owner:p,key:'p:'+p.id+':'+i,label:r.label,school:p.school,qty:q});});else a.push({owner:p,key:'p:'+p.id,label:p.items||p.title||p.type,school:p.school,qty:null});});return a;
       }
       const fingerprint=r=>JSON.stringify([r.label,r.qty,r.school]);
       function loadState(r){const v=r.owner.fieldLoad?.[day()]?.[r.key];return v&&v.fingerprint===fingerprint(r)?v.state:'준비 전';}
@@ -11414,7 +11899,7 @@ ${school.address || ''}`;
       for(const [m,t] of [['visit','원별 통합 업무'],['load','상차 체크']]){const b=document.createElement('button');b.type='button';b.className='px-3 py-2 rounded-xl bg-slate-700 text-sm';b.textContent=t;b.onclick=()=>{focusBack=document.activeElement;mode=m;if(activeModalSchoolId)selected='s:'+activeModalSchoolId;panel.hidden=false;draw();panel.querySelector('button')?.focus();};document.getElementById('headerTools')?.append(b);}
       function status(){
         try{const cur=syncLocalRecords(),snap=syncSnap||{};const pending=new Set([...Object.keys(cur),...Object.keys(snap)]);let n=0;pending.forEach(k=>{if(stableStr(cur[k])!==snap[k])n++;});
-          const w=PICKUPS.filter(p=>p.worksTaskId&&p.worksSyncPending).length;
+          const w=PICKUPS.filter(p=>p&&!p.duplicateMergedInto&&p.worksTaskId&&p.worksSyncPending).length;
           let text=localError?'기기 저장 실패: '+localError:localAt?'기기 저장 '+new Date(localAt).toLocaleTimeString('ko-KR'):'기기 저장: 이번 실행 중 신규 저장 없음';
           text+=' | '+(!syncUser?'서버 미연결':navigator.onLine===false?'오프라인 · 서버 미반영 '+n+'건':syncState==='error'?'서버 오류 · '+(syncDetail||'재시도 대기'):syncPushing?'서버 전송 중':!syncHasSnap?'서버 초기 동기화 중':n?'서버 반영 대기 '+n+'건':'서버 기준과 변경 내역 일치');
           if(syncLastAt)text+=' | 서버 확인 '+new Date(syncLastAt).toLocaleTimeString('ko-KR');text+=' | 웍스 반영 대기 '+w+'건';badge.textContent=text;const target=panel.querySelector('#opsInnerStatus');if(target)target.textContent=text;
@@ -11436,7 +11921,7 @@ ${school.address || ''}`;
         panel.innerHTML+='<h2>원별 통합 업무</h2><label>원 선택<select id="opsGroup">'+gs.map(x=>`<option value="${E(x.key)}" ${x===g?'selected':''}>${E(x.name)} · 할 일 ${x.ps.filter(p=>!p.done).length}건</option>`).join('')+'</select></label>';
         if(g.s){const s=g.s,f=s.fieldOps||{},items=deliveryItems(s);panel.innerHTML+=`<p>${E(s.address||'주소 없음')}</p><article><h3>정규 납품 · 주문앱 기준</h3><p>누적 전달 수량을 입력하세요. 원 주문 수량은 유지됩니다.</p>${items.map((it,i)=>`<label>${E(it.label)} · 주문 ${Number(it.qty)} / 잔여 ${remaining(it.qty,delivered(s,it))}<input class="opsQty" type="number" min="0" max="${Number(it.qty)}" step="1" data-delivery="${i}" value="${delivered(s,it)}"></label>`).join('')}<label>상태<select id="opsDeliveryState">${stateOptions(completedMap[s.id]?'완료':f.deliveryStatus||'대기')}</select></label><label>미처리 사유<textarea id="opsReason">${E(f.reason||'')}</textarea></label><label>재방문일<input id="opsDate" type="date" value="${E(f.revisitDate||'')}"></label><label>현장 메모<textarea id="opsMemo">${E(f.memo||'')}</textarea></label>${btn('saveDelivery','정규 납품 저장')}</article>`;}
         else panel.innerHTML+='<p class="opsWarn">정규 납품 목록에 연결되지 않은 원입니다. 원 이름이 같아도 중복 후보가 있으면 자동 연결하지 않습니다.</p>';
-        for(const [isExtra,title] of [[true,'추가 납품·교구·A/S'],[false,'회수·반품·기타']]){const ps=g.ps.filter(p=>extra(p)===isExtra);panel.innerHTML+=`<h3>${title}</h3>`+(ps.length?ps.map(p=>{const rows=pickupRows(p);return `<article data-task="${E(p.id)}"><p>${E(p.type)} · ${E(p.items||p.title||'내용 없음')}</p><small>${E(p.worksContent||'')}<br>${p.worksTaskId?(p.worksSyncPending?'웍스 반영 대기':p.done?'웍스 완료 상태':'웍스 미완료 상태'):'직접 등록'}</small><label>품목별 수량 설정 (한 줄에 품목명 | 예정수량)<textarea data-rows placeholder="교구 | 5">${E(rows.map(r=>r.label+' | '+r.qty).join('\n'))}</textarea></label>${btn('setRows','품목·예정수량 설정',`data-id="${E(p.id)}"`)}${rows.map((r,i)=>`<label>${E(r.label)} · 예정 ${r.qty} / 잔여 ${p.done?0:remaining(r.qty,r.done)}<input class="opsQty" data-taskqty="${i}" type="number" min="0" max="${r.qty}" step="1" value="${p.done?r.qty:r.done||0}"></label>`).join('')}<label>상태<select data-taskstate>${stateOptions(p.done?'완료':p.fieldStatus||'대기')}</select></label><label>미처리 사유<textarea data-taskreason>${E(p.fieldReason||'')}</textarea></label><label>재방문일<input data-taskdate type="date" value="${E(p.fieldRevisitDate||'')}"></label>${btn('saveTask','업무 처리 저장',`data-id="${E(p.id)}"`)}</article>`;}).join(''):'<p>해당 업무 없음</p>');}
+        for(const [isExtra,title] of [[true,'추가 납품·교구·A/S'],[false,'회수·반품·기타']]){const ps=g.ps.filter(p=>extra(p)===isExtra);panel.innerHTML+=`<h3>${title}</h3>`+(ps.length?ps.map(p=>{const rows=pickupRows(p);const sumTxt=(p.worksSummary||'').trim();return `<article data-task="${E(p.id)}"><p>${E(p.type)} · ${E(p.items||p.title||'내용 없음')}</p><small>${sumTxt?E('✨ '+sumTxt)+'<br>':''}${p.worksTaskId?(p.worksSyncPending?'웍스 반영 대기':p.done?'웍스 완료 상태':'웍스 미완료 상태'):'직접 등록'}</small><label>품목별 수량 설정 (한 줄에 품목명 | 예정수량)<textarea data-rows placeholder="교구 | 5">${E(rows.map(r=>r.label+' | '+r.qty).join('\n'))}</textarea></label>${btn('setRows','품목·예정수량 설정',`data-id="${E(p.id)}"`)}${rows.map((r,i)=>`<label>${E(r.label)} · 예정 ${r.qty} / 잔여 ${p.done?0:remaining(r.qty,r.done)}<input class="opsQty" data-taskqty="${i}" type="number" min="0" max="${r.qty}" step="1" value="${p.done?r.qty:r.done||0}"></label>`).join('')}<label>상태<select data-taskstate>${stateOptions(p.done?'완료':p.fieldStatus||'대기')}</select></label><label>미처리 사유<textarea data-taskreason>${E(p.fieldReason||'')}</textarea></label><label>재방문일<input data-taskdate type="date" value="${E(p.fieldRevisitDate||'')}"></label>${btn('saveTask','업무 처리 저장',`data-id="${E(p.id)}"`)}</article>`;}).join(''):'<p>해당 업무 없음</p>');}
         status();
       }
       function drawLoad(){
@@ -11451,7 +11936,7 @@ ${school.address || ''}`;
         }
         panel.innerHTML+=`<h2>출발 전 상차 체크 · ${day()}</h2><p>현재 미완료 전체 목록 기준입니다. 오늘 방문할 원은 아래 선택으로 정하세요. 회수·반품은 싣는 물건에 포함하지 않습니다. 수량·내용이 바뀌면 확인 상태가 초기화됩니다.</p><p>${btn('toggleLoadOrder',loadReverse?'📦 현재: 방문 역순 적재 (마지막 원 먼저 싣기) → 기본순 보기':'🚚 현재: '+E(orderLabel)+' → 역순 상차(마지막 원 먼저)로 보기')}</p><h3>품목별 전체 잔여 합계</h3>${[...totals].map(([k,v])=>`<p>${E(k)}: ${v.q} <small>(${E(v.names.join(' / '))})</small></p>`).join('')}<h3>원별 준비</h3>`;
         indexed.forEach(({r,idx})=>{panel.innerHTML+=`<article><p>${E(r.school)} · ${E(r.label)} · ${r.qty===null?'수량 미설정 (원문 확인)':r.qty}</p><label>이번 출발 대상 / 준비 상태<select data-load="${idx}">${['이번 출발 제외','준비 전','포장 완료','상차 완료'].map(v=>`<option ${loadState(r)===v?'selected':''}>${v}</option>`).join('')}</select></label></article>`;});
-        panel.innerHTML+=btn('saveLoad','상차 체크 저장')+btn('departure','출발 전 점검')+'<h3>현장에서 가져올 것</h3>'+PICKUPS.filter(p=>!p.done&&!extra(p)).map(p=>`<p>${E(p.school)} · ${E(p.type)} · ${E(p.items||p.title||'')}</p>`).join('');
+        panel.innerHTML+=btn('saveLoad','상차 체크 저장')+btn('departure','출발 전 점검')+'<h3>현장에서 가져올 것</h3>'+PICKUPS.filter(p=>p&&!p.done&&!p.duplicateMergedInto&&!extra(p)).map(p=>`<p>${E(p.school)} · ${E(p.type)} · ${E(p.items||p.title||'')}</p>`).join('');
       }
       panel.onchange=e=>{if(e.target.id==='opsGroup'){selected=e.target.value;draw();}};
       panel.onclick=async e=>{

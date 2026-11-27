@@ -202,7 +202,7 @@
       } else {
         const hay = [
           linked && linked.name, p.school, p.type, p.items, p.title,
-          p.assignee, p.memo, p.fieldReason, p.worksContent, p.address
+          p.assignee, p.memo, p.fieldReason, p.worksSummary, p.worksContent, p.address
         ].filter(Boolean).join(' ').toLowerCase();
         card.style.display = hay.includes(pkSearchQuery) ? '' : 'none';
       }
