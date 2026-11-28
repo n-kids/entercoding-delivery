@@ -1,7 +1,7 @@
 {
-  "appVersion": "2026-11-27.9",
-  "overlayVersion": "2026-11-27.7",
-  "swBuild": "integrated-20261127-holdhide1",
-  "updatedAt": "2026-11-27T09:15:00Z",
-  "notes": "보류·재방문 선택 시 당일 팝업창 자동 숨김(미니팝업·PiP·GPS 도착알림 일괄 제외, 다음날 또는 상태 복구 시 자동 재표시)"
+  "appVersion": "2026-11-27.10",
+  "overlayVersion": "2026-11-27.8",
+  "swBuild": "integrated-20261127-skills1",
+  "updatedAt": "2026-11-28T02:55:00Z",
+  "notes": "1탭 출발 모드, 오늘 숨긴 원 1탭 복구(메인+미니팝업), 음성 메모·핸즈프리 음성 명령, 출발 전 차량 적재 요약 시트 추가"
 }

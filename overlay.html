@@ -140,6 +140,7 @@
   #w.collapsed #menu,
   #w.collapsed #cfgMenu,
   #w.collapsed #undoBar,
+  #w.collapsed #restoreHiddenBar,
   #w.collapsed #heroCard,
   #w.collapsed #body { display: none !important; }
 
@@ -268,12 +269,12 @@
   /* =========================================================
      4. UNDO BAR & 0.5-SECOND QUANTITY HERO BLOCK
      ========================================================= */
-  #undoBar {
+  #undoBar, #restoreHiddenBar {
     display: none; width: 100%; margin-bottom: 5px; padding: 5px 8px; font-size: 11px; font-weight: 900;
     color: var(--ov-undo-ink); background: var(--ov-undo-bg); border: 1px solid var(--ov-undo-bd); border-radius: 10px;
     text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  #undoBar.open { display: block; }
+  #undoBar.open, #restoreHiddenBar.open { display: block; }
 
   #heroCard {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -569,6 +570,7 @@
   </div>
 
   <button id="undoBar" type="button" aria-label="방금 완료 되돌리기">↩ 되돌리기</button>
+  <button id="restoreHiddenBar" type="button" aria-label="오늘 숨긴 보류·재방문 복구">🔓 오늘 숨김 복구</button>
 
   <!-- 3. 0.5초 시인성 수량 히어로 블록 -->
   <div id="heroCard">
@@ -649,7 +651,7 @@
 <script>
 (function () {
   'use strict';
-  var VERSION = '2026-11-27.7';
+  var VERSION = '2026-11-27.8';
   var H = window.OverlayHost || null;
   var $ = function (id) { return document.getElementById(id); };
   var w = $('w');
@@ -994,6 +996,12 @@
     var undoText = String(p.undoLabel || '').trim();
     $('undoBar').classList.toggle('open', !!undoText && !state.collapsed);
     if (undoText) $('undoBar').textContent = '↩ ' + undoText + ' 완료 취소';
+    var hidCnt = Number(p.hiddenTodayCount || 0);
+    var rhEl = $('restoreHiddenBar');
+    if (rhEl) {
+      rhEl.classList.toggle('open', hidCnt > 0 && !state.collapsed);
+      if (hidCnt > 0) rhEl.textContent = '🔓 오늘 숨김 ' + hidCnt + '건 · 최근 1건 복구';
+    }
 
     // Expanded Header distance
     var weakAcc = (gpsState === 'weak' && p.gpsAccuracy) ? (' (±' + p.gpsAccuracy + 'm)') : '';
@@ -1344,6 +1352,7 @@
 
   // ---- 주소 · 메모 · 전체체크 ----
   $('undoBar').addEventListener('click', function () { callMain('onNativeOverlayUndoComplete'); });
+  $('restoreHiddenBar').addEventListener('click', function () { callMain('onNativeOverlayRestoreHiddenToday'); });
   $('addrBtn').addEventListener('click', function () {
     if ($('addrBtn').disabled) return;
     state.addrOpen = !state.addrOpen;

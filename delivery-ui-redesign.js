@@ -910,6 +910,8 @@
       `;
     }
 
+    const hiddenCnt = typeof window.nkCountHiddenInPopupToday === 'function' ? window.nkCountHiddenInPopupToday('auto') : 0;
+    const voiceOn = !!(window.nkFieldSkills && window.nkFieldSkills.isVoiceCommandActive && window.nkFieldSkills.isVoiceCommandActive());
     focusHero.innerHTML = `
       <div class="fh-top">
         <span>오늘 진행 <strong>${doneCount}/${totalCount}곳</strong> (${pct}%)</span>
@@ -918,6 +920,10 @@
       <div class="fh-track"><div class="fh-fill" style="width:${pct}%"></div></div>
       ${nextHtml}
       <div class="fh-chips">
+        <button type="button" class="fh-chip fh-chip-go" data-fh-skill="departure">🚀 1탭 출발</button>
+        <button type="button" class="fh-chip" data-fh-skill="load">📦 적재 요약</button>
+        <button type="button" class="fh-chip fh-chip-voice ${voiceOn ? 'on' : ''}" data-fh-skill="voice">${voiceOn ? '🔴 음성 듣는 중' : '🎙️ 음성 명령'}</button>
+        <button type="button" class="fh-chip fh-chip-restore" data-fh-skill="restore" style="${hiddenCnt > 0 ? '' : 'display:none'}">🔓 숨김 ${hiddenCnt}건 복구</button>
         <button type="button" class="fh-chip ${showStepTotals ? 'on' : ''}" data-fh-toggle="steps">📊 단계별 합계</button>
         <button type="button" class="fh-chip ${showManualArea ? 'on' : ''}" data-fh-toggle="area">📍 수동 동네 선택</button>
         <button type="button" class="fh-chip ${showLegacyNavi ? 'on' : ''}" data-fh-toggle="navi">🚗 대형 HUD</button>
@@ -927,6 +933,15 @@
   }
 
   focusHero.addEventListener('click', (e) => {
+    const skillBtn = e.target.closest('[data-fh-skill]');
+    if (skillBtn && window.nkFieldSkills) {
+      const sk = skillBtn.getAttribute('data-fh-skill');
+      if (sk === 'departure') window.nkFieldSkills.startDepartureMode();
+      else if (sk === 'load') window.nkFieldSkills.openLoadSummaryDialog();
+      else if (sk === 'voice') window.nkFieldSkills.toggleVoiceCommandMode();
+      else if (sk === 'restore') window.nkFieldSkills.openRestoreHiddenDialog();
+      return;
+    }
     const openEl = e.target.closest('[data-fh-open]');
     if (openEl && typeof openArrivalModal === 'function') {
       openArrivalModal(Number(openEl.getAttribute('data-fh-open')), false);

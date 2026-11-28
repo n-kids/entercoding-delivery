@@ -243,7 +243,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
 #domFloatingOverlay.nk-dom-light #domOverlayHoldHint{color:#92400e!important;background:#fef3c7!important;border-color:#f59e0b!important}
 #domFloatingOverlay.nk-dom-light .nk-dom-memo-chip{color:#0369a1!important;background:#e0f2fe!important;border-color:#7dd3fc!important}
 #domFloatingOverlay.nk-dom-light .nk-dom-memo-chip.is-edit{color:#92400e!important;background:#fef3c7!important;border-color:#f59e0b!important}
-#domFloatingOverlay.nk-dom-light #domOverlayUndoBtn{color:#92400e!important;background:#fef3c7!important;border-color:#d97706!important}
+#domFloatingOverlay.nk-dom-light #domOverlayUndoBtn,#domFloatingOverlay.nk-dom-light #domOverlayRestoreHiddenBtn{color:#92400e!important;background:#fef3c7!important;border-color:#d97706!important}
 #domFloatingOverlay.nk-dom-light #domOverlayCallBtn{background:#d1fae5!important;color:#065f46!important;border-color:#10b981!important}
 #domFloatingOverlay.nk-dom-light #domOverlaySmsBtn{background:#e0f2fe!important;color:#075985!important;border-color:#0ea5e9!important}
 #domFloatingOverlay.nk-dom-light #domOverlayPhotoBtn,#domFloatingOverlay.nk-dom-light #domOverlaySpeakBtn{background:#e0e7ff!important;color:#3730a3!important;border-color:#6366f1!important}
@@ -1530,6 +1530,7 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
     </div>
 
     <button id="domOverlayUndoBtn" type="button" class="hidden w-full mb-1.5 px-2 py-1.5 rounded-xl text-[11px] font-black bg-amber-500/20 text-amber-200 border border-amber-500/40 truncate">↩ 방금 완료 되돌리기</button>
+    <button id="domOverlayRestoreHiddenBtn" type="button" class="hidden w-full mb-1.5 px-2 py-1.5 rounded-xl text-[11px] font-black bg-amber-500/20 text-amber-200 border border-amber-500/40 truncate">🔓 오늘 숨김 복구</button>
 
     <!-- 3. 0.5초 시인성 수량 히어로 블록 -->
     <div id="domOverlayHeroCard" class="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl cursor-move">
@@ -8372,14 +8373,15 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-27.9';
-    var NK_EXPECTED_OVERLAY_VERSION = '2026-11-27.7';
+    var NK_APP_VERSION = '2026-11-27.10';
+    var NK_EXPECTED_OVERLAY_VERSION = '2026-11-27.8';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
       'index.html',
       'delivery-convenience.js',
       'delivery-pro-features.js',
       'delivery-ui-redesign.js',
+      'delivery-field-skills.js',
       'save-sync-status.js',
       'pickup-extra-ui.js',
       'return-card-status.js',
@@ -9527,6 +9529,7 @@ ${school.address || ''}`;
       const best = getOverlayDisplayTarget();
       const radiusMeters = parseInt(document.getElementById('radiusSelect')?.value, 10) || 300;
       const undoLabel = (typeof window.nkGetUndoLabel === 'function') ? window.nkGetUndoLabel() : '';
+      const totalHiddenToday = typeof nkCountHiddenInPopupToday === 'function' ? nkCountHiddenInPopupToday('auto') : 0;
       const gpsState = typeof gpsUiState === 'string' ? gpsUiState : 'off';
       const gpsAccuracy = userAccuracy != null && isFinite(userAccuracy) ? Math.round(userAccuracy) : null;
       const autoNearest = !!overlayFollowNearest;
@@ -9620,6 +9623,7 @@ ${school.address || ''}`;
           memo: '',
           pickupNote: '',
           undoLabel,
+          hiddenTodayCount: totalHiddenToday,
           naviUrl: '',
           webNaviUrl: '',
           kakaoUrl: '',
@@ -9633,7 +9637,7 @@ ${school.address || ''}`;
           quickList: [],
           nextPreview: null,
           smsBodies: null,
-          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-27.7',
+          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-27.8',
           overlayAssetSig: nkLatestOverlayAssetSig || '',
           items: []
         };
@@ -9730,6 +9734,7 @@ ${school.address || ''}`;
           memo: memoList[0] || (linkedS && linkedS.fieldOps && linkedS.fieldOps.memo) || '',
           pickupNote: '',
           undoLabel,
+          hiddenTodayCount: totalHiddenToday,
           naviUrl,
           webNaviUrl,
           kakaoUrl,
@@ -9745,7 +9750,7 @@ ${school.address || ''}`;
           smsBodies: buildOverlaySmsBodies(grp.name, totalQtyLabel),
           closeOnOpenApp: true,
           autoHideOnAppOpen: true,
-          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-27.7',
+          latestOverlayVersion: nkLatestOverlayVersion || '2026-11-27.8',
           overlayAssetSig: nkLatestOverlayAssetSig || '',
           items: overlayItems
         };
@@ -9834,6 +9839,7 @@ ${school.address || ''}`;
         memo: [statusPrefix.trim(), fOps.visitWindow ? `⏰ ${fOps.visitWindow}` : '', fOps.avoidWindow ? `⚠️ ${fOps.avoidWindow}` : '', fOps.memo || fOps.reason || ''].filter(Boolean).join(' · '),
         pickupNote: linkedPendingPickups.length ? `↩️ 회수·추가 ${linkedPendingPickups.length}건 함께 확인` : '',
         undoLabel,
+        hiddenTodayCount: totalHiddenToday,
         naviUrl: buildNaverNaviSchemeUrl(s),
         webNaviUrl,
         kakaoUrl: buildKakaoNaviUrl(s),
@@ -9849,7 +9855,7 @@ ${school.address || ''}`;
         smsBodies: buildOverlaySmsBodies(s.name, totalQtyLabel),
         closeOnOpenApp: true,
         autoHideOnAppOpen: true,
-        latestOverlayVersion: nkLatestOverlayVersion || '2026-11-27.7',
+        latestOverlayVersion: nkLatestOverlayVersion || '2026-11-27.8',
         overlayAssetSig: nkLatestOverlayAssetSig || '',
         items: mappedItems
       };
@@ -10227,6 +10233,16 @@ ${school.address || ''}`;
           undoEl.classList.remove('hidden');
         } else {
           undoEl.classList.add('hidden');
+        }
+      }
+      const restoreHidEl = document.getElementById('domOverlayRestoreHiddenBtn');
+      if (restoreHidEl) {
+        const hidCnt = Number(payload.hiddenTodayCount || 0);
+        if (hidCnt > 0 && !domOverlayCollapsed) {
+          restoreHidEl.textContent = `🔓 오늘 숨김 ${hidCnt}건 · 최근 1건 복구`;
+          restoreHidEl.classList.remove('hidden');
+        } else {
+          restoreHidEl.classList.add('hidden');
         }
       }
 
@@ -10751,6 +10767,46 @@ ${school.address || ''}`;
     window.onNativeOverlayUndoComplete = function() {
       if (typeof window.nkPerformUndo === 'function') {
         window.nkPerformUndo();
+      }
+    };
+
+    window.onNativeOverlayRestoreHiddenToday = function() {
+      if (window.nkFieldSkills && typeof window.nkFieldSkills.restoreLastHiddenToday === 'function') {
+        window.nkFieldSkills.restoreLastHiddenToday();
+        return;
+      }
+      const today = typeof nkLocalTodayKey === 'function' ? nkLocalTodayKey() : '';
+      const hiddenS = SCHOOLS.filter(s => typeof isSchoolHiddenInPopupToday === 'function' && isSchoolHiddenInPopupToday(s));
+      const hiddenP = (typeof PICKUPS !== 'undefined' && Array.isArray(PICKUPS))
+        ? PICKUPS.filter(p => p && !p.done && !(typeof pkIsHiddenDup === 'function' && pkIsHiddenDup(p)) && typeof isPickupHiddenInPopupToday === 'function' && isPickupHiddenInPopupToday(p))
+        : [];
+      const all = [
+        ...hiddenS.map(s => ({ kind: 'school', item: s, ts: Number((s.fieldOps && s.fieldOps.updatedAt) || 0) })),
+        ...hiddenP.map(p => ({ kind: 'pickup', item: p, ts: Number(p.statusUpdatedAt || (p.manualWorkflow && Date.parse(p.manualWorkflow.updatedAt)) || 0) }))
+      ].sort((a, b) => b.ts - a.ts);
+      if (!all.length) { showToast('오늘 숨겨진 항목이 없습니다.'); return; }
+      const top = all[0];
+      if (top.kind === 'school') {
+        const f = top.item.fieldOps || {};
+        top.item.fieldOps = { ...f, deliveryStatus: '대기', popupHiddenDate: '', revisitDate: (f.revisitDate && f.revisitDate > today) ? '' : (f.revisitDate || ''), updatedAt: Date.now() };
+        saveState();
+        renderList();
+        syncNativeAndDomOverlays();
+        updateBgMediaAndPip();
+        showToast(`🔓 [${top.item.name}] 팝업창에 다시 표시됩니다.`);
+      } else {
+        const p = top.item;
+        p.popupHiddenDate = '';
+        if (typeof nkIsHoldOrRevisitStatus === 'function' && nkIsHoldOrRevisitStatus(p.fieldStatus)) p.fieldStatus = '';
+        if (p.manualWorkflow && typeof nkIsHoldOrRevisitStatus === 'function' && nkIsHoldOrRevisitStatus(p.manualWorkflow.status)) delete p.manualWorkflow;
+        if (p.fieldRevisitDate && p.fieldRevisitDate > today) p.fieldRevisitDate = '';
+        p.statusUpdatedAt = Date.now();
+        savePickups();
+        if (typeof renderPickups === 'function') renderPickups();
+        renderList();
+        syncNativeAndDomOverlays();
+        updateBgMediaAndPip();
+        showToast(`🔓 [${p.school || p.title || '업무'}] 팝업창에 다시 표시됩니다.`);
       }
     };
 
@@ -11808,6 +11864,9 @@ ${school.address || ''}`;
     document.getElementById('domOverlayUndoBtn')?.addEventListener('click', () => {
       window.onNativeOverlayUndoComplete();
     });
+    document.getElementById('domOverlayRestoreHiddenBtn')?.addEventListener('click', () => {
+      if (typeof window.onNativeOverlayRestoreHiddenToday === 'function') window.onNativeOverlayRestoreHiddenToday();
+    });
     document.getElementById('domOverlayCallBtn')?.addEventListener('click', () => {
       window.onNativeOverlayCallPhone();
     });
@@ -12237,7 +12296,26 @@ window.__nkBridge = {
   stepLabelParts: (s) => (typeof stepLabelParts === 'function' ? stepLabelParts(s) : []),
   grandTotal: (s) => (typeof grandTotal === 'function' ? grandTotal(s) : 0),
   distanceToSchool: (s) => (typeof distanceToSchool === 'function' ? distanceToSchool(s) : null),
-  formatDistance: (m) => (typeof formatDistance === 'function' ? formatDistance(m) : '')
+  formatDistance: (m) => (typeof formatDistance === 'function' ? formatDistance(m) : ''),
+  startGps: () => { if (!gpsActive && typeof startGpsTracking === 'function') startGpsTracking(); },
+  enableWakeLock: async () => {
+    if (!('wakeLock' in navigator)) return false;
+    try {
+      wakeLockWanted = true;
+      if (!wakeLockSentinel && typeof requestWakeLock === 'function') await requestWakeLock();
+      return !!wakeLockSentinel;
+    } catch (e) { return false; }
+  },
+  startBgKeepAlive: (silent = true) => { if (typeof startBgKeepAlive === 'function') startBgKeepAlive(silent); },
+  openOverlayForDeparture: () => {
+    if (hasAndroidNativeOverlay() && !window.AndroidOverlay.canDrawOverlays()) {
+      showToast('⚙️ 팝업모드(오버레이)를 띄우려면 [다른 앱 위에 표시] 권한을 허용해 주세요!');
+      window.AndroidOverlay.requestOverlayPermission();
+      return false;
+    }
+    if (typeof openPopupModeWithScreenOff === 'function') openPopupModeWithScreenOff();
+    return true;
+  }
 };
 </script>
   <script src="save-sync-status.js"></script>
@@ -12248,5 +12326,6 @@ window.__nkBridge = {
   <script src="delivery-convenience.js"></script>
   <script src="delivery-pro-features.js"></script>
   <script src="delivery-ui-redesign.js"></script>
+  <script src="delivery-field-skills.js"></script>
 </body>
 </html>
