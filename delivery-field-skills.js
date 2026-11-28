@@ -263,29 +263,135 @@
       color: #e2e8f0;
     }
     .nk-load-tag strong { color: #34d399; }
+    .nk-load-filter-box {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #111c33;
+      border: 1px solid #334155;
+    }
+    .nk-load-filter-chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .nk-load-filter-chip strong { color: #34d399; margin-left: 2px; }
+    .nk-load-filter-chip.is-selected {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #60a5fa;
+    }
+    .nk-load-filter-chip.is-selected strong { color: #fde68a; }
+    .nk-load-filter-chip.is-extra.is-selected {
+      background: #7c3aed;
+      border-color: #a78bfa;
+    }
+    .nk-load-step-btn {
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    }
+    .nk-load-step-btn.is-selected {
+      border-color: #60a5fa !important;
+      background: rgba(37, 99, 235, 0.28) !important;
+      box-shadow: 0 0 0 1px #60a5fa inset;
+    }
     .nk-load-card {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
+      flex-direction: column;
+      gap: 9px;
       padding: 12px;
       border-radius: 14px;
       border: 1px solid #334155;
       background: #172033;
-      cursor: pointer;
       transition: border-color 0.15s, opacity 0.15s;
     }
     .nk-load-card.checked {
-      opacity: 0.56;
+      opacity: 0.65;
       border-color: #059669;
       background: rgba(6, 78, 59, 0.25);
     }
+    .nk-load-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .nk-load-card-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
     .nk-load-card input[type="checkbox"] {
-      width: 22px;
-      height: 22px;
-      margin-top: 2px;
+      width: 20px;
+      height: 20px;
       accent-color: #10b981;
       flex: none;
     }
+    .nk-load-stop-stat {
+      flex: none;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 900;
+      background: #0f172a;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+    .nk-load-stop-stat.done {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+      border-color: #10b981;
+    }
+    .nk-load-item-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 6px;
+    }
+    .nk-load-item-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 9px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fde68a;
+    }
+    .nk-load-item-row.is-teacher { color: #bae6fd; }
+    .nk-load-item-row.is-extra { color: #ddd6fe; }
+    .nk-load-item-row.is-on {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.14);
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+    .nk-load-item-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+    .nk-load-item-lbl {
+      flex: 1;
+      min-width: 0;
+      line-height: 1.25;
+    }
+    .nk-load-item-qty {
+      flex: none;
+      font-size: 13px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+    .nk-load-item-row.is-on .nk-load-item-qty { color: #94a3b8; }
     .nk-load-order-badge {
       display: inline-block;
       padding: 2px 7px;
@@ -439,10 +545,46 @@
     body.nk-theme-sunlight .nk-load-step-box,
     body.nk-theme-sunlight .nk-load-card,
     body.nk-theme-sunlight .nk-restore-card,
-    body.nk-theme-sunlight .nk-load-tag {
+    body.nk-theme-sunlight .nk-load-tag,
+    body.nk-theme-sunlight .nk-load-filter-box {
       background: #f8fafc;
       border-color: #cbd5e1;
       color: #0f172a;
+    }
+    body.nk-theme-sunlight .nk-load-filter-chip {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #1e293b;
+    }
+    body.nk-theme-sunlight .nk-load-filter-chip strong { color: #047857; }
+    body.nk-theme-sunlight .nk-load-filter-chip.is-selected {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+    }
+    body.nk-theme-sunlight .nk-load-filter-chip.is-selected strong { color: #fef08a; }
+    body.nk-theme-sunlight .nk-load-item-row {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #92400e;
+    }
+    body.nk-theme-sunlight .nk-load-item-row.is-teacher { color: #0369a1; }
+    body.nk-theme-sunlight .nk-load-item-row.is-extra { color: #6d28d9; }
+    body.nk-theme-sunlight .nk-load-item-row .nk-load-item-qty { color: #0f172a; }
+    body.nk-theme-sunlight .nk-load-item-row.is-on {
+      background: #ecfdf5;
+      border-color: #10b981;
+      color: #64748b;
+    }
+    body.nk-theme-sunlight .nk-load-stop-stat {
+      background: #e2e8f0;
+      color: #1e293b;
+      border-color: #cbd5e1;
+    }
+    body.nk-theme-sunlight .nk-load-stop-stat.done {
+      background: #d1fae5;
+      color: #065f46;
+      border-color: #10b981;
     }
     body.nk-theme-sunlight .nk-load-step-box strong { color: #0f172a; }
     body.nk-theme-sunlight .nk-load-step-box small { color: #b45309; }
@@ -1048,8 +1190,37 @@
   const loadState = {
     scope: 'auto', // 'course' | 'all' | 'auto'
     excludeHidden: true,
-    reverseOrder: true
+    reverseOrder: true,
+    selectedKeys: new Set(),  // 'prod:<name>' | 'extra:<name>' (empty = all)
+    selectedSteps: new Set(), // 1 | 2 | 3 | 4 (empty = all)
+    roleFilter: 'all'         // 'all' | 'student' | 'teacher'
   };
+
+  function isLoadItemChecked(checks, it) {
+    if (!checks || !it) return false;
+    if (Object.prototype.hasOwnProperty.call(checks, it.itemCheckKey)) {
+      return !!checks[it.itemCheckKey];
+    }
+    return !!(it.legacyParentKey && checks[it.legacyParentKey]);
+  }
+
+  function hasActiveLoadFilter() {
+    return loadState.selectedKeys.size > 0 || loadState.selectedSteps.size > 0 || loadState.roleFilter !== 'all';
+  }
+
+  function matchesLoadFilter(it) {
+    if (loadState.selectedKeys.size > 0 && !loadState.selectedKeys.has(it.filterKey)) return false;
+    if (loadState.selectedSteps.size > 0) {
+      if (it.role === 'extra') {
+        if (!loadState.selectedKeys.has(it.filterKey)) return false;
+      } else if (!loadState.selectedSteps.has(it.step)) {
+        return false;
+      }
+    }
+    if (loadState.roleFilter === 'student' && it.role !== 'student') return false;
+    if (loadState.roleFilter === 'teacher' && it.role !== 'teacher') return false;
+    return true;
+  }
 
   function collectLoadSummaryData() {
     const comp = getCompleted();
@@ -1063,147 +1234,284 @@
       schools = schools.filter(s => cSet.has(Number(s.id)));
     }
 
-    // Order by active route rank if available, else order
     const rankMap = typeof window.nkGetRouteRank === 'function' ? window.nkGetRouteRank(schools) : null;
     schools = [...schools].sort((a, b) => {
       if (rankMap && rankMap.has(a.id) && rankMap.has(b.id)) return rankMap.get(a.id) - rankMap.get(b.id);
       return (a.order || 0) - (b.order || 0);
     });
 
+    const availableProducts = new Map(); // filterKey -> { filterKey, name, q:[0,0,0,0], t:[0,0,0,0], total }
+    const availableExtras = new Map();   // filterKey -> { filterKey, name, total }
     const stepSums = { 1: 0, 2: 0, 3: 0, 4: 0 };
     const teacherSums = { 1: 0, 2: 0, 3: 0, 4: 0 };
-    const productMap = new Map(); // productName -> { q1..4, t1..4, total }
-    const extrasMap = new Map();  // extraName -> qty
+    const allStepSums = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    const allTeacherSums = { 1: 0, 2: 0, 3: 0, 4: 0 };
     let grandBoxTotal = 0;
 
-    const addProd = (pName, q, t) => {
-      const key = String(pName || '정규 교재').trim() || '정규 교재';
-      if (!productMap.has(key)) productMap.set(key, { name: key, q: [0, 0, 0, 0], t: [0, 0, 0, 0], total: 0 });
-      const entry = productMap.get(key);
-      for (let i = 1; i <= 4; i++) {
-        const qv = Math.max(0, Number(q[i - 1]) || 0);
-        const tv = Math.max(0, Number(t[i - 1]) || 0);
-        entry.q[i - 1] += qv;
-        entry.t[i - 1] += tv;
-        entry.total += qv + tv;
-        stepSums[i] += qv;
-        teacherSums[i] += tv;
-        grandBoxTotal += qv + tv;
+    const recordAvailable = (it) => {
+      if (it.role === 'extra') {
+        const cur = availableExtras.get(it.filterKey) || { filterKey: it.filterKey, name: it.productName, total: 0 };
+        cur.total += it.qty;
+        availableExtras.set(it.filterKey, cur);
+      } else {
+        const cur = availableProducts.get(it.filterKey) || { filterKey: it.filterKey, name: it.productName, q: [0, 0, 0, 0], t: [0, 0, 0, 0], total: 0 };
+        if (it.role === 'student') {
+          cur.q[it.step - 1] += it.qty;
+          allStepSums[it.step] += it.qty;
+        } else if (it.role === 'teacher') {
+          cur.t[it.step - 1] += it.qty;
+          allTeacherSums[it.step] += it.qty;
+        }
+        cur.total += it.qty;
+        availableProducts.set(it.filterKey, cur);
       }
     };
 
-    const schoolRows = schools.map((s, visitIdx) => {
+    const rawStops = [];
+
+    schools.forEach((s, visitIdx) => {
       const fDel = (s.fieldOps && s.fieldOps.delivered) || {};
-      const rem = (key, raw) => {
+      const rem = (keys, raw) => {
         const total = Math.max(0, Number(raw) || 0);
-        const done = Math.max(0, Number(fDel[key]) || 0);
+        let done = 0;
+        for (const k of keys) {
+          if (fDel[k] !== undefined && fDel[k] !== null) {
+            done = Math.max(0, Number(fDel[k]) || 0);
+            break;
+          }
+        }
         return Math.max(0, total - done);
       };
 
-      const mainQ = [1, 2, 3, 4].map(n => rem(`q${n}`, s[`q${n}`]));
-      const mainT = [1, 2, 3, 4].map(n => rem(`t${n}`, s[`t${n}`]));
-      if (mainQ.some(v => v > 0) || mainT.some(v => v > 0)) {
-        addProd(s.product || '정규 교재', mainQ, mainT);
+      const stopItems = [];
+      const mainProdName = String(s.product || '정규 교재').trim() || '정규 교재';
+      for (let n = 1; n <= 4; n++) {
+        const qv = rem([`q${n}`], s[`q${n}`]);
+        if (qv > 0) {
+          stopItems.push({
+            itemCheckKey: `s:${s.id}:q${n}`,
+            legacyParentKey: `s:${s.id}`,
+            filterKey: `prod:${mainProdName}`,
+            productName: mainProdName,
+            step: n,
+            role: 'student',
+            label: `${mainProdName} ${n}단계`,
+            qty: qv
+          });
+        }
+        const tv = rem([`t${n}`], s[`t${n}`]);
+        if (tv > 0) {
+          stopItems.push({
+            itemCheckKey: `s:${s.id}:t${n}`,
+            legacyParentKey: `s:${s.id}`,
+            filterKey: `prod:${mainProdName}`,
+            productName: mainProdName,
+            step: n,
+            role: 'teacher',
+            label: `${mainProdName} ${n}단계 교사용`,
+            qty: tv
+          });
+        }
       }
 
       const more = Array.isArray(s.moreProducts) ? s.moreProducts : [];
       more.forEach((mp, mi) => {
-        const mq = [1, 2, 3, 4].map(n => rem(`mp${mi}_q${n}`, mp[`q${n}`]));
-        const mt = [1, 2, 3, 4].map(n => rem(`mp${mi}_t${n}`, mp[`t${n}`]));
-        if (mq.some(v => v > 0) || mt.some(v => v > 0)) {
-          addProd(mp.name || '추가 상품', mq, mt);
+        const mpName = String(mp.name || '추가 상품').trim() || '추가 상품';
+        const pIdx = mi + 1;
+        for (let n = 1; n <= 4; n++) {
+          const mqv = rem([`p${pIdx}:q${n}`, `mp${mi}_q${n}`], mp[`q${n}`]);
+          if (mqv > 0) {
+            stopItems.push({
+              itemCheckKey: `s:${s.id}:p${pIdx}:q${n}`,
+              legacyParentKey: `s:${s.id}`,
+              filterKey: `prod:${mpName}`,
+              productName: mpName,
+              step: n,
+              role: 'student',
+              label: `${mpName} ${n}단계`,
+              qty: mqv
+            });
+          }
+          const mtv = rem([`p${pIdx}:t${n}`, `mp${mi}_t${n}`], mp[`t${n}`]);
+          if (mtv > 0) {
+            stopItems.push({
+              itemCheckKey: `s:${s.id}:p${pIdx}:t${n}`,
+              legacyParentKey: `s:${s.id}`,
+              filterKey: `prod:${mpName}`,
+              productName: mpName,
+              step: n,
+              role: 'teacher',
+              label: `${mpName} ${n}단계 교사용`,
+              qty: mtv
+            });
+          }
         }
       });
 
       const normExtras = typeof normalizeExtras === 'function' ? normalizeExtras(s.extras) : (Array.isArray(s.extras) ? s.extras : []);
-      const extraParts = [];
       normExtras.forEach((ex, ei) => {
-        const eq = rem(`ex${ei}`, ex.qty || 1);
+        const exName = String(ex.name || '추가교구').trim() || '추가교구';
+        const eq = rem([`x:${exName}`, `ex${ei}`], ex.qty || 1);
         if (eq > 0) {
-          const exName = String(ex.name || '추가교구').trim();
-          extrasMap.set(exName, (extrasMap.get(exName) || 0) + eq);
-          grandBoxTotal += eq;
-          extraParts.push(`${exName} ${eq}`);
+          stopItems.push({
+            itemCheckKey: `s:${s.id}:x:${exName}`,
+            legacyParentKey: `s:${s.id}`,
+            filterKey: `extra:${exName}`,
+            productName: exName,
+            step: null,
+            role: 'extra',
+            label: `➕ ${exName}`,
+            qty: eq
+          });
         }
       });
 
-      const parts = typeof stepLabelParts === 'function' ? stepLabelParts(s) : [];
-      const summary = [...parts, ...extraParts].join(' · ') || '수량 확인 필요';
-      const totalForSchool = (typeof grandTotal === 'function' ? grandTotal(s) : 0);
-
-      return {
+      stopItems.forEach(recordAvailable);
+      rawStops.push({
         checkKey: 's:' + s.id,
         visitOrder: visitIdx + 1,
         isExtra: false,
         name: s.name,
         sub: `${s.regionGroup || ''} ${s.subRegion || ''}`.trim(),
-        summary,
-        qty: totalForSchool
-      };
+        allItems: stopItems
+      });
     });
 
     const allPickups = getPickups().filter(p => p && !p.done && !(typeof pkIsHiddenDup === 'function' && pkIsHiddenDup(p)) && !isHidP(p));
-    const extraPickups = [];
     const returnPickups = [];
+    let extraIdx = 0;
     allPickups.forEach(p => {
       const gMode = typeof pkGroupOf === 'function' ? pkGroupOf(p) : 'return';
       if (gMode === 'extra') {
         if (useCourse && cSet.size > 0 && p.schoolId && !cSet.has(Number(p.schoolId))) return;
         const fqs = typeof normalizeFieldQuantities === 'function' ? normalizeFieldQuantities(p.fieldQuantities, false) : [];
-        let pQty = 0;
-        let pDesc = '';
+        const pItems = [];
         if (fqs.length) {
-          const remParts = [];
-          fqs.forEach(q => {
+          fqs.forEach((q, qi) => {
             const rq = Math.max(0, (Number(q.qty) || 0) - (Number(q.done) || 0));
             if (rq > 0) {
-              pQty += rq;
-              extrasMap.set(q.label, (extrasMap.get(q.label) || 0) + rq);
-              remParts.push(`${q.label} ${rq}`);
+              const lbl = String(q.label || '추가납품').trim();
+              pItems.push({
+                itemCheckKey: `p:${p.id}:${qi}`,
+                legacyParentKey: `p:${p.id}`,
+                filterKey: `extra:${lbl}`,
+                productName: lbl,
+                step: null,
+                role: 'extra',
+                label: `➕ ${lbl}`,
+                qty: rq
+              });
             }
           });
-          pDesc = remParts.join(' · ');
         } else {
-          pQty = Math.max(0, Number(p.qty) || 0);
+          const pQty = Math.max(0, Number(p.qty) || 0);
           const lbl = String(p.items || p.title || p.type || '추가납품').trim();
-          if (pQty > 0) extrasMap.set(lbl, (extrasMap.get(lbl) || 0) + pQty);
-          pDesc = pQty > 0 ? `${lbl} (${pQty}개)` : lbl;
+          pItems.push({
+            itemCheckKey: `p:${p.id}:0`,
+            legacyParentKey: `p:${p.id}`,
+            filterKey: `extra:${lbl}`,
+            productName: lbl,
+            step: null,
+            role: 'extra',
+            label: `➕ ${lbl}`,
+            qty: pQty > 0 ? pQty : 1,
+            qtyUnknown: !(pQty > 0)
+          });
         }
-        grandBoxTotal += pQty;
-        extraPickups.push({
+        pItems.forEach(recordAvailable);
+        extraIdx += 1;
+        rawStops.push({
           checkKey: 'p:' + p.id,
-          visitOrder: schoolRows.length + extraPickups.length + 1,
+          visitOrder: schools.length + extraIdx,
           isExtra: true,
           name: p.school || p.title || '추가 납품',
           sub: p.type || '추가납품',
-          summary: pDesc || (p.items || p.title || ''),
-          qty: pQty
+          allItems: pItems
         });
       } else {
         returnPickups.push(p);
       }
     });
 
-    const stopRows = [...schoolRows, ...extraPickups];
+    // Drop stale selectedKeys no longer present in current scope
+    const validKeys = new Set([...availableProducts.keys(), ...availableExtras.keys()]);
+    [...loadState.selectedKeys].forEach(k => { if (!validKeys.has(k)) loadState.selectedKeys.delete(k); });
+
+    const filteredActive = hasActiveLoadFilter();
+    const stopRows = [];
+    const filteredProductMap = new Map();
+    const filteredExtrasMap = new Map();
+
+    rawStops.forEach(st => {
+      const visibleItems = st.allItems.filter(matchesLoadFilter);
+      if (filteredActive && !visibleItems.length) return;
+      if (!filteredActive && !st.allItems.length) {
+        // Keep school with 0 numeric qty only when no item filter is active
+        stopRows.push({
+          ...st,
+          items: [],
+          summary: '수량 확인 필요',
+          qty: 0
+        });
+        return;
+      }
+      const itemsToUse = filteredActive ? visibleItems : st.allItems;
+      let stopQty = 0;
+      itemsToUse.forEach(it => {
+        const q = it.qtyUnknown ? 0 : it.qty;
+        stopQty += q;
+        grandBoxTotal += q;
+        if (it.role === 'student') {
+          stepSums[it.step] += q;
+          const pr = filteredProductMap.get(it.productName) || { name: it.productName, q: [0, 0, 0, 0], t: [0, 0, 0, 0], total: 0 };
+          pr.q[it.step - 1] += q;
+          pr.total += q;
+          filteredProductMap.set(it.productName, pr);
+        } else if (it.role === 'teacher') {
+          teacherSums[it.step] += q;
+          const pr = filteredProductMap.get(it.productName) || { name: it.productName, q: [0, 0, 0, 0], t: [0, 0, 0, 0], total: 0 };
+          pr.t[it.step - 1] += q;
+          pr.total += q;
+          filteredProductMap.set(it.productName, pr);
+        } else {
+          filteredExtrasMap.set(it.productName, (filteredExtrasMap.get(it.productName) || 0) + q);
+        }
+      });
+      stopRows.push({
+        ...st,
+        items: itemsToUse,
+        summary: itemsToUse.map(it => `${it.label} ${it.qtyUnknown ? '' : it.qty + '개'}`.trim()).join(' · '),
+        qty: stopQty
+      });
+    });
+
     const orderedStops = loadState.reverseOrder ? [...stopRows].reverse() : stopRows;
+    const allVisibleItems = orderedStops.flatMap(r => r.items);
 
     return {
       useCourse,
       courseCount: cSet.size,
+      filteredActive,
       stepSums,
       teacherSums,
-      products: [...productMap.values()],
-      extras: [...extrasMap.entries()],
+      allStepSums,
+      allTeacherSums,
+      availableProducts: [...availableProducts.values()],
+      availableExtras: [...availableExtras.values()],
+      products: [...filteredProductMap.values()],
+      extras: [...filteredExtrasMap.entries()],
       grandBoxTotal,
       stopRows: orderedStops,
-      totalStops: stopRows.length,
+      allVisibleItems,
+      totalStops: orderedStops.length,
       returnPickups
     };
   }
 
   function buildLoadPlainText(data) {
     const lines = [];
-    lines.push(`[차량 적재 요약 · ${todayKey()}] (${data.useCourse ? '오늘 코스' : '전체 미완료'} · ${data.totalStops}건 · 총 ${data.grandBoxTotal}개)`);
+    const filterTag = data.filteredActive ? ' · 선택 품목 필터' : '';
+    lines.push(`[차량 적재 요약 · ${todayKey()}] (${data.useCourse ? '오늘 코스' : '전체 미완료'}${filterTag} · ${data.totalStops}곳 · 총 ${data.grandBoxTotal}개)`);
     const stepStr = [1, 2, 3, 4]
       .filter(n => data.stepSums[n] > 0 || data.teacherSums[n] > 0)
       .map(n => `${n}단계 ${data.stepSums[n]}${data.teacherSums[n] ? `(교사 ${data.teacherSums[n]})` : ''}`)
@@ -1228,42 +1536,61 @@
     if (!body) return;
     const data = collectLoadSummaryData();
     const checks = loadCheckMap();
-    const checkedCnt = data.stopRows.filter(r => !!checks[r.checkKey]).length;
-    const pct = data.totalStops ? Math.round((checkedCnt / data.totalStops) * 100) : 0;
+    const totalItemCnt = data.allVisibleItems.length;
+    const checkedItemCnt = data.allVisibleItems.filter(it => isLoadItemChecked(checks, it)).length;
+    const doneStopsCnt = data.stopRows.filter(r => r.items.length > 0 && r.items.every(it => isLoadItemChecked(checks, it))).length;
+    const pct = totalItemCnt ? Math.round((checkedItemCnt / totalItemCnt) * 100) : 0;
 
-    const prodHtml = data.products.map(pr => {
-      const parts = [1, 2, 3, 4]
-        .filter(n => pr.q[n - 1] > 0 || pr.t[n - 1] > 0)
-        .map(n => `${n}단계 ${pr.q[n - 1]}${pr.t[n - 1] ? `+교${pr.t[n - 1]}` : ''}`)
-        .join(' · ');
-      return `<div class="nk-load-tag">${esc(pr.name)}: <strong>${pr.total}개</strong> <span style="opacity:.75;font-weight:700">(${esc(parts)})</span></div>`;
+    // Multi-select clickable item filter chips (products + extras)
+    const prodChipHtml = data.availableProducts.map(pr => {
+      const sel = loadState.selectedKeys.has(pr.filterKey);
+      return `<button type="button" class="nk-load-filter-chip ${sel ? 'is-selected' : ''}" data-load-item-key="${esc(pr.filterKey)}" aria-pressed="${sel}">${sel ? '✓ ' : ''}📚 ${esc(pr.name)} <strong>${pr.total}</strong></button>`;
     }).join('');
-
-    const extrasHtml = data.extras.map(([name, qty]) =>
-      `<div class="nk-load-tag">➕ ${esc(name)}: <strong>${qty}개</strong></div>`
-    ).join('');
+    const extraChipHtml = data.availableExtras.map(ex => {
+      const sel = loadState.selectedKeys.has(ex.filterKey);
+      return `<button type="button" class="nk-load-filter-chip is-extra ${sel ? 'is-selected' : ''}" data-load-item-key="${esc(ex.filterKey)}" aria-pressed="${sel}">${sel ? '✓ ' : ''}➕ ${esc(ex.name)} <strong>${ex.total}</strong></button>`;
+    }).join('');
 
     const cardsHtml = data.stopRows.length
       ? data.stopRows.map((r, idx) => {
-          const isCk = !!checks[r.checkKey];
+          const itemCnt = r.items.length;
+          const ckCnt = r.items.filter(it => isLoadItemChecked(checks, it)).length;
+          const allCk = itemCnt > 0 && ckCnt === itemCnt;
           const badgeTxt = loadState.reverseOrder
             ? `${idx + 1}번 적재 (방문 ${r.visitOrder}번)`
             : `방문 ${r.visitOrder}번`;
+          const itemRowsHtml = r.items.length
+            ? `<div class="nk-load-item-grid">${r.items.map(it => {
+                const on = isLoadItemChecked(checks, it);
+                const roleCls = it.role === 'teacher' ? 'is-teacher' : (it.role === 'extra' ? 'is-extra' : '');
+                return `
+                  <label class="nk-load-item-row ${on ? 'is-on' : ''} ${roleCls}">
+                    <input type="checkbox" data-load-item-ck="${esc(it.itemCheckKey)}" data-load-parent-key="${esc(it.legacyParentKey)}" ${on ? 'checked' : ''}>
+                    <span class="nk-load-item-lbl">${esc(it.label)}</span>
+                    <strong class="nk-load-item-qty">${it.qtyUnknown ? '확인' : it.qty + '개'}</strong>
+                  </label>
+                `;
+              }).join('')}</div>`
+            : `<div class="nk-load-items-line">${esc(r.summary)}</div>`;
+
           return `
-            <label class="nk-load-card ${isCk ? 'checked' : ''} ${r.isExtra ? 'is-extra' : ''}">
-              <input type="checkbox" data-load-ck="${esc(r.checkKey)}" ${isCk ? 'checked' : ''}>
-              <div style="flex:1;min-width:0">
-                <div>
-                  <span class="nk-load-order-badge">${esc(badgeTxt)}</span>
-                  <strong style="font-size:14.5px">${r.isExtra ? '➕ ' : ''}${esc(r.name)}</strong>
-                  ${r.sub ? `<span style="font-size:11px;opacity:.7;margin-left:4px">${esc(r.sub)}</span>` : ''}
-                </div>
-                <div class="nk-load-items-line">${esc(r.summary)}</div>
+            <div class="nk-load-card ${allCk ? 'checked' : ''} ${r.isExtra ? 'is-extra' : ''}" data-load-stop-card="${esc(r.checkKey)}">
+              <div class="nk-load-card-head">
+                <label class="nk-load-card-title-wrap">
+                  <input type="checkbox" data-load-stop-ck="${esc(r.checkKey)}" ${allCk ? 'checked' : ''}>
+                  <div style="min-width:0;flex:1">
+                    <span class="nk-load-order-badge">${esc(badgeTxt)}</span>
+                    <strong style="font-size:14.5px">${r.isExtra ? '➕ ' : ''}${esc(r.name)}</strong>
+                    ${r.sub ? `<span style="font-size:11px;opacity:.7;margin-left:4px">${esc(r.sub)}</span>` : ''}
+                  </div>
+                </label>
+                <span class="nk-load-stop-stat ${allCk ? 'done' : ''}">${ckCnt}/${itemCnt}</span>
               </div>
-            </label>
+              ${itemRowsHtml}
+            </div>
           `;
         }).join('')
-      : `<div style="text-align:center;padding:22px 10px;font-size:13px;opacity:.75">적을 미완료 납품·추가납품 물품이 없습니다.</div>`;
+      : `<div style="text-align:center;padding:22px 10px;font-size:13px;opacity:.75">선택한 조건에 해당하는 적재 품목이 없습니다.</div>`;
 
     const retHtml = data.returnPickups.length
       ? `<div class="nk-load-sec-title" style="color:#fda4af">↩️ 현장 회수·반품 참고 (${data.returnPickups.length}건 · 실을 물건 아님)</div>
@@ -1282,34 +1609,54 @@
         </label>
       </div>
 
+      <div class="nk-load-filter-box">
+        <div class="nk-sd-row" style="margin-bottom:6px">
+          <span class="nk-load-sec-title" style="margin:0">🎯 적재할 품목 선택 (원하는 품목만 탭 · 다중 선택)</span>
+          ${data.filteredActive ? `<button type="button" class="nk-sd-pill amber" style="padding:4px 9px;font-size:11px" data-load-clear-filter="1">✕ 전체 품목 보기</button>` : ''}
+        </div>
+        <div class="nk-load-tags">
+          <button type="button" class="nk-load-filter-chip ${!data.filteredActive ? 'is-selected' : ''}" data-load-clear-filter="1">전체 품목</button>
+          ${prodChipHtml}
+          ${extraChipHtml}
+        </div>
+        <div class="nk-sd-row" style="margin-top:8px;gap:6px">
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button type="button" class="nk-sd-pill ${loadState.roleFilter === 'all' ? 'active' : ''}" style="padding:5px 9px;font-size:11px" data-load-role="all">학생·교사 전체</button>
+            <button type="button" class="nk-sd-pill ${loadState.roleFilter === 'student' ? 'active' : ''}" style="padding:5px 9px;font-size:11px" data-load-role="student">🎒 학생용만</button>
+            <button type="button" class="nk-sd-pill ${loadState.roleFilter === 'teacher' ? 'active' : ''}" style="padding:5px 9px;font-size:11px" data-load-role="teacher">👩‍🏫 교사용만</button>
+          </div>
+          <span style="font-size:11px;opacity:.75">아래 단계 박스도 탭해 필터</span>
+        </div>
+      </div>
+
       <div class="nk-load-hero">
         <div>
           <div class="nk-load-big">총 ${data.grandBoxTotal.toLocaleString()}개</div>
-          <div class="nk-load-sub">적재 대상 ${data.totalStops}곳 · 상차 완료 ${checkedCnt}/${data.totalStops} (${pct}%)</div>
+          <div class="nk-load-sub">${data.filteredActive ? '선택 품목 ' : ''}${data.totalStops}곳 · 품목 상차 ${checkedItemCnt}/${totalItemCnt} (${pct}% · ${doneStopsCnt}곳 완료)</div>
         </div>
         <button type="button" class="nk-sd-pill green" data-load-copy="1">📋 상차표 복사</button>
       </div>
 
       <div class="nk-load-steps">
-        ${[1, 2, 3, 4].map(n => `
-          <div class="nk-load-step-box">
-            <span>${n}단계</span>
-            <strong>${data.stepSums[n]}</strong>
-            <small>교사 ${data.teacherSums[n]}</small>
-          </div>
-        `).join('')}
+        ${[1, 2, 3, 4].map(n => {
+          const stepSel = loadState.selectedSteps.has(n);
+          return `
+            <button type="button" class="nk-load-step-box nk-load-step-btn ${stepSel ? 'is-selected' : ''}" data-load-step="${n}" aria-pressed="${stepSel}">
+              <span>${stepSel ? '✓ ' : ''}${n}단계</span>
+              <strong>${data.stepSums[n]}</strong>
+              <small>교사 ${data.teacherSums[n]}</small>
+            </button>
+          `;
+        }).join('')}
       </div>
-
-      ${prodHtml ? `<div class="nk-load-sec-title">📚 교재별 적재 합계</div><div class="nk-load-tags">${prodHtml}</div>` : ''}
-      ${extrasHtml ? `<div class="nk-load-sec-title">🧩 추가 교구·추가 납품 합계</div><div class="nk-load-tags">${extrasHtml}</div>` : ''}
 
       <div class="nk-sd-row" style="margin-top:2px">
         <button type="button" class="nk-sd-pill ${loadState.reverseOrder ? 'amber' : ''}" data-load-toggle-order="1">
-          ${loadState.reverseOrder ? '📦 방문 역순 (마지막 원 먼저 안쪽에 적재) ⇄' : '🚚 방문 정순 보기 ⇄'}
+          ${loadState.reverseOrder ? '📦 방문 역순 (마지막 원 먼저 적재) ⇄' : '🚚 방문 정순 보기 ⇄'}
         </button>
         <div style="display:flex;gap:6px">
-          <button type="button" class="nk-sd-pill" data-load-check-all="1">✓ 전체 체크</button>
-          <button type="button" class="nk-sd-pill" data-load-reset="1">↺ 초기화</button>
+          <button type="button" class="nk-sd-pill green" data-load-check-all="1">✓ ${data.filteredActive ? '선택 품목' : '전체'} 체크</button>
+          <button type="button" class="nk-sd-pill" data-load-reset="1">↺ ${data.filteredActive ? '선택 해제' : '초기화'}</button>
         </div>
       </div>
 
@@ -1324,11 +1671,50 @@
     else loadDlg.setAttribute('open', '');
   }
 
+  function expandLegacyParentIfNeeded(map, parentKey, allStopItems) {
+    if (!parentKey || !map[parentKey]) return;
+    (allStopItems || []).forEach(it => {
+      if (!Object.prototype.hasOwnProperty.call(map, it.itemCheckKey)) {
+        map[it.itemCheckKey] = true;
+      }
+    });
+    delete map[parentKey];
+  }
+
   loadDlg.addEventListener('click', async (e) => {
     if (e.target.closest('[data-close-load]')) { loadDlg.close(); return; }
     const sc = e.target.closest('[data-load-scope]');
     if (sc && !sc.disabled) {
       loadState.scope = sc.getAttribute('data-load-scope');
+      renderLoadSummaryDialog();
+      return;
+    }
+    const itemChip = e.target.closest('[data-load-item-key]');
+    if (itemChip) {
+      const k = itemChip.getAttribute('data-load-item-key');
+      if (loadState.selectedKeys.has(k)) loadState.selectedKeys.delete(k);
+      else loadState.selectedKeys.add(k);
+      renderLoadSummaryDialog();
+      return;
+    }
+    const stepBtn = e.target.closest('[data-load-step]');
+    if (stepBtn) {
+      const n = Number(stepBtn.getAttribute('data-load-step'));
+      if (loadState.selectedSteps.has(n)) loadState.selectedSteps.delete(n);
+      else loadState.selectedSteps.add(n);
+      renderLoadSummaryDialog();
+      return;
+    }
+    const roleBtn = e.target.closest('[data-load-role]');
+    if (roleBtn) {
+      loadState.roleFilter = roleBtn.getAttribute('data-load-role') || 'all';
+      renderLoadSummaryDialog();
+      return;
+    }
+    if (e.target.closest('[data-load-clear-filter]')) {
+      loadState.selectedKeys.clear();
+      loadState.selectedSteps.clear();
+      loadState.roleFilter = 'all';
       renderLoadSummaryDialog();
       return;
     }
@@ -1340,16 +1726,26 @@
     if (e.target.closest('[data-load-check-all]')) {
       const data = collectLoadSummaryData();
       const map = loadCheckMap();
-      data.stopRows.forEach(r => { map[r.checkKey] = true; });
+      data.allVisibleItems.forEach(it => { map[it.itemCheckKey] = true; });
       saveCheckMap(map);
       renderLoadSummaryDialog();
-      toast(`✅ ${data.stopRows.length}곳 상차 완료로 체크했습니다.`);
+      toast(`✅ ${data.filteredActive ? '선택한 ' : ''}${data.allVisibleItems.length}개 품목을 상차 완료로 체크했습니다.`);
       return;
     }
     if (e.target.closest('[data-load-reset]')) {
-      saveCheckMap({});
-      renderLoadSummaryDialog();
-      toast('상차 체크를 초기화했습니다.');
+      const data = collectLoadSummaryData();
+      if (data.filteredActive) {
+        const map = loadCheckMap();
+        data.stopRows.forEach(st => expandLegacyParentIfNeeded(map, st.checkKey, st.allItems));
+        data.allVisibleItems.forEach(it => { delete map[it.itemCheckKey]; });
+        saveCheckMap(map);
+        renderLoadSummaryDialog();
+        toast(`선택한 ${data.allVisibleItems.length}개 품목의 상차 체크를 해제했습니다.`);
+      } else {
+        saveCheckMap({});
+        renderLoadSummaryDialog();
+        toast('상차 체크를 초기화했습니다.');
+      }
       return;
     }
     if (e.target.closest('[data-load-copy]')) {
@@ -1374,13 +1770,35 @@
       renderLoadSummaryDialog();
       return;
     }
-    const ck = e.target && e.target.getAttribute && e.target.getAttribute('data-load-ck');
-    if (ck) {
+    const itemCk = e.target && e.target.getAttribute && e.target.getAttribute('data-load-item-ck');
+    if (itemCk) {
+      const parentKey = e.target.getAttribute('data-load-parent-key') || '';
       const map = loadCheckMap();
-      if (e.target.checked) map[ck] = true;
-      else delete map[ck];
+      if (parentKey && map[parentKey]) {
+        const data = collectLoadSummaryData();
+        const st = data.stopRows.find(r => r.checkKey === parentKey);
+        expandLegacyParentIfNeeded(map, parentKey, st ? st.allItems : []);
+      }
+      if (e.target.checked) map[itemCk] = true;
+      else delete map[itemCk];
       saveCheckMap(map);
       renderLoadSummaryDialog();
+      return;
+    }
+    const stopCk = e.target && e.target.getAttribute && e.target.getAttribute('data-load-stop-ck');
+    if (stopCk) {
+      const data = collectLoadSummaryData();
+      const st = data.stopRows.find(r => r.checkKey === stopCk);
+      if (st) {
+        const map = loadCheckMap();
+        expandLegacyParentIfNeeded(map, st.checkKey, st.allItems);
+        st.items.forEach(it => {
+          if (e.target.checked) map[it.itemCheckKey] = true;
+          else delete map[it.itemCheckKey];
+        });
+        saveCheckMap(map);
+        renderLoadSummaryDialog();
+      }
     }
   });
 
@@ -1469,6 +1887,19 @@
     openLoadSummaryDialog,
     collectLoadSummaryData,
     buildLoadPlainText,
+    setLoadFilter: ({ keys, steps, role } = {}) => {
+      if (Array.isArray(keys)) { loadState.selectedKeys.clear(); keys.forEach(k => loadState.selectedKeys.add(k)); }
+      if (Array.isArray(steps)) { loadState.selectedSteps.clear(); steps.forEach(n => loadState.selectedSteps.add(Number(n))); }
+      if (typeof role === 'string') loadState.roleFilter = role;
+    },
+    clearLoadFilter: () => {
+      loadState.selectedKeys.clear();
+      loadState.selectedSteps.clear();
+      loadState.roleFilter = 'all';
+    },
+    isLoadItemChecked,
+    getLoadCheckMap: loadCheckMap,
+    saveLoadCheckMap: saveCheckMap,
     syncSkillChips
   };
 

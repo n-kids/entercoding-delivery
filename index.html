@@ -1208,9 +1208,10 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
         <button type="button" data-items-scope="pending" class="px-3 py-1.5 rounded-lg text-xs font-bold">미완료 원만</button>
         <button type="button" data-items-scope="all" class="px-3 py-1.5 rounded-lg text-xs font-bold">전체 원</button>
       </div>
+      <div id="itemsQuickChips" class="flex flex-wrap gap-1.5" role="group" aria-label="품목 빠른 선택"></div>
       <div class="overflow-y-auto flex-1 space-y-3 pr-1">
         <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3">
-          <div class="text-xs font-bold text-violet-300 mb-2">품목별 총 수량 (차량 적재 확인)</div>
+          <div class="text-xs font-bold text-violet-300 mb-2">품목별 총 수량 (원하는 품목 탭해 다중 선택 · 차량 적재 확인)</div>
           <div id="itemsTotals" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
         </div>
         <div>
@@ -1219,7 +1220,11 @@ header div:has(> #openItemsModalBtn):has(> #openImportModalBtn):has(> #openEditM
         </div>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
-        <button id="itemsResetChecksBtn" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">품목 체크 모두 해제</button>
+        <div class="flex flex-wrap gap-1.5">
+          <button id="itemsCheckVisibleBtn" type="button" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">✓ 표시 품목 전체 체크</button>
+          <button id="itemsUncheckVisibleBtn" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700">☐ 표시 품목 체크 해제</button>
+          <button id="itemsResetChecksBtn" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">품목 체크 모두 해제</button>
+        </div>
         <button id="itemsCloseBtn2" type="button" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700">닫기</button>
       </div>
     </div>
@@ -4777,42 +4782,84 @@ function speakSchoolQuantity(school, opts = {}) {
 
 
 
-    // ---------- 납품 품목 확인 (총괄표 + 원별 체크) ----------
+    // ---------- 납품 품목 확인 (총괄표 + 원별 체크 · 다중 품목 선택) ----------
     let itemsScope = 'pending';
+    let itemsSelectedLabels = new Set();
     function normalizeItemSearch(v){return String(v||'').normalize('NFKC').toLocaleLowerCase('ko').replace(/\s+/g,'');}
-    function matchesItemSearch(it){const q=normalizeItemSearch(document.getElementById('itemsSearchInput').value),p=document.getElementById('itemsProductFilter').value;return(!q||normalizeItemSearch(it.label).includes(q))&&(!p||it.label===p);}
+    function matchesItemTextFilter(it){const q=normalizeItemSearch(document.getElementById('itemsSearchInput').value),p=document.getElementById('itemsProductFilter').value;return(!q||normalizeItemSearch(it.label).includes(q))&&(!p||it.label===p);}
+    function matchesItemSearch(it){return matchesItemTextFilter(it)&&(!itemsSelectedLabels.size||itemsSelectedLabels.has(it.label));}
+    function itemGroupNameOf(it){
+      if(!it)return '기타';
+      if(it.kind==='extra')return '추가교구';
+      return String(it.label||'').replace(/\s+\d+단계.*$/,'').trim()||'정규 교재';
+    }
     function refreshItemOptions(){const el=document.getElementById('itemsProductFilter'),previous=el.value;const labels=[...new Set(SCHOOLS.flatMap(s=>deliveryItems(s).map(it=>it.label)))].sort((a,b)=>a.localeCompare(b,'ko'));el.innerHTML='<option value="">전체 품목</option>'+labels.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');el.value=labels.includes(previous)?previous:'';}
     document.getElementById('itemsSearchInput').addEventListener('input',renderItemsModal);
-    document.getElementById('itemsProductFilter').addEventListener('change',renderItemsModal);
-    document.getElementById('itemsSearchClear').addEventListener('click',()=>{document.getElementById('itemsSearchInput').value='';document.getElementById('itemsProductFilter').value='';renderItemsModal();});
+    document.getElementById('itemsProductFilter').addEventListener('change',()=>{itemsSelectedLabels.clear();renderItemsModal();});
+    document.getElementById('itemsSearchClear').addEventListener('click',()=>{document.getElementById('itemsSearchInput').value='';document.getElementById('itemsProductFilter').value='';itemsSelectedLabels.clear();renderItemsModal();});
     function renderItemsModal() {
       document.querySelectorAll('[data-items-scope]').forEach(b => {
         const on = b.getAttribute('data-items-scope') === itemsScope;
         b.className = `px-3 py-1.5 rounded-lg text-xs font-bold ${on ? 'bg-violet-500 text-slate-950' : 'bg-slate-800 text-slate-300 border border-slate-700'}`;
       });
-      const list = [...SCHOOLS].sort((a, b) => a.order - b.order).filter(s => itemsScope === 'all' || !completedMap[s.id]).filter(s=>deliveryItems(s).some(matchesItemSearch));
-      const totals = new Map();
-      list.forEach(s => deliveryItems(s).filter(matchesItemSearch).forEach(it => {
-        const t = totals.get(it.label) || { label: it.label, kind: it.kind, qty: 0, schools: 0 };
-        t.qty += it.qty; t.schools += 1; totals.set(it.label, t);
+      const scopeSchools = [...SCHOOLS].sort((a, b) => a.order - b.order).filter(s => itemsScope === 'all' || !completedMap[s.id]);
+      // Base items matching text/dropdown search (kept visible in totals/chips so user can multi-select freely)
+      const baseTotals = new Map();
+      const groupLabels = new Map();
+      scopeSchools.forEach(s => deliveryItems(s).filter(matchesItemTextFilter).forEach(it => {
+        const t = baseTotals.get(it.label) || { label: it.label, kind: it.kind, qty: 0, schools: 0 };
+        t.qty += it.qty; t.schools += 1; baseTotals.set(it.label, t);
+        const grp = itemGroupNameOf(it);
+        if (!groupLabels.has(grp)) groupLabels.set(grp, new Set());
+        groupLabels.get(grp).add(it.label);
       }));
+      [...itemsSelectedLabels].forEach(l => { if (!baseTotals.has(l)) itemsSelectedLabels.delete(l); });
+
+      const quickBox = document.getElementById('itemsQuickChips');
+      if (quickBox) {
+        const hasSel = itemsSelectedLabels.size > 0;
+        const grpChips = [...groupLabels.entries()].map(([grp, lblSet]) => {
+          const arr = [...lblSet];
+          const allOn = arr.length > 0 && arr.every(l => itemsSelectedLabels.has(l));
+          return `<button type="button" data-item-grp="${escapeHtml(grp)}" class="px-2.5 py-1 rounded-full text-[11px] font-extrabold border transition ${allOn ? 'bg-blue-600 text-white border-blue-400' : 'bg-slate-800 text-slate-200 border-slate-700'}">${allOn ? '✓ ' : ''}${grp === '추가교구' ? '🧩 ' : '📚 '}${escapeHtml(grp)} (${arr.length})</button>`;
+        }).join('');
+        quickBox.innerHTML = `<button type="button" data-item-clear-sel="1" class="px-2.5 py-1 rounded-full text-[11px] font-extrabold border transition ${!hasSel ? 'bg-violet-500 text-slate-950 border-violet-300' : 'bg-slate-800 text-slate-300 border-slate-700'}">전체 품목</button>${grpChips}${hasSel ? `<button type="button" data-item-clear-sel="1" class="px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-amber-500/20 text-amber-200 border-amber-400">✕ 선택 해제 (${itemsSelectedLabels.size})</button>` : ''}`;
+      }
+
+      const list = scopeSchools.filter(s => deliveryItems(s).some(matchesItemSearch));
       const rank = { student: 0, teacher: 1, extra: 2 };
-      const tot = [...totals.values()].sort((a, b) => (rank[a.kind] - rank[b.kind]) || a.label.localeCompare(b.label, 'ko'));
+      const allTot = [...baseTotals.values()].sort((a, b) => (rank[a.kind] - rank[b.kind]) || a.label.localeCompare(b.label, 'ko'));
+      const activeTot = itemsSelectedLabels.size ? allTot.filter(t => itemsSelectedLabels.has(t.label)) : allTot;
       const color = k => k === 'teacher' ? 'border-sky-500/40 bg-sky-500/10 text-sky-200' : k === 'extra' ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'border-amber-500/40 bg-amber-500/10 text-amber-200';
-      document.getElementById('itemsSearchSummary').textContent=`검색 결과 ${list.length}곳 · ${tot.length}품목`;
-      const grand = tot.filter(t => t.kind !== 'extra').reduce((a, t) => a + t.qty, 0);
-      document.getElementById('itemsTotals').innerHTML = tot.length
-        ? tot.map(t => `<div class="rounded-xl border px-2.5 py-2 ${color(t.kind)}"><div class="text-[11px] font-bold leading-tight">${escapeHtml(t.label)}</div><div class="text-lg font-black text-white">${t.qty ? t.qty + '개' : '-'}</div><div class="text-[10px] opacity-75">${t.schools}곳</div></div>`).join('')
-          + `<div class="rounded-xl border px-2.5 py-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-200"><div class="text-[11px] font-bold">선택 품목 교재 합계</div><div class="text-lg font-black text-white">${grand}개</div><div class="text-[10px] opacity-75">${list.length}곳</div></div>`
+      document.getElementById('itemsSearchSummary').textContent = itemsSelectedLabels.size
+        ? `선택 품목 ${itemsSelectedLabels.size}개 · 대상 ${list.length}곳 (카드를 탭해 품목 추가/해제)`
+        : `검색 결과 ${list.length}곳 · ${allTot.length}품목 (원하는 품목 카드를 탭해 다중 선택)`;
+      const grand = activeTot.reduce((a, t) => a + (Number(t.qty) || 0), 0);
+      document.getElementById('itemsTotals').innerHTML = allTot.length
+        ? allTot.map(t => {
+            const sel = itemsSelectedLabels.has(t.label);
+            const dim = itemsSelectedLabels.size > 0 && !sel;
+            return `<button type="button" data-item-toggle-label="${escapeHtml(t.label)}" aria-pressed="${sel}" class="text-left rounded-xl border px-2.5 py-2 transition ${sel ? 'border-emerald-400 bg-emerald-500/20 text-emerald-100 ring-2 ring-emerald-400/60' : color(t.kind)} ${dim ? 'opacity-45' : ''}"><div class="text-[11px] font-bold leading-tight">${sel ? '✓ ' : ''}${escapeHtml(t.label)}</div><div class="text-lg font-black text-white">${t.qty ? t.qty + '개' : '-'}</div><div class="text-[10px] opacity-75">${t.schools}곳${sel ? ' · 선택됨' : ''}</div></button>`;
+          }).join('')
+          + `<div class="rounded-xl border px-2.5 py-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-200"><div class="text-[11px] font-bold">${itemsSelectedLabels.size ? '선택 품목 총 합계' : '전체 품목 합계'}</div><div class="text-lg font-black text-white">${grand}개</div><div class="text-[10px] opacity-75">${list.length}곳 · ${activeTot.length}품목</div></div>`
         : '<div class="col-span-full text-xs text-slate-500">표시할 품목이 없습니다.</div>';
+      const batchCheckBtn = document.getElementById('itemsCheckVisibleBtn');
+      if (batchCheckBtn) batchCheckBtn.textContent = itemsSelectedLabels.size ? `✓ 선택 품목 전체 체크` : '✓ 표시 품목 전체 체크';
+      const batchUncheckBtn = document.getElementById('itemsUncheckVisibleBtn');
+      if (batchUncheckBtn) batchUncheckBtn.textContent = itemsSelectedLabels.size ? `☐ 선택 품목 체크 해제` : '☐ 표시 품목 체크 해제';
+
       document.getElementById('itemsBySchool').innerHTML = list.map(s => {
         const items = deliveryItems(s).filter(matchesItemSearch);
         const pr = {total:items.length,done:items.filter(it=>isItemChecked(s.id,it.key)).length};
+        const allDone = pr.total > 0 && pr.done === pr.total;
         const done = !!completedMap[s.id];
-        return `<div class="bg-slate-950 border ${pr.total && pr.done === pr.total ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-3">
+        return `<div class="bg-slate-950 border ${allDone ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-3">
           <div class="flex items-center justify-between gap-2 mb-2">
             <div class="min-w-0"><div class="text-sm font-extrabold text-white truncate">${escapeHtml(s.name)}${done ? ' <span class="text-[11px] text-emerald-400">· 납품완료</span>' : ''}</div><div class="text-[11px] text-slate-500 truncate">${escapeHtml(s.regionGroup || '')} ${escapeHtml(s.subRegion || '')}</div></div>
-            <span class="text-[11px] font-black px-2 py-1 rounded-lg shrink-0 ${pr.total && pr.done === pr.total ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-300'}">${pr.done}/${pr.total}</span>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" data-school-check-toggle="${Number(s.id)}" data-target-state="${allDone ? '0' : '1'}" class="text-[11px] font-extrabold px-2 py-1 rounded-lg border ${allDone ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-emerald-500/20 text-emerald-200 border-emerald-500/40'}">${allDone ? '☐ 해제' : '✓ 체크'}</button>
+              <span class="text-[11px] font-black px-2 py-1 rounded-lg ${allDone ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-300'}">${pr.done}/${pr.total}</span>
+            </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             ${items.length ? items.map(it => { const on = isItemChecked(s.id, it.key); return `<label class="flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer border ${on ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-900 border-slate-800'}"><input type="checkbox" data-ic-id="${Number(s.id)}" data-ic-key="${escapeHtml(it.key)}" ${on ? 'checked' : ''} class="w-4 h-4 accent-emerald-500 shrink-0"><span class="flex-1 text-xs font-bold ${on ? 'text-slate-500 line-through' : it.kind === 'teacher' ? 'text-sky-200' : it.kind === 'extra' ? 'text-violet-200' : 'text-amber-200'}">${escapeHtml(it.label)}</span><span class="text-sm font-black ${on ? 'text-slate-500' : 'text-white'}">${it.qty ? it.qty : '-'}</span></label>`; }).join('') : '<div class="text-xs text-slate-500">품목 없음</div>'}
@@ -4829,11 +4876,69 @@ function speakSchoolQuantity(school, opts = {}) {
       const b = e.target.closest('[data-items-scope]'); if (!b) return;
       itemsScope = b.getAttribute('data-items-scope'); renderItemsModal();
     });
+    document.getElementById('itemsQuickChips')?.addEventListener('click', (e) => {
+      if (e.target.closest('[data-item-clear-sel]')) {
+        itemsSelectedLabels.clear();
+        document.getElementById('itemsProductFilter').value = '';
+        renderItemsModal();
+        return;
+      }
+      const gBtn = e.target.closest('[data-item-grp]');
+      if (!gBtn) return;
+      const grp = gBtn.getAttribute('data-item-grp');
+      const scopeSchools = SCHOOLS.filter(s => itemsScope === 'all' || !completedMap[s.id]);
+      const labels = [...new Set(scopeSchools.flatMap(s => deliveryItems(s).filter(matchesItemTextFilter).filter(it => itemGroupNameOf(it) === grp).map(it => it.label)))];
+      const allOn = labels.length > 0 && labels.every(l => itemsSelectedLabels.has(l));
+      labels.forEach(l => { if (allOn) itemsSelectedLabels.delete(l); else itemsSelectedLabels.add(l); });
+      renderItemsModal();
+    });
+    document.getElementById('itemsTotals').addEventListener('click', (e) => {
+      const card = e.target.closest('[data-item-toggle-label]');
+      if (!card) return;
+      const lbl = card.getAttribute('data-item-toggle-label');
+      if (itemsSelectedLabels.has(lbl)) itemsSelectedLabels.delete(lbl);
+      else itemsSelectedLabels.add(lbl);
+      renderItemsModal();
+    });
+    document.getElementById('itemsBySchool').addEventListener('click', (e) => {
+      const tgl = e.target.closest('[data-school-check-toggle]');
+      if (!tgl) return;
+      const sid = parseInt(tgl.getAttribute('data-school-check-toggle'), 10);
+      const on = tgl.getAttribute('data-target-state') === '1';
+      const s = SCHOOLS.find(x => x.id === sid);
+      if (!s) return;
+      if (!itemChecks[sid]) itemChecks[sid] = {};
+      deliveryItems(s).filter(matchesItemSearch).forEach(it => {
+        if (on) itemChecks[sid][it.key] = true;
+        else delete itemChecks[sid][it.key];
+      });
+      saveItemChecks();
+      renderItemsModal();
+    });
     document.getElementById('itemsBySchool').addEventListener('change', (e) => {
       const cb = e.target.closest('[data-ic-id]'); if (!cb) return;
       setItemChecked(parseInt(cb.getAttribute('data-ic-id'), 10), cb.getAttribute('data-ic-key'), cb.checked);
       renderItemsModal();
     });
+    function batchSetVisibleItemsChecked(on) {
+      const scopeSchools = SCHOOLS.filter(s => itemsScope === 'all' || !completedMap[s.id]);
+      let cnt = 0;
+      scopeSchools.forEach(s => {
+        const items = deliveryItems(s).filter(matchesItemSearch);
+        if (!items.length) return;
+        if (!itemChecks[s.id]) itemChecks[s.id] = {};
+        items.forEach(it => {
+          if (on) itemChecks[s.id][it.key] = true;
+          else delete itemChecks[s.id][it.key];
+          cnt += 1;
+        });
+      });
+      saveItemChecks();
+      renderItemsModal();
+      showToast(on ? `✅ 표시된 ${cnt}개 품목을 체크했습니다.` : `표시된 ${cnt}개 품목의 체크를 해제했습니다.`);
+    }
+    document.getElementById('itemsCheckVisibleBtn')?.addEventListener('click', () => batchSetVisibleItemsChecked(true));
+    document.getElementById('itemsUncheckVisibleBtn')?.addEventListener('click', () => batchSetVisibleItemsChecked(false));
     let resetChecksArmed = false;
     document.getElementById('itemsResetChecksBtn').addEventListener('click', (e) => {
       if (!resetChecksArmed) { resetChecksArmed = true; e.currentTarget.textContent = '한 번 더 누르면 모두 해제'; setTimeout(() => { resetChecksArmed = false; const b = document.getElementById('itemsResetChecksBtn'); if (b) b.textContent = '품목 체크 모두 해제'; }, 3000); return; }
@@ -8373,7 +8478,7 @@ function speakSchoolQuantity(school, opts = {}) {
     }
 
     // 3) 서비스 워커 등록 & 앱/미니창 무중단 자동 업데이트 매니저
-    var NK_APP_VERSION = '2026-11-27.10';
+    var NK_APP_VERSION = '2026-11-28.1';
     var NK_EXPECTED_OVERLAY_VERSION = '2026-11-27.8';
     window.NK_APP_VERSION = NK_APP_VERSION;
     var NK_MAIN_ASSETS = [
@@ -12151,9 +12256,13 @@ ${school.address || ''}`;
         for(const [isExtra,title] of [[true,'추가 납품·교구·A/S'],[false,'회수·반품·기타']]){const ps=g.ps.filter(p=>extra(p)===isExtra);panel.innerHTML+=`<h3>${title}</h3>`+(ps.length?ps.map(p=>{const rows=pickupRows(p);const sumTxt=(p.worksSummary||'').trim();return `<article data-task="${E(p.id)}"><p>${E(p.type)} · ${E(p.items||p.title||'내용 없음')}</p><small>${sumTxt?E('✨ '+sumTxt)+'<br>':''}${p.worksTaskId?(p.worksSyncPending?'웍스 반영 대기':p.done?'웍스 완료 상태':'웍스 미완료 상태'):'직접 등록'}</small><label>품목별 수량 설정 (한 줄에 품목명 | 예정수량)<textarea data-rows placeholder="교구 | 5">${E(rows.map(r=>r.label+' | '+r.qty).join('\n'))}</textarea></label>${btn('setRows','품목·예정수량 설정',`data-id="${E(p.id)}"`)}${rows.map((r,i)=>`<label>${E(r.label)} · 예정 ${r.qty} / 잔여 ${p.done?0:remaining(r.qty,r.done)}<input class="opsQty" data-taskqty="${i}" type="number" min="0" max="${r.qty}" step="1" value="${p.done?r.qty:r.done||0}"></label>`).join('')}<label>상태<select data-taskstate>${stateOptions(p.done?'완료':p.fieldStatus||'대기')}</select></label><label>미처리 사유<textarea data-taskreason>${E(p.fieldReason||'')}</textarea></label><label>재방문일<input data-taskdate type="date" value="${E(p.fieldRevisitDate||'')}"></label>${btn('saveTask','업무 처리 저장',`data-id="${E(p.id)}"`)}</article>`;}).join(''):'<p>해당 업무 없음</p>');}
         status();
       }
+      let loadSelectedLabels = new Set();
       function drawLoad(){
         const rows=loads(),totals=new Map();rows.filter(r=>r.qty!==null).forEach(r=>{const t=totals.get(r.label)||{q:0,names:[]};t.q+=r.qty;t.names.push(r.school+' '+r.qty);totals.set(r.label,t);});
-        const indexed=rows.map((r,idx)=>({r,idx}));
+        const allLabels=[...new Set(rows.map(r=>r.label))].sort((a,b)=>a.localeCompare(b,'ko'));
+        [...loadSelectedLabels].forEach(l=>{if(!allLabels.includes(l))loadSelectedLabels.delete(l);});
+        const filteredRows=loadSelectedLabels.size?rows.map((r,idx)=>({r,idx})).filter(({r})=>loadSelectedLabels.has(r.label)):rows.map((r,idx)=>({r,idx}));
+        const indexed=[...filteredRows];
         let orderLabel='기본 순서';
         if(typeof window.nkGetLoadOrderedItems==='function'){
           const res=window.nkGetLoadOrderedItems(indexed,loadReverse);
@@ -12161,7 +12270,12 @@ ${school.address || ''}`;
         }else if(loadReverse){
           indexed.reverse();orderLabel='방문 역순 (안쪽부터 적재)';
         }
-        panel.innerHTML+=`<h2>출발 전 상차 체크 · ${day()}</h2><p>현재 미완료 전체 목록 기준입니다. 오늘 방문할 원은 아래 선택으로 정하세요. 회수·반품은 싣는 물건에 포함하지 않습니다. 수량·내용이 바뀌면 확인 상태가 초기화됩니다.</p><p>${btn('toggleLoadOrder',loadReverse?'📦 현재: 방문 역순 적재 (마지막 원 먼저 싣기) → 기본순 보기':'🚚 현재: '+E(orderLabel)+' → 역순 상차(마지막 원 먼저)로 보기')}</p><h3>품목별 전체 잔여 합계</h3>${[...totals].map(([k,v])=>`<p>${E(k)}: ${v.q} <small>(${E(v.names.join(' / '))})</small></p>`).join('')}<h3>원별 준비</h3>`;
+        const chipHtml=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">`
+          +`<button type="button" data-ops="loadLabelClear" style="padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;${loadSelectedLabels.size?'background:#334155;color:#cbd5e1':'background:#2563eb;color:#fff'}">전체 품목 (${allLabels.length})</button>`
+          +allLabels.map(l=>{const on=loadSelectedLabels.has(l);const q=totals.get(l)?.q;return `<button type="button" data-ops="loadLabelToggle" data-label="${E(l)}" style="padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;${on?'background:#2563eb;color:#fff;border:1px solid #60a5fa':'background:#1e293b;color:#cbd5e1;border:1px solid #475569'}">${on?'✓ ':''}${E(l)}${q!=null?' ('+q+')':''}</button>`;}).join('')
+          +`</div>`;
+        const shownTotals=[...totals].filter(([k])=>!loadSelectedLabels.size||loadSelectedLabels.has(k));
+        panel.innerHTML+=`<h2>출발 전 상차 체크 · ${day()}</h2><p>원하는 품목만 선택해서 체크할 수 있습니다. 선택하지 않은 품목의 기존 상태는 그대로 유지됩니다.</p>${chipHtml}<p>${btn('toggleLoadOrder',loadReverse?'📦 현재: 방문 역순 적재 (마지막 원 먼저 싣기) → 기본순 보기':'🚚 현재: '+E(orderLabel)+' → 역순 상차(마지막 원 먼저)로 보기')}${btn('markVisibleLoaded','✓ 표시 품목 모두 상차 완료')}</p><h3>${loadSelectedLabels.size?'선택 품목 잔여 합계':'품목별 전체 잔여 합계'}</h3>${shownTotals.map(([k,v])=>`<p>${E(k)}: ${v.q} <small>(${E(v.names.join(' / '))})</small></p>`).join('')||'표시할 품목 없음'}<h3>원별 준비 (${indexed.length}건)</h3>`;
         indexed.forEach(({r,idx})=>{panel.innerHTML+=`<article><p>${E(r.school)} · ${E(r.label)} · ${r.qty===null?'수량 미설정 (원문 확인)':r.qty}</p><label>이번 출발 대상 / 준비 상태<select data-load="${idx}">${['이번 출발 제외','준비 전','포장 완료','상차 완료'].map(v=>`<option ${loadState(r)===v?'selected':''}>${v}</option>`).join('')}</select></label></article>`;});
         panel.innerHTML+=btn('saveLoad','상차 체크 저장')+btn('departure','출발 전 점검')+'<h3>현장에서 가져올 것</h3>'+PICKUPS.filter(p=>p&&!p.done&&!p.duplicateMergedInto&&!extra(p)).map(p=>`<p>${E(p.school)} · ${E(p.type)} · ${E(p.items||p.title||'')}</p>`).join('');
       }
@@ -12170,10 +12284,13 @@ ${school.address || ''}`;
         const b=e.target.closest('[data-ops]');if(!b)return;const a=b.dataset.ops;
         if(a==='close'){panel.hidden=true;focusBack?.focus();return;}if(['visit','load'].includes(a)){mode=a;draw();return;}
         if(a==='toggleLoadOrder'){loadReverse=!loadReverse;draw();return;}
+        if(a==='loadLabelClear'){loadSelectedLabels.clear();draw();return;}
+        if(a==='loadLabelToggle'){const lbl=b.dataset.label||'';if(loadSelectedLabels.has(lbl))loadSelectedLabels.delete(lbl);else if(lbl)loadSelectedLabels.add(lbl);draw();return;}
+        if(a==='markVisibleLoaded'){panel.querySelectorAll('select[data-load]').forEach(sel=>{sel.value='상차 완료';});showToast('표시된 품목을 [상차 완료]로 선택했습니다. [상차 체크 저장]을 눌러 저장하세요.');return;}
         if(a==='retry'){if(navigator.onLine===false){showToast('오프라인입니다. 연결 후 다시 시도하세요.');return;}scheduleSync(0);await worksRetryPending();status();return;}
         if(a==='saveLoad'||a==='departure'){
-          const rows=loads();rows.forEach((r,i)=>{const state=panel.querySelector(`[data-load="${i}"]`)?.value||'준비 전';r.owner.fieldLoad=r.owner.fieldLoad||{};const key=day();r.owner.fieldLoad[key]=r.owner.fieldLoad[key]||{};r.owner.fieldLoad[key][r.key]={state,fingerprint:fingerprint(r)};Object.keys(r.owner.fieldLoad).sort().slice(0,-7).forEach(k=>delete r.owner.fieldLoad[k]);});
-          if(!commit())return;const left=rows.filter(r=>!['상차 완료','이번 출발 제외'].includes(loadState(r)));showToast(a==='departure'?(left.length?'미상차 '+left.length+'건이 있습니다. 목록을 확인하세요.':'이번 출발 대상의 상차 확인을 마쳤습니다.'):'상차 체크를 기기에 저장했습니다.');return;
+          const rows=loads();rows.forEach((r,i)=>{const sel=panel.querySelector(`[data-load="${i}"]`);if(!sel)return;const state=sel.value||'준비 전';r.owner.fieldLoad=r.owner.fieldLoad||{};const key=day();r.owner.fieldLoad[key]=r.owner.fieldLoad[key]||{};r.owner.fieldLoad[key][r.key]={state,fingerprint:fingerprint(r)};Object.keys(r.owner.fieldLoad).sort().slice(0,-7).forEach(k=>delete r.owner.fieldLoad[k]);});
+          if(!commit())return;const targetRows=loadSelectedLabels.size?rows.filter(r=>loadSelectedLabels.has(r.label)):rows;const left=targetRows.filter(r=>!['상차 완료','이번 출발 제외'].includes(loadState(r)));showToast(a==='departure'?(left.length?'미상차 '+left.length+'건이 있습니다. 목록을 확인하세요.':'선택한 출발 대상의 상차 확인을 마쳤습니다.'):'상차 체크를 기기에 저장했습니다.');return;
         }
         const g=groups().find(x=>x.key===selected);if(!g)return;
         if(a==='saveDelivery'&&g.s){const s=g.s,items=deliveryItems(s),done={};let valid=true;items.forEach((it,i)=>{const raw=panel.querySelector(`[data-delivery="${i}"]`).value,n=Number(raw);if(raw===''||!Number.isInteger(n)||n<0||n>Number(it.qty))valid=false;done[it.key]=n;});const state=panel.querySelector('#opsDeliveryState').value,reason=panel.querySelector('#opsReason').value.trim();
